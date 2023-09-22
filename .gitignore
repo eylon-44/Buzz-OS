@@ -1,0 +1,11 @@
+/test/*
+/bin
+/build
+/tmp
+
+*.ignore
+*.todo
+*.o
+*.img
+*.elf
+*.exe
