@@ -1,12 +1,15 @@
 ## Bootloader Makefile ## ~ eylon
 
-BIN_DIR := ../../bin/bootloader
+BIN_DIR     := ../../bin/bootloader
+BIN_OUT     := $(BIN_DIR)/bootsector.bin
+BOOT_SCRIPT := bootsector.asm
 
+# Find Assembly sources
 BOOT_SRCS := $(shell find -name '*.asm')
-BOOT_OBJS := $(patsubst %.asm, $(BIN_DIR)/%.o, $(BOOT_SRCS))
 
-all: $(BOOT_OBJS)
+all: $(BIN_OUT)
 
-$(BIN_DIR)/%.o: %.asm
-	mkdir -p ${shell dirname $@}
-	nasm -f bin -o $@ $<
+# Compile
+$(BIN_OUT): $(BOOT_SRCS)
+	@mkdir -p ${shell dirname $@}
+	nasm -f bin -o $@ $(BOOT_SCRIPT)

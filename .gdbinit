@@ -7,6 +7,7 @@ layout reg
 target remote localhost:26000
 
 break *0x7c00
+break *0x1000
 continue
 
 define hook-stop
