@@ -1,4 +1,4 @@
-;; Buzz OS bootsector ;; ~ eylon
+;; Buzz OS Bootsector ;; ~ eylon
 
 [org 0x7c00]
 [bits 16]

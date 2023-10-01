@@ -3,6 +3,7 @@
 /build
 /tmp
 
+.vscode
 *.ignore
 *.todo
 *.o

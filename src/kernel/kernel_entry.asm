@@ -1,3 +1,5 @@
+;; Kernel Entry ;; ~ eylon
+
 [bits 32]
 global _start
 
