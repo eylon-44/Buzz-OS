@@ -1,9 +1,8 @@
 // VGA Screen Driver // ~ eylon
 
-#include "screen.h"
-#include "vga_attribute.h"
-#include "../../utils/type.h"
-#include "../ports.h"
+#include <drivers/screen.h>
+#include <drivers/ports.h>
+#include <utils/type.h>
 
 // Screen settings
 #define VIDEO_ADDRESS 0xb8000
@@ -38,6 +37,7 @@ static void print_char(char character, u8_t attribute)
 
 // Scroll the screen down (move the text up) without saving the lost text
 // # also scrolls the cursor
+// TODO edit P70
 static void scroll_down()
 {
     u16_t* vidmem = (unsigned char*) VIDEO_ADDRESS;

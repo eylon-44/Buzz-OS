@@ -1,7 +1,15 @@
-// VGA attribute table // ~ eylon
+// Screen driver header file // ~ eylon
 
-#if !defined(VGA_ATRB_H)
-#define VGA_ATRB_H
+#if !defined(SCREEN__DRIVER_H)
+#define SCREEN_DRIVER_H
+
+void kprint(char* string, u8_t attribute);
+void kprint_at(char* string, u8_t attribute, u16_t offset);
+void set_cursor_offset(u16_t offset);
+u16_t get_cursor_offset();
+void clear_screen();
+
+// VGA attribute table //
 
 // (0-2)                      |||
 #define VGA_TXT_BLACK  0b00000000
@@ -24,9 +32,6 @@
 // (7)                   |
 #define VGA_BLINK      0b10000000
 
-
-#endif
-
 /*
 -bits-     -attribute-
 (0-2) : Foreground Color
@@ -34,4 +39,8 @@
 (4-5) : Background Color
 (6)   : Background Intensity
 (7)   : Blinking
+
+Example: [ VGA_TXT_GREEN | VGA_BG_CYAN | VGA_BLINK ] will give a blinking green text with cyan background
 */
+
+#endif

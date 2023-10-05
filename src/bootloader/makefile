@@ -1,7 +1,6 @@
 ## Bootloader Makefile ## ~ eylon
+# *This is a child Makefile that won't work without his parent Makefile
 
-BIN_DIR     := ../../bin/bootloader
-BIN_OUT     := $(BIN_DIR)/bootsector.bin
 BOOT_SCRIPT := bootsector.asm
 
 # Find Assembly sources
@@ -12,4 +11,4 @@ all: $(BIN_OUT)
 # Compile
 $(BIN_OUT): $(BOOT_SRCS)
 	@mkdir -p ${shell dirname $@}
-	nasm -f bin -o $@ $(BOOT_SCRIPT)
+	$(AS) -f bin -o $@ $(BOOT_SCRIPT)

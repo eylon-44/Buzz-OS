@@ -1,7 +1,7 @@
 // Ports Utils // ~ eylon
 
-#include "ports.h"
-#include "../utils/type.h"
+#include <drivers/ports.h>
+#include <utils/type.h>
 
 // Read a byte from a port
 u8_t port_byte_in(u16_t port)
