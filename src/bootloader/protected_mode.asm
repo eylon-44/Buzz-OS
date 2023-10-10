@@ -2,7 +2,7 @@
 
 [bits 16]
 switch_to_pm:
-    cli ; clear interrupt flag :: disable maskable interrupts
+    cli ; clear interrupt flag :: disable maskable interrupts :: we can't handle interrupts yet
 
     lgdt [gdt_descriptor] ; load the global descriptor table
 

@@ -11,8 +11,8 @@ typedef unsigned char  u8_t;
 typedef          char  s8_t;
 
 // Get low or high value out of 32 bit data
-#define LOW_16 (b32_d) (u16_t) ((b32_d) & 0xFFFF)
-#define HIGH_16(b32_d) (u16_t) (((b32_d) >> 16) & 0xFFFF) 
+#define LOW_16(arg32) ((u16_t) ((arg32) & 0xFFFF))
+#define HIGH_16(arg32) ((u16_t) (((arg32) >> 16) & 0xFFFF))
 
 
 #endif
