@@ -1,27 +1,24 @@
 ## Buzz OS Main Makefile ## ~ eylon
 
-##################
-#### SETTINGS ####
-##################
+###############################################################
+### WARNING! THIS MAKEFILE IS HORRIBLE BUT IT WORKS FOR NOW ###
+###           IF YOU LIKE YOUR EYES DON'T READ IT           ###
+###############################################################
+
+#----------------#
+#---<SETTINGS>---#
+#----------------#
 
 # Set main directories
 SRC_DIR := src
 BIN_DIR := bin
 INCLUDE_DIR := $(SRC_DIR)/include
 
-# Global variables
-export TOP_DIR := $(shell pwd)
-export COMMON_MK  := $(TOP_DIR)/$(SRC_DIR)/common.mk
-
-### DANGER ZONE ### (spooky)
-# TODO comment
-BOOT_DIR := $(SRC_DIR)/bootloader
-KRNL_DIR := $(SRC_DIR)/kernel
-DRVR_DIR := $(SRC_DIR)/drivers
-
-
-# $$ KERNEL LINKED DIRECTORIES
-# $$ KENREL LINKED OBJECTS
+# Meaning to all code that is related to the kernel and not only the kernel directory
+KRNL_DIRS := kernel drivers cpu
+KRNL_DIRS := $(patsubst %, $(SRC_DIR)/%, $(KRNL_DIRS))
+KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.asm' -or -name '*.c')
+KRNL_OBJS := $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%.o, $(patsubst $(SRC_DIR)/%.asm, $(BIN_DIR)/%.o, $(KRNL_SRCS)))
 
 # Executables
 DISK_IMG := $(BIN_DIR)/disk.img
@@ -29,37 +26,42 @@ BOOT_BIN := $(BIN_DIR)/bootloader/bootsector.bin
 KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
 
 # Compiler settings
-export CC      := gcc
-export CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding
+CC      := gcc
+CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding
 
-export AS      := nasm
-export ASFLAGS := -f elf32
+AS      := nasm
+ASFLAGS := -f elf32
 
 LD      := ld
-LDFLAGS := -m elf_i386 -Ttext 0x1000 --oformat binary
+LDFLAGS := -m elf_i386 --oformat binary
 
+# Kernel specifics
+KRNL_OFFSET := 0x1000
+KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.o
 
-##################
-#### COMPILE #####
-##################
+#---------------#
+#---<COMPILE>---#
+#---------------#
 
 all: $(DISK_IMG)
 
 # Build the bootloader
-$(BOOT_BIN): $(BOOT_DIR)
-	$(MAKE) -C $< BIN_OUT=$(TOP_DIR)/$@
+$(BOOT_BIN): $(SRC_DIR)/bootloader
+	$(MAKE) -C $< BOOT_BIN=$(shell pwd)/$@ -s
 
-# RM goal, call all makefiles needed to build the kernel related objects (from kernel, drivers, etc)
-# RM and link them into one binary file.
-# RM $$ all kernel related src dir (drivers, kernel, etc)
-# RM Compile everything related to the kernel -> Link all with the kernel entry at the start
-# Build and link the kernel
-$(KRNL_BIN):
-	$(MAKE) -C $<
-	# Init the makefile of each kernel related folder (kernel, drivers...)
-	# Find their objects
-	# Link all the objects into "kernel.bin" with the kernel_entry.o at the start
+# Compile C kernel sources into objects
+$(BIN_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(shell dirname $@)
+	gcc -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding -c -o $@ $<
 
+# Compile Assembly kernel sources into objects
+$(BIN_DIR)/%.o: $(SRC_DIR)/%.asm
+	mkdir -p $(shell dirname $@)
+	nasm -f elf32 -o $@ $<
+
+# Link the kernel into a single binary file
+$(KRNL_BIN): $(KRNL_OBJS)
+	${LD} ${LDFLAGS} -Ttext ${KRNL_OFFSET} -o $@ $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS))
 
 # Build the disk image
 $(DISK_IMG): $(BOOT_BIN) $(KRNL_BIN)
@@ -68,9 +70,9 @@ $(DISK_IMG): $(BOOT_BIN) $(KRNL_BIN)
 	dd if=${KRNL_BIN} of=${DISK_IMG} bs=512 count=16 seek=1 conv=notrunc  # load the kernel into the second sector
 
 
-#################
-#### EXECUTE ####
-#################
+#---------------#
+#---<EXECUTE>---#
+#---------------#
 
 QEMU_FLAGS := -machine q35 -drive file=$(DISK_IMG),format=raw
 run: $(DISK_IMG)
@@ -78,12 +80,12 @@ run: $(DISK_IMG)
 
 rund: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS} -gdb tcp::26000 -S &
-	gdb -x .gdbinit ${GDB_FLAGS}
+	gdb -x auto/gdbinit ${GDB_FLAGS}
 
 
-###############
-#### UTILS ####
-###############
+#-------------#
+#---<UTILS>---#
+#-------------#
 
 clean:
 	rm -rf ${BIN_DIR}

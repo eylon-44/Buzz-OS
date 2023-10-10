@@ -18,29 +18,12 @@
 #define SCREEN_DATA_PORT 0x3d5
 
 
-// Print a single character to the screen at the current cursor location
-static void print_char(char character, u8_t attribute)
-{
-    unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
-    u16_t offset = get_cursor_offset();
-
-    // scroll down if overwritten to the screen
-    if (offset/2 > SCREEN_SIZE) {
-        scroll_down();
-        offset -= MAX_COLS * 2;
-    }
-
-    // set the character
-    vidmem[offset]   = character;
-    vidmem[offset+1] = attribute;
-}
-
 // Scroll the screen down (move the text up) without saving the lost text
 // # also scrolls the cursor
 // TODO edit P70
 static void scroll_down()
 {
-    u16_t* vidmem = (unsigned char*) VIDEO_ADDRESS;
+    u8_t* vidmem = (u8_t*) VIDEO_ADDRESS;
 
     // for each row, starting from the second
     for (u8_t r = 1; r < MAX_ROWS; r++)
@@ -60,6 +43,23 @@ static void scroll_down()
 
     // scroll the cursor
     set_cursor_offset(get_cursor_offset() - MAX_COLS * 2);
+}
+
+// Print a single character to the screen at the current cursor location
+static void print_char(char character, u8_t attribute)
+{
+    unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
+    u16_t offset = get_cursor_offset();
+
+    // scroll down if overwritten to the screen
+    if (offset/2 > SCREEN_SIZE) {
+        scroll_down();
+        offset -= MAX_COLS * 2;
+    }
+
+    // set the character
+    vidmem[offset]   = character;
+    vidmem[offset+1] = attribute;
 }
 
 // Print a null terminated string
