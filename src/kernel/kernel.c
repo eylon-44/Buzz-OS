@@ -1,7 +1,7 @@
 // Buzz OS Kernel Main // ~ eylon
 
+#include <drivers/screen.h>
+
 void kernel_main() {
-	// [Testing] Put the character "P" on the screen using video memory manipulation
-	char* video_memory = (char*) 0xb8000;
-	*video_memory = 'P';
+	kprint("Hello from kernel", VGA_TXT_RED | VGA_BG_GREEN);
 }

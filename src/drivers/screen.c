@@ -46,10 +46,10 @@ static void scroll_down()
 }
 
 // Print a single character to the screen at the current cursor location
-static void print_char(char character, u8_t attribute)
+static void print_char(char character, u8_t attribute, u16_t extra_offset)
 {
     unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
-    u16_t offset = get_cursor_offset();
+    u16_t offset = get_cursor_offset() + extra_offset * 2;
 
     // scroll down if overwritten to the screen
     if (offset/2 > SCREEN_SIZE) {
@@ -69,7 +69,7 @@ void kprint(char* string, u8_t attribute)
     // keep printing until the null character
     while (string[i] != 0)
     {
-        print_char(string[i], attribute);
+        print_char(string[i], attribute, i);
         i++;
     }
 }
