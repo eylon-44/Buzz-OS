@@ -6,11 +6,11 @@
 #include "../utils/type.h"
 
 // Byte I/O
-u8_t port_byte_in(u16_t port);
-void port_byte_out(u16_t port, u8_t data);
+u8_t port_inb(u16_t port);
+void port_outb(u16_t port, u8_t data);
 
 // Word I/O
-u16_t port_word_in(u16_t port);
-void port_word_out(u16_t port, u16_t data);
+u16_t port_inw(u16_t port);
+void port_outw(u16_t port, u16_t data);
 
 #endif

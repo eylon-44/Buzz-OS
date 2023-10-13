@@ -14,5 +14,8 @@ typedef          char  s8_t;
 #define LOW_16(arg32) ((u16_t) ((arg32) & 0xFFFF))
 #define HIGH_16(arg32) ((u16_t) (((arg32) >> 16) & 0xFFFF))
 
+// Unused variables
+#define UNUSED(variable) ((void) (variable))
+
 
 #endif

@@ -88,24 +88,24 @@ void set_cursor_offset(u16_t offset)
     offset /= 2;
 
     // control port = 0x0E -> data port = high byte
-    port_byte_out(SCREEN_CTRL_PORT, 0x0E);
-    port_byte_out(SCREEN_DATA_PORT, (u8_t) (offset >> 8) & 0xFFFF); // high
+    port_outb(SCREEN_CTRL_PORT, 0x0E);
+    port_outb(SCREEN_DATA_PORT, (u8_t) (offset >> 8) & 0xFFFF); // high
 
     // control port = 0x0F -> data port = low byte
-    port_byte_out(SCREEN_CTRL_PORT, 0x0F);
-    port_byte_out(SCREEN_DATA_PORT, (u8_t) (offset & 0xFFFF)); // low
+    port_outb(SCREEN_CTRL_PORT, 0x0F);
+    port_outb(SCREEN_DATA_PORT, (u8_t) (offset & 0xFFFF)); // low
 }
 
 // Use VGA ports to get cursor offset inside video memory
 u16_t get_cursor_offset()
 {
     // control port = 0x0E -> data port = high byte
-    port_byte_out(SCREEN_CTRL_PORT, 0x0E);
-    u16_t offset = port_byte_in(SCREEN_DATA_PORT) << 8; // high byte << 8
+    port_outb(SCREEN_CTRL_PORT, 0x0E);
+    u16_t offset = port_inb(SCREEN_DATA_PORT) << 8; // high byte << 8
     
     // control port = 0x0F -> data port = low byte
-    port_byte_out(SCREEN_CTRL_PORT, 0x0F);
-    offset |= port_byte_in(SCREEN_DATA_PORT);
+    port_outb(SCREEN_CTRL_PORT, 0x0F);
+    offset |= port_inb(SCREEN_DATA_PORT);
 
     // return [position * size of character cell in video memory]
     return offset * 2;
