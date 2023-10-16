@@ -9,8 +9,8 @@
 #define PIC1_CMD_PORT 0x20
 #define PIC2_CMD_PORT 0xA0
 
-#define PIC1_DATA_PORT 0x21
-#define PIC2_DATA_PORT 0xA1
+#define PIC1_MASK_PORT 0x21
+#define PIC2_MASK_PORT 0xA1
 
 // Remapped PIC offset
 #define PIC1_START_INTERRUPT 0x20
@@ -39,9 +39,11 @@
 #define ICW4_BUF_MASTER	0b00001100	    // buffered mode/master
 #define ICW4_SFNM		0b00010000	    // special fully nested (not)
 
-void pic_init();
+void init_pic();
 void pic_eoi(u32_t interrupt);
 void mask_irq(u8_t irq_line);
 void unmask_irq(u8_t irq_line);
+void mask_all_irq();
+void unmask_all_irq();
 
 #endif

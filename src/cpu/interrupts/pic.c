@@ -5,13 +5,13 @@
 #include <utils/type.h>
 
 // Initialize and config the PIC
-void pic_init()
+void init_pic()
 {
     u8_t mask_pic1, mask_pic2;
 
     // save the IMR (interrupt mask register) of both PICs
-    mask_pic1 = port_inb(PIC1_DATA_PORT);
-    mask_pic2 = port_inb(PIC2_DATA_PORT);
+    mask_pic1 = port_inb(PIC1_MASK_PORT);
+    mask_pic2 = port_inb(PIC2_MASK_PORT);
 
     // ICW1 :: start the Interrupt Control Word initiatlization sequence
     port_outb(PIC1_CMD_PORT, ICW1_INIT | ICW1_ICW4);
@@ -30,12 +30,13 @@ void pic_init()
     port_outb(PIC2_CMD_PORT, ICW4_8086);
 
     // restore the IMR
-    port_outb(PIC1_DATA_PORT, mask_pic1);
-    port_outb(PIC2_DATA_PORT, mask_pic2);
+    port_outb(PIC1_MASK_PORT, mask_pic1);
+    port_outb(PIC2_MASK_PORT, mask_pic2);
 
     // [MAY] cause a problem on real hardware when not using an io_wait function
 }
 
+// [MAY] need to handle "Spurious IRQs" using the ISR (in service register), more likely to happen on real hardware
 
 // Send the PIC an EOI (end of interrupt) signal :: take the interrupt number as parameter
 void pic_eoi(u32_t interrupt)
@@ -54,6 +55,20 @@ void pic_eoi(u32_t interrupt)
 }
 
 
+// Mask all IRQs
+void mask_all_irq()
+{
+    port_outb(PIC1_MASK_PORT, 0xFF); 
+    port_outb(PIC2_MASK_PORT, 0xFF);
+}
+
+// Unmask all IRQs
+void unmask_all_irq()
+{
+    port_outb(PIC1_MASK_PORT, 0x00); 
+    port_outb(PIC2_MASK_PORT, 0x00); 
+}
+
 // Mask an IRQ by its index
 void mask_irq(u8_t irq_line)
 {
@@ -62,11 +77,11 @@ void mask_irq(u8_t irq_line)
 
     // PIC1 irq
     if (irq_line < 8) {
-        port = PIC1_DATA_PORT;
+        port = PIC1_MASK_PORT;
     }
     // PIC2 irq
     else {
-        port = PIC2_DATA_PORT;
+        port = PIC2_MASK_PORT;
         irq_line -= 8;
     }
 
@@ -83,11 +98,11 @@ void unmask_irq(u8_t irq_line)
 
     // PIC1 irq
     if (irq_line < 8) {
-        port = PIC1_DATA_PORT;
+        port = PIC1_MASK_PORT;
     }
     // PIC2 irq
     else {
-        port = PIC2_DATA_PORT;
+        port = PIC2_MASK_PORT;
         irq_line -= 8;
     }
 

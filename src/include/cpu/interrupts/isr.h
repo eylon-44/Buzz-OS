@@ -9,14 +9,14 @@
 // CPU state struct
 typedef struct
 {
-    u32_t eax;
-    u32_t ecx;
-    u32_t edx;
-    u32_t ebx;
-    u32_t esp;
-    u32_t ebp;
-    u32_t esi;
     u32_t edi;
+    u32_t esi;
+    u32_t ebp;
+    u32_t esp;
+    u32_t ebx;
+    u32_t edx;
+    u32_t ecx;
+    u32_t eax;
 } __attribute__((packed)) CPUState;
 
 // Interrupt Request stack state struct
@@ -27,5 +27,7 @@ typedef struct
     u32_t cs;
     u32_t eflags;
 } __attribute__((packed)) IRQStackState;
+
+void init_interrupt();
 
 #endif

@@ -3,8 +3,8 @@
 #include <cpu/interrupts/idt.h>
 #include <utils/type.h>
 
-InterruptDescriptor idt[IDT_ENTRIES_COUNT];
-IDTR idtr;
+static InterruptDescriptor idt[IDT_ENTRIES_COUNT];
+static IDTR idtr;
 
 // Set an interrupt descriptor in the IDT array
 void set_interrupt_descriptor(u8_t index, u32_t handler_address)

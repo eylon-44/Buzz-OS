@@ -103,3 +103,13 @@ When you enter protected mode (or even before hand, if you're not using GRUB) th
 Its vector offset. (ICW2)
 Tell it how it is wired to master/slaves. (ICW3)
 Gives additional information about the environment. (ICW4)
+
+Read about "Spurious IRQs". May need to handle them.
+
+**ISR**
+https://wiki.osdev.org/ISR
+https://wiki.osdev.org/Interrupts#So_how_do_I_program_this_stuff.3F
+
+**interrupts numbers**
+https://wiki.osdev.org/Interrupts#General_IBM-PC_Compatible_Interrupt_Information
+https://wiki.osdev.org/Exceptions

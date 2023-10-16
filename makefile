@@ -27,10 +27,10 @@ KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
 
 # Compiler settings
 CC      := gcc
-CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding
+CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding -g
 
 AS      := nasm
-ASFLAGS := -f elf32
+ASFLAGS := -f elf32 -g -F dwarf
 
 LD      := ld
 LDFLAGS := -m elf_i386 --oformat binary
@@ -52,16 +52,19 @@ $(BOOT_BIN): $(SRC_DIR)/bootloader
 # Compile C kernel sources into objects
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c
 	mkdir -p $(shell dirname $@)
-	gcc -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding -c -o $@ $<
+	gcc -I${INCLUDE_DIR} ${CFLAGS} -c -o $@ $<
 
 # Compile Assembly kernel sources into objects
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.asm
 	mkdir -p $(shell dirname $@)
-	nasm -f elf32 -o $@ $<
+	nasm ${ASFLAGS} -o $@ $<
 
 # Link the kernel into a single binary file
 $(KRNL_BIN): $(KRNL_OBJS)
 	${LD} ${LDFLAGS} -Ttext ${KRNL_OFFSET} -o $@ $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS))
+
+	# Make the kernel's symbol table
+	${LD} -o ${BIN_DIR}/kernel/kernel.elf -m elf_i386 $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS))
 
 # Build the disk image
 $(DISK_IMG): $(BOOT_BIN) $(KRNL_BIN)
@@ -79,7 +82,7 @@ run: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS}
 
 rund: $(DISK_IMG)
-	qemu-system-i386 ${QEMU_FLAGS} -gdb tcp::26000 -S &
+	qemu-system-i386 ${QEMU_FLAGS} -s -S &
 	gdb -x auto/gdbinit ${GDB_FLAGS}
 
 

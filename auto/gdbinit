@@ -1,12 +1,17 @@
-set architecture i386:intel # i8086
+set architecture i386:intel
 set disassembly-flavor intel
+set print pretty
+
+add-symbol-file bin/kernel/kernel.elf 0x1000
 
 layout asm
 layout reg
 
-target remote localhost:26000
+target remote localhost:1234
 
-break *0x7c00
+# MBR start
+#break *0x7c00
+# Kernel entry start
 break *0x1000
 continue
 

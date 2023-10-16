@@ -11,8 +11,8 @@
 %macro no_error_code_interrupt_handler 1
     global interrupt_handler_%1
     interrupt_handler_%1:               ; define the interrupt handler function
-        push dword 0                     ; push 0 as error code
-        push dword %1                    ; push the interrupt number
+        push dword 0                    ; push 0 as error code
+        push dword %1                   ; push the interrupt number
         jmp common_interrupt_handler    ; jump to the common interrupt handler
 %endmacro
 
@@ -30,34 +30,78 @@
 ;; Restore the interrupted process, restore the stack to the state as the cpu gave it to us. 
 ;; Return to the interrupted code.
 common_interrupt_handler:
-    pusha                   ; save all registers :: save the state of the interrupted process
+    pushad                  ; save all registers :: save the state of the interrupted process
     call interrupt_handler  ; call the C function to handle the interrupt
-    popa                    ; restore the registers :: restore the state of the interrupted process
+    popad                   ; restore the registers :: restore the state of the interrupted process
     add esp, 8              ; iret expectes the stack should to be the same as the time of the interrupt
     iret                    ; return to the code that got interrupted
 
 
+
 ;; Set all interrupt request handlers.
-;; The error code interrupts are interrupts number 7, 9, 10, 11, 12, 13 and 16.
+;; https://wiki.osdev.org/Interrupts#General_IBM-PC_Compatible_Interrupt_Information
+;; https://wiki.osdev.org/Exceptions
+
+;; CPU Exceptions
+no_error_code_interrupt_handler 0           ;; [fault]      devision by 0 error
+no_error_code_interrupt_handler 1           ;; [fault/trap] debug exception
+no_error_code_interrupt_handler 2           ;; [interrupt]  non maskable interrupt
+no_error_code_interrupt_handler 3           ;; [trap]       breakpoint
+
+no_error_code_interrupt_handler 4           ;; [trap]       overflow
+no_error_code_interrupt_handler 5           ;; [fault]      bound range exceeded
+no_error_code_interrupt_handler 6           ;; [fault]      invalid opcode
+no_error_code_interrupt_handler 7           ;; [fault]      device not available
+
+error_code_interrupt_handler    8           ;; [abort]*     double float
+no_error_code_interrupt_handler 9           ;; [fault]      coprocessor segment overrun
+error_code_interrupt_handler    10          ;; [fault]*     invalid tss
+error_code_interrupt_handler    11          ;; [fault]*     segment not present
+
+error_code_interrupt_handler    12          ;; [fault]*     stack segment fault
+error_code_interrupt_handler    13          ;; [fault]*     general protection fault
+error_code_interrupt_handler    14          ;; [fault]*     page fault
+no_error_code_interrupt_handler 15          ;; [reserved]
+
+no_error_code_interrupt_handler 16          ;; [fault]      x87 floating point exception
+error_code_interrupt_handler 17             ;; [fault]*     alignment check
+no_error_code_interrupt_handler 18          ;; [abort]      machine check
+no_error_code_interrupt_handler 19          ;; [fault]      SIMD floating-point exception
+
+no_error_code_interrupt_handler 20          ;; [fault]      virtualization exception
+error_code_interrupt_handler 21             ;; [fault]*     control protection exception
+no_error_code_interrupt_handler 22          ;; [reserved]
+no_error_code_interrupt_handler 23          ;; [reserved]
+
+no_error_code_interrupt_handler 24          ;; [reserved]
+no_error_code_interrupt_handler 25          ;; [reserved]
+no_error_code_interrupt_handler 26          ;; [reserved]
+no_error_code_interrupt_handler 27          ;; [reserved]
+
+no_error_code_interrupt_handler 28          ;; [fault]      hypervisor injection exception
+error_code_interrupt_handler 29             ;; [fault]*     VMM communication exception
+error_code_interrupt_handler 30             ;; [fault]*     secutiry exception
+no_error_code_interrupt_handler 31          ;; [reserved]
+
 
 ;; Master PIC
-no_error_code_interrupt_handler 0
-no_error_code_interrupt_handler 1
-no_error_code_interrupt_handler 2
-no_error_code_interrupt_handler 3
+no_error_code_interrupt_handler 32          ;; [IRQ0]       programable interrupt timer interrupt
+no_error_code_interrupt_handler 33          ;; [IRQ1]       keyboard interrupt
+no_error_code_interrupt_handler 34          ;; [IRQ2]       cascade PIC2
+no_error_code_interrupt_handler 35          ;; [IRQ3]       COM2
 
-no_error_code_interrupt_handler 4
-no_error_code_interrupt_handler 5
-no_error_code_interrupt_handler 6
-no_error_code_interrupt_handler 7
+no_error_code_interrupt_handler 36          ;; [IRQ4]       COM1
+no_error_code_interrupt_handler 37          ;; [IRQ5]       LPT2
+no_error_code_interrupt_handler 38          ;; [IRQ6]       floppy disk
+no_error_code_interrupt_handler 39          ;; [IRQ7]       LPT1 / unreliable "spurious" interrupt (usually)
 
 ;; Slave PIC
-no_error_code_interrupt_handler 8
-no_error_code_interrupt_handler 9
-no_error_code_interrupt_handler 10
-no_error_code_interrupt_handler 11
+no_error_code_interrupt_handler 40          ;; [IRQ8]       CMOS real-time clock
+no_error_code_interrupt_handler 41          ;; [IRQ9]       free for peripherals / legacy SCSI / NIC
+no_error_code_interrupt_handler 42          ;; [IRQ10]      free for peripherals / legacy SCSI / NIC
+no_error_code_interrupt_handler 43          ;; [IRQ11]      free for peripherals / legacy SCSI / NIC
 
-no_error_code_interrupt_handler 12
-no_error_code_interrupt_handler 13
-no_error_code_interrupt_handler 14
-no_error_code_interrupt_handler 15
+no_error_code_interrupt_handler 44          ;; [IRQ12]      PS2 mouse
+no_error_code_interrupt_handler 45          ;; [IRQ13]      FPU / coprocessor / inter-processor
+no_error_code_interrupt_handler 46          ;; [IRQ14]      primary ATA hard disk
+no_error_code_interrupt_handler 47          ;; [IRQ15]      secondary ATA hard disk
