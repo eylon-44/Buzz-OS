@@ -34,7 +34,7 @@ common_interrupt_handler:
     call interrupt_handler  ; call the C function to handle the interrupt
     popad                   ; restore the registers :: restore the state of the interrupted process
     add esp, 8              ; iret expectes the stack should to be the same as the time of the interrupt
-    iret                    ; return to the code that got interrupted
+    iretd                   ; return to the code that got interrupted
 
 
 

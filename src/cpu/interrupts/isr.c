@@ -8,6 +8,32 @@
 #define INTERRUPT_HANDLER(index) extern void (interrupt_handler_##index)(); \
                                  set_interrupt_descriptor(index, (u32_t) interrupt_handler_##index);
 
+isr_t interrupt_handlers[IDT_ENTRIES_COUNT];
+
+
+void set_interrupt_handler(u8_t index, isr_t func)
+{
+    interrupt_handlers[index] = func;
+    // unmask if it's an IRQ
+    if (index >= IRQ0 && index <= IRQ15) unmask_irq(index);
+}
+
+#include <drivers/screen.h> // [DEBUG]
+void interrupt_handler(const CPUState cpu_state, const u32_t interrupt, const IRQStackState stack_state)
+{
+    static int loc = 0;
+    //interrupt_handlers[interrupt]();
+    for (int i = 0; i < interrupt; i++) {
+        kprint_at("I", interrupt, i*2+loc);
+    }
+    if (interrupt > 31) {
+        kprint("EOI", VGA_BG_GREEN);
+        pic_eoi(interrupt-32);
+    }
+    loc+=80;
+    return;
+}
+
 void init_interrupt()
 {
     __asm__ volatile ("cli");       // clear interrupt flag :: disable interrupts
@@ -68,18 +94,5 @@ void init_interrupt()
 
     __asm__ volatile ("sti");       // set interrupt flag   :: enable interrupts
 
-    unmask_all_irq();
-}
-
-#include <drivers/screen.h> // [DEBUG]
-void interrupt_handler(CPUState cpu_state, u32_t interrupt, IRQStackState stack_state)
-{
-    for (int i = 0; i < interrupt; i++) {
-        kprint_at("I", interrupt, i*2);
-    }
-    if (interrupt > 31) {
-        kprint("EOI", VGA_BG_GREEN);
-        pic_eoi(interrupt-32);
-    }
-    return;
+    mask_all_irq();
 }
