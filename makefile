@@ -27,7 +27,8 @@ KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
 
 # Compiler settings
 CC      := gcc
-CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-PIC -ffreestanding -g
+CFLAGS  := -I$(INCLUDE_DIR) -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+#CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-pic -ffreestanding -g -fno-pie -no-pie
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf
@@ -77,7 +78,7 @@ $(DISK_IMG): $(BOOT_BIN) $(KRNL_BIN)
 #---<EXECUTE>---#
 #---------------#
 
-QEMU_FLAGS := -machine q35 -drive file=$(DISK_IMG),format=raw
+QEMU_FLAGS := -machine q35 -drive file=$(DISK_IMG),index=0,media=disk,format=raw
 run: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS}
 
