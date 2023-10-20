@@ -16,5 +16,5 @@ void panic(char* msg)
     kprint(msg, VGA_TXT_RED | VGA_BG_BOLD | VGA_BG_GREEN);
 
     // halt forever
-    while (1) { __asm__ volatile ("hlt"); }
+    for (;;) { __asm__ volatile ("hlt"); }
 }

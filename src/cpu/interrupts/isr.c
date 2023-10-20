@@ -5,40 +5,43 @@
 #include <cpu/interrupts/idt.h>
 #include <utils/type.h>
 
+// Macro to extern and set an interrupt handler in the IDT
 #define INTERRUPT_HANDLER(index) extern void (interrupt_handler_##index)(); \
                                  set_interrupt_descriptor(index, (u32_t) interrupt_handler_##index);
-
+// Array of interrupt handlers arranged by the interrupt index
 isr_t interrupt_handlers[IDT_ENTRIES_COUNT];
 
 
+// Set a function handler to be called when the selected inerrupt occurs
 void set_interrupt_handler(u8_t index, isr_t func)
 {
     interrupt_handlers[index] = func;
     // unmask if it's an IRQ
-    if (index >= IRQ0 && index <= IRQ15) unmask_irq(index);
+    if (index >= IRQ0 && index <= IRQ15) { 
+        unmask_irq(index);
+    }
 }
 
-#include <drivers/screen.h> // [DEBUG]
-void interrupt_handler(const InterruptData int_data)
+// Being called by the common_interrupt_handler :: call the interrupt's handler function and send an EOI if it's an IRQ.
+void interrupt_handler(const InterruptData interrupt_data)
 {
-    static int loc = 0;
-    //interrupt_handlers[interrupt]();
-    for (int i = 0; i < int_data.interrupt_number; i++) {
-        kprint_at("I", int_data.interrupt_number, i*2+loc);
+    // call the associated interrupt handler
+    if (interrupt_handlers[interrupt_data.interrupt_number] != NULL) {
+        interrupt_handlers[interrupt_data.interrupt_number]();
     }
-    if (int_data.interrupt_number > 31) {
-        kprint("EOI", VGA_BG_GREEN);
-        pic_eoi(int_data.interrupt_number-32);
+    // send an EOI signal to the PIC if the interrupt is an IRQ
+    if (interrupt_data.interrupt_number >= IRQ0) {
+        pic_eoi(interrupt_data.interrupt_number-IRQ0);
     }
-    loc+=80;
     return;
 }
 
+// Initiate interrupts :: initiate the PIC, fill the IDT, load the IDT, initiate the interrupt handlers array
 void init_interrupt()
 {
     __asm__ volatile ("cli");       // clear interrupt flag :: disable interrupts
 
-    init_pic();                     // config and initiate the PIC
+    init_pic();                     // config and initiate the PIC :: all IRQs will be masked (except IRQ2)
 
     // set the IDT
     INTERRUPT_HANDLER(0)
@@ -92,7 +95,10 @@ void init_interrupt()
 
     load_idt();                     // load the IDT into the PIC
 
-    __asm__ volatile ("sti");       // set interrupt flag   :: enable interrupts
+    // initiate the interrupt handlers array with NULL pointers
+    for (int i = 0; i < IDT_ENTRIES_COUNT; i++) {
+        interrupt_handlers[i] = NULL;
+    }
 
-    mask_all_irq();
+    __asm__ volatile ("sti");       // set interrupt flag :: enable interrupts
 }

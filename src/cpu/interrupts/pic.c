@@ -32,20 +32,20 @@ void init_pic()
 
 // [MAY] need to handle "Spurious IRQs" using the ISR (in service register), more likely to happen on real hardware
 
-// Send the PIC an EOI (end of interrupt) signal :: take the interrupt number as parameter
-void pic_eoi(u32_t interrupt)
+// Send the PIC an EOI (end of interrupt) signal :: take the interrupt number (0-15) as parameter
+void pic_eoi(u8_t interrupt)
 {
-    // if interrupt number is out of range
+    // if interrupt number is out of range ignore request
     if (interrupt < PIC1_START_INTERRUPT || interrupt > PIC2_END_INTERRUPT) {
-        return; // [TODO] add a panic command ? /[TODO] add the panic commnad under the kernel as panic.c
+        return; // [TODO] handle error
     }
 
     // if is a PIC2 interrupt
     if (interrupt >= PIC2_START_INTERRUPT) {
-        port_outb(PIC2_CMD_PORT, PIC_EOI);      // send an end of interrupt signal to slave
+        port_outb(PIC2_CMD_PORT, PIC_EOI);      // send an EOI signal to slave
     }
     
-    port_outb(PIC1_CMD_PORT, PIC_EOI);          // send an end of interrupt signal to master
+    port_outb(PIC1_CMD_PORT, PIC_EOI);          // send an EOI signal to master
 }
 
 

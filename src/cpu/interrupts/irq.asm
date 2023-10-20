@@ -44,11 +44,11 @@ common_interrupt_handler:
 
     call interrupt_handler  ; call the C function to handle the interrupt
 
-    pop ebx
-    mov ds, bx
-    mov es, bx
-    mov fs, bx
-    mov gs, bx
+    pop eax
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
 
     popad                   ; restore the registers :: restore the state of the interrupted process
 

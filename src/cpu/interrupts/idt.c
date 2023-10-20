@@ -16,7 +16,7 @@ void set_interrupt_descriptor(u8_t index, u32_t handler_address)
     idt[index].offset_high      = HIGH_16(handler_address);
 }
 
-// Set the IDT descriptor and load the IDT
+// Set the IDT descriptor and load it into the PIC
 void load_idt()
 {
     // set the IDT descriptor

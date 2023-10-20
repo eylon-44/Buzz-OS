@@ -40,7 +40,7 @@
 #define ICW4_SFNM		0b00010000	    // special fully nested (not)
 
 void init_pic();
-void pic_eoi(u32_t interrupt);
+void pic_eoi(u8_t interrupt);
 void mask_irq(u8_t irq_line);
 void unmask_irq(u8_t irq_line);
 void mask_all_irq();

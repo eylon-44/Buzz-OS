@@ -3,6 +3,7 @@
 #if !defined(TYPE_H)
 #define TYPE_H
 
+// size type definitions
 typedef unsigned int   u32_t;
 typedef          int   s32_t;
 typedef unsigned short u16_t;
@@ -21,5 +22,7 @@ typedef          char  s8_t;
 // Unused variables
 #define UNUSED(variable) ((void) (variable))
 
+// NULL pointer
+#define NULL ((void*) 0)
 
 #endif
