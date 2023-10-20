@@ -7,31 +7,25 @@
 // Initialize and config the PIC
 void init_pic()
 {
-    u8_t mask_pic1, mask_pic2;
-
-    // save the IMR (interrupt mask register) of both PICs
-    mask_pic1 = port_inb(PIC1_MASK_PORT);
-    mask_pic2 = port_inb(PIC2_MASK_PORT);
-
     // ICW1 :: start the Interrupt Control Word initiatlization sequence
     port_outb(PIC1_CMD_PORT, ICW1_INIT | ICW1_ICW4);
     port_outb(PIC2_CMD_PORT, ICW1_INIT | ICW1_ICW4);
 
     // ICW2 :: set the vector offsets
-    port_outb(PIC1_CMD_PORT, ICW2_PIC1);
-    port_outb(PIC2_CMD_PORT, ICW2_PIC2);
+    port_outb(PIC1_DATA_PORT, ICW2_PIC1);
+    port_outb(PIC2_DATA_PORT, ICW2_PIC2);
 
     // ICW3 :: pics connenction data and cascade mode
-    port_outb(PIC1_CMD_PORT, ICW3_PIC1);
-    port_outb(PIC2_CMD_PORT, ICW3_PIC2);
+    port_outb(PIC1_DATA_PORT, ICW3_PIC1);
+    port_outb(PIC2_DATA_PORT, ICW3_PIC2);
 
     // ICW4 :: have the PICs use 8086 mode (and not 8080 mode)
-    port_outb(PIC1_CMD_PORT, ICW4_8086);
-    port_outb(PIC2_CMD_PORT, ICW4_8086);
+    port_outb(PIC1_DATA_PORT, ICW4_8086);
+    port_outb(PIC2_DATA_PORT, ICW4_8086);
 
-    // restore the IMR
-    port_outb(PIC1_MASK_PORT, mask_pic1);
-    port_outb(PIC2_MASK_PORT, mask_pic2);
+    // Disable all IRQs except IRQ2 on master PIC
+    mask_all_irq();
+    unmask_irq(2);
 
     // [MAY] cause a problem on real hardware when not using an io_wait function
 }
@@ -48,28 +42,28 @@ void pic_eoi(u32_t interrupt)
 
     // if is a PIC2 interrupt
     if (interrupt >= PIC2_START_INTERRUPT) {
-        port_outb(PIC2_CMD_PORT, PIC_EOI);      // send an end of interrupt signal  
+        port_outb(PIC2_CMD_PORT, PIC_EOI);      // send an end of interrupt signal to slave
     }
     
-    port_outb(PIC1_CMD_PORT, PIC_EOI);          // send an end of interrupt signal
+    port_outb(PIC1_CMD_PORT, PIC_EOI);          // send an end of interrupt signal to master
 }
 
 
-// Mask all IRQs
+// Mask (disable) all IRQs
 void mask_all_irq()
 {
-    port_outb(PIC1_MASK_PORT, 0xFF); 
-    port_outb(PIC2_MASK_PORT, 0xFF);
+    port_outb(PIC1_DATA_PORT, 0xFF); 
+    port_outb(PIC2_DATA_PORT, 0xFF);
 }
 
-// Unmask all IRQs
+// Unmask (enable) all IRQs
 void unmask_all_irq()
 {
-    port_outb(PIC1_MASK_PORT, 0x00); 
-    port_outb(PIC2_MASK_PORT, 0x00); 
+    port_outb(PIC1_DATA_PORT, 0x00); 
+    port_outb(PIC2_DATA_PORT, 0x00); 
 }
 
-// Mask an IRQ by its index
+// Mask (disable) an IRQ by its index
 void mask_irq(u8_t irq_line)
 {
     u8_t value;
@@ -77,11 +71,11 @@ void mask_irq(u8_t irq_line)
 
     // PIC1 irq
     if (irq_line < 8) {
-        port = PIC1_MASK_PORT;
+        port = PIC1_DATA_PORT;
     }
     // PIC2 irq
     else {
-        port = PIC2_MASK_PORT;
+        port = PIC2_DATA_PORT;
         irq_line -= 8;
     }
 
@@ -90,7 +84,7 @@ void mask_irq(u8_t irq_line)
     
 }
 
-// Unmask an IRQ by its index
+// Unmask (enable) an IRQ by its index
 void unmask_irq(u8_t irq_line)
 {
     u8_t value;
@@ -98,11 +92,11 @@ void unmask_irq(u8_t irq_line)
 
     // PIC1 irq
     if (irq_line < 8) {
-        port = PIC1_MASK_PORT;
+        port = PIC1_DATA_PORT;
     }
     // PIC2 irq
     else {
-        port = PIC2_MASK_PORT;
+        port = PIC2_DATA_PORT;
         irq_line -= 8;
     }
 

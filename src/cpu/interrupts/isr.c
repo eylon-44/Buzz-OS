@@ -19,16 +19,16 @@ void set_interrupt_handler(u8_t index, isr_t func)
 }
 
 #include <drivers/screen.h> // [DEBUG]
-void interrupt_handler(const CPUState cpu_state, const u32_t interrupt, const IRQStackState stack_state)
+void interrupt_handler(const InterruptData int_data)
 {
     static int loc = 0;
     //interrupt_handlers[interrupt]();
-    for (int i = 0; i < interrupt; i++) {
-        kprint_at("I", interrupt, i*2+loc);
+    for (int i = 0; i < int_data.interrupt_number; i++) {
+        kprint_at("I", int_data.interrupt_number, i*2+loc);
     }
-    if (interrupt > 31) {
+    if (int_data.interrupt_number > 31) {
         kprint("EOI", VGA_BG_GREEN);
-        pic_eoi(interrupt-32);
+        pic_eoi(int_data.interrupt_number-32);
     }
     loc+=80;
     return;

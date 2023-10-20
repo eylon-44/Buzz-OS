@@ -11,6 +11,7 @@
 %macro no_error_code_interrupt_handler 1
     global interrupt_handler_%1
     interrupt_handler_%1:               ; define the interrupt handler function
+        cli                             ; disable maskable interrupts
         push dword 0                    ; push 0 as error code
         push dword %1                   ; push the interrupt number
         jmp common_interrupt_handler    ; jump to the common interrupt handler
@@ -19,6 +20,7 @@
 %macro error_code_interrupt_handler 1
     global interrupt_handler_%1
     interrupt_handler_%1:               ; define the interrupt handler function
+        cli                             ; disable maskable interrupts
         push dword %1                   ; push the interrupt number
         jmp common_interrupt_handler    ; jump to the common interrupt handler
 %endmacro
@@ -31,9 +33,27 @@
 ;; Return to the interrupted code.
 common_interrupt_handler:
     pushad                  ; save all registers :: save the state of the interrupted process
+
+    mov ax, ds              ; save data segment
+    push eax
+    mov ax, 0x10            ; switch to the kernel data segment descriptor
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+
     call interrupt_handler  ; call the C function to handle the interrupt
+
+    pop ebx
+    mov ds, bx
+    mov es, bx
+    mov fs, bx
+    mov gs, bx
+
     popad                   ; restore the registers :: restore the state of the interrupted process
+
     add esp, 8              ; iret expectes the stack should to be the same as the time of the interrupt
+    sti                     ; enable interrupts
     iretd                   ; return to the code that got interrupted
 
 

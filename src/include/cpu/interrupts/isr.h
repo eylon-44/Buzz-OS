@@ -6,16 +6,16 @@
 #include <utils/type.h> 
 
 // Define IRQ locations in the IDT
-#define IRQ0 32
-#define IRQ1 33
-#define IRQ2 34
-#define IRQ3 35
-#define IRQ4 36
-#define IRQ5 37
-#define IRQ6 38
-#define IRQ7 39
-#define IRQ8 40
-#define IRQ9 41
+#define IRQ0  32
+#define IRQ1  33
+#define IRQ2  34
+#define IRQ3  35
+#define IRQ4  36
+#define IRQ5  37
+#define IRQ6  38
+#define IRQ7  39
+#define IRQ8  40
+#define IRQ9  41
 #define IRQ10 42
 #define IRQ11 43
 #define IRQ12 44
@@ -24,27 +24,14 @@
 #define IRQ15 47
 
 // Using u32_t values as the stack values are 4 bytes long (32 bit mode)
-// CPU state struct
-typedef struct
+// Interrupt request stack data
+typedef struct 
 {
-    u32_t edi;
-    u32_t esi;
-    u32_t ebp;
-    u32_t esp;
-    u32_t ebx;
-    u32_t edx;
-    u32_t ecx;
-    u32_t eax;
-} __attribute__((packed)) CPUState;
-
-// Interrupt Request stack state struct
-typedef struct
-{
-    u32_t error_code;
-    u32_t eip;
-    u32_t cs;
-    u32_t eflags;
-} __attribute__((packed)) IRQStackState;
+    u32_t ds;                                           // data segment of interrupted code
+    u32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;       // cpu registers values from interrupted code
+    u32_t interrupt_number, error_code;                 // interrupt number and error code
+    u32_t eip, cs, eflags;                              // irq information pushed by the cpu
+} __attribute__((packed)) InterruptData;
 
 typedef void (*isr_t)(); 
 

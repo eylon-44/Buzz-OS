@@ -9,8 +9,8 @@
 #define PIC1_CMD_PORT 0x20
 #define PIC2_CMD_PORT 0xA0
 
-#define PIC1_MASK_PORT 0x21
-#define PIC2_MASK_PORT 0xA1
+#define PIC1_DATA_PORT 0x21
+#define PIC2_DATA_PORT 0xA1
 
 // Remapped PIC offset
 #define PIC1_START_INTERRUPT 0x20

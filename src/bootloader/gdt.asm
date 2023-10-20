@@ -19,7 +19,7 @@ gdt_start:
         db 0x0         ; base  (16-23)
         db 10011010b   ; flags (8 bits)
         db 11001111b   ; flags (4 bits) + segment length (16-19)
-        db 0 x0        ; base  (24-31)
+        db 0x0         ; base  (24-31)
         
     ;; data SD
     data_descriptor:
@@ -36,7 +36,7 @@ gdt_end:
 
 ;; GDT descriptor :: GDT size [16 bits], GDT address [32 bits]
 gdt_descriptor:
-    dw gdt_start - gdt_end - 1 ; size of the GDT, always less 1 of the true size
+    dw gdt_end - gdt_start - 1 ; size of the GDT, always less 1 of the true size
     dd gdt_start               ; GDT start address
 
 
