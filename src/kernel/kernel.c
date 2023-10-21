@@ -9,7 +9,8 @@
 
 // Kernel main function :: kernel start
 void kernel_main() {
-	kprint("Welcome to Buzz OS", VGA_TXT_RED | VGA_BG_GREEN);
+	clear_screen();
+	kprint("Welcome to Buzz OS", VGA_ATR_DEFAULT);
 	init_interrupt();
 
 	// Halt forever :: wait for an interrupt, execute it and continue halting

@@ -15,7 +15,7 @@ BIN_DIR := bin
 INCLUDE_DIR := $(SRC_DIR)/include
 
 # Meaning to all code that is related to the kernel and not only the kernel directory
-KRNL_DIRS := kernel drivers cpu
+KRNL_DIRS := kernel drivers cpu utils
 KRNL_DIRS := $(patsubst %, $(SRC_DIR)/%, $(KRNL_DIRS))
 KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.asm' -or -name '*.c')
 KRNL_OBJS := $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%.o, $(patsubst $(SRC_DIR)/%.asm, $(BIN_DIR)/%.o, $(KRNL_SRCS)))

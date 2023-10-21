@@ -3,90 +3,83 @@
 #include <drivers/screen.h>
 #include <drivers/ports.h>
 #include <utils/type.h>
+#include <utils/memory.h>
 
 // Screen settings
 #define VIDEO_ADDRESS 0xb8000
-#define MAX_ROWS    25
-#define MAX_COLS    80
-#define SCREEN_SIZE (MAX_ROWS * MAX_COLS)
-
-// Attribute byte for default color scheme
-# define DEFAULT_TXT_COLOR (VGA_TXT_WHITE | VGA_BG_BLACK)
 
 // Screen I/O ports
 #define SCREEN_CTRL_PORT 0x3d4
 #define SCREEN_DATA_PORT 0x3d5
 
+static u8_t* vidmem = (u8_t*) VIDEO_ADDRESS;
 
-// Scroll the screen down (move the text up) without saving the lost text
-// # also scrolls the cursor
-// TODO edit P70
-static void scroll_down()
+
+// Process an escape sequence character :: escape sequence characters are not printed and only affect the cursor
+static u16_t handle_escape_sequence(char character, u16_t offset)
 {
-    u8_t* vidmem = (u8_t*) VIDEO_ADDRESS;
+    // [TODO]
+    return offset;
+}
 
-    // for each row, starting from the second
-    for (u8_t r = 1; r < MAX_ROWS; r++)
-    {
-        // for each column in a row
-        for (u8_t c = 0; c < MAX_COLS; c++)
-        {
-            // copy the current column in a row to the column in the row before it
-            vidmem[ (MAX_ROWS*(r-1) + c) * 2 ]    = (u16_t) vidmem[ (MAX_ROWS*r + c) * 2 ];
+// Put a single character on the screen at the given offset
+static void put_char(char character, u8_t attribute, u16_t offset)
+{
+    // put the character on screen
+    vidmem[(offset*2)]   = character;
+    vidmem[(offset*2)+1] = attribute;
+}
 
-            // if it's the last row, clean it
-            if (r == MAX_ROWS-1) {
-                vidmem[ (MAX_ROWS*r + c) * 2 ] = (u16_t) 0x00000000;
-            }
+// Scroll the screen down (move the text up) :: return the new offset :: also scrolls the cursor
+static u16_t handle_scrolling(u16_t offset)
+{
+    // if going out of screen bounds scroll the screen
+    if (offset > SCREEN_SIZE) {
+        memcpy(vidmem + SCREEN_MAX_COLS * 2, vidmem, (SCREEN_SIZE - SCREEN_MAX_COLS)*2);
+        // blank the last line
+        for (u8_t i = 0; i < SCREEN_MAX_COLS; i++) {
+            put_char(' ', VGA_ATR_DEFAULT, (SCREEN_SIZE - SCREEN_MAX_COLS + i));
         }
+        offset -= (SCREEN_MAX_COLS + 1);
     }
-
-    // scroll the cursor
-    set_cursor_offset(get_cursor_offset() - MAX_COLS * 2);
+    return offset;
 }
 
-// Print a single character to the screen at the current cursor location
-static void print_char(char character, u8_t attribute, u16_t extra_offset)
-{
-    unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
-    u16_t offset = get_cursor_offset() + extra_offset * 2;
 
-    // scroll down if overwritten to the screen
-    if (offset/2 > SCREEN_SIZE) {
-        scroll_down();
-        offset -= MAX_COLS * 2;
-    }
-
-    // set the character
-    vidmem[offset]   = character;
-    vidmem[offset+1] = attribute;
-}
-
-// Print a null terminated string
+// Print a null terminated string at the current cursor locaion :: attribute 0 for default
 void kprint(char* string, u8_t attribute)
 {
+    if (attribute == 0) { attribute = VGA_ATR_DEFAULT; }
+
+    // get cursor offset :: starting the print from the cursor location
+    u16_t offset = get_cursor_offset();
+
     u16_t i = 0;
     // keep printing until the null character
-    while (string[i] != 0)
-    {
-        print_char(string[i], attribute, i);
-        i++;
+    while (string[i] != '\0') {
+
+            offset = handle_escape_sequence(string[i], offset);
+            offset = handle_scrolling(offset);
+            put_char(string[i], attribute, offset); // print the character
+    
+            i++;
+            offset++;
     }
+
+    // update cursor location
+    set_cursor_offset(offset);
 }
 
-// Print a null terminated string to the screen at a specific cursor offset
-// # offset < 0 will print at the current cursor location
+// Print a null terminated string to the screen at a specific offset
 void kprint_at(char* string, u8_t attribute, u16_t offset)
 {
-    if (offset >= 0) set_cursor_offset(offset);
+    set_cursor_offset(offset);
     kprint(string, attribute);
 }
 
 // Use VGA ports to set cursor offset inside video memory
 void set_cursor_offset(u16_t offset)
 {
-    offset /= 2;
-
     // control port = 0x0E -> data port = high byte
     port_outb(SCREEN_CTRL_PORT, 0x0E);
     port_outb(SCREEN_DATA_PORT, (u8_t) (offset >> 8) & 0xFFFF); // high
@@ -107,8 +100,8 @@ u16_t get_cursor_offset()
     port_outb(SCREEN_CTRL_PORT, 0x0F);
     offset |= port_inb(SCREEN_DATA_PORT);
 
-    // return [position * size of character cell in video memory]
-    return offset * 2;
+    // return
+    return offset;
 }
 
 // Clear the screen and reset the cursor
@@ -117,10 +110,10 @@ void clear_screen()
     unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
 
     // fill the screen with a blank character (space)
-    for (int i = 0; i < SCREEN_SIZE; i++) 
+    for (int i = 0; i < SCREEN_SIZE; i++)
     {
         vidmem[i*2]     = ' ';
-        vidmem[(i*2)+1] = DEFAULT_TXT_COLOR;
+        vidmem[(i*2)+1] = VGA_ATR_DEFAULT;
     }
 
     // reset cursor offset to 0

@@ -13,7 +13,7 @@ void panic(char* msg)
 
     // clear the screen and print error message
     clear_screen();
-    kprint(msg, VGA_TXT_RED | VGA_BG_BOLD | VGA_BG_GREEN);
+    kprint(msg, VGA_ATR_ERROR);
 
     // halt forever
     for (;;) { __asm__ volatile ("hlt"); }
