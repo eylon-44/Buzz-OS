@@ -18,20 +18,23 @@ void set_interrupt_handler(u8_t index, isr_t func)
     interrupt_handlers[index] = func;
     // unmask if it's an IRQ
     if (index >= IRQ0 && index <= IRQ15) { 
-        unmask_irq(index);
+        unmask_irq(index-IRQ0);
     }
 }
 
 // Being called by the common_interrupt_handler :: call the interrupt's handler function and send an EOI if it's an IRQ.
+#include <drivers/screen.h>
 void interrupt_handler(const InterruptData interrupt_data)
 {
+    kprint("INTERRUPT", VGA_BG_ORANGE);
     // call the associated interrupt handler
     if (interrupt_handlers[interrupt_data.interrupt_number] != NULL) {
         interrupt_handlers[interrupt_data.interrupt_number]();
     }
     // send an EOI signal to the PIC if the interrupt is an IRQ
-    if (interrupt_data.interrupt_number >= IRQ0) {
-        pic_eoi(interrupt_data.interrupt_number-IRQ0);
+    if (interrupt_data.interrupt_number >= IRQ0 && interrupt_data.interrupt_number <= IRQ15) {
+        kprint("EOI", VGA_BG_GREEN);
+        pic_eoi(interrupt_data.interrupt_number);
     }
     return;
 }

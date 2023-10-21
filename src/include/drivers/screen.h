@@ -48,7 +48,7 @@ void clear_screen();
 // VGA text attribute presets //
 
 // [NOTE] it is prefered to use the presets over the custom combinations for a painless future :)
-#define VGA_ATR_DEFAULT (VGA_TXT_WHITE | VGA_BG_BLACK)
+#define VGA_ATR_DEFAULT (VGA_TXT_WHITE | VGA_TXT_LIGHT | VGA_BG_BLUE)
 #define VGA_ATR_ERROR   (VGA_TXT_BLACK | VGA_BG_RED)
 #define VGA_ATR_WARNING (VGA_TXT_BLACK | VGA_BG_ORANGE | VGA_BG_LIGHT)
 

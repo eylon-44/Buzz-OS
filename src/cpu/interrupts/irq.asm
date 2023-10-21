@@ -33,23 +33,7 @@
 ;; Return to the interrupted code.
 common_interrupt_handler:
     pushad                  ; save all registers :: save the state of the interrupted process
-
-    mov ax, ds              ; save data segment
-    push eax
-    mov ax, 0x10            ; switch to the kernel data segment descriptor
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
     call interrupt_handler  ; call the C function to handle the interrupt
-
-    pop eax
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
     popad                   ; restore the registers :: restore the state of the interrupted process
 
     add esp, 8              ; iret expectes the stack should to be the same as the time of the interrupt

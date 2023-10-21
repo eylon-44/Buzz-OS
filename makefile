@@ -82,6 +82,9 @@ QEMU_FLAGS := -machine q35 -drive file=$(DISK_IMG),index=0,media=disk,format=raw
 run: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS}
 
+runc:
+	echo TODO
+
 rund: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS} -s -S &
 	gdb -x auto/gdbinit ${GDB_FLAGS}
@@ -94,4 +97,4 @@ rund: $(DISK_IMG)
 clean:
 	rm -rf ${BIN_DIR}
 
-.PHONY: all clean run rund
+.PHONY: all clean run runc rund

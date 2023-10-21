@@ -27,7 +27,6 @@
 // Interrupt request stack data
 typedef struct 
 {
-    u32_t ds;                                           // data segment of interrupted code
     u32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;       // cpu registers values from interrupted code
     u32_t interrupt_number, error_code;                 // interrupt number and error code
     u32_t eip, cs, eflags;                              // irq information pushed by the cpu

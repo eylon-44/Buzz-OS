@@ -45,7 +45,8 @@ void pic_eoi(u8_t interrupt)
         port_outb(PIC2_CMD_PORT, PIC_EOI);      // send an EOI signal to slave
     }
     
-    port_outb(PIC1_CMD_PORT, PIC_EOI);          // send an EOI signal to master
+    //port_outb(PIC1_CMD_PORT, PIC_EOI);          // send an EOI signal to master
+    port_outb(0x20, 0x20);
 }
 
 
