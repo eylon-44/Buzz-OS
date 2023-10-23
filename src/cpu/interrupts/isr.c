@@ -4,6 +4,7 @@
 #include <cpu/interrupts/pic.h>
 #include <cpu/interrupts/idt.h>
 #include <utils/type.h>
+#include <drivers/screen.h> // [DEBUG]
 
 // Macro to extern and set an interrupt handler in the IDT
 #define INTERRUPT_HANDLER(index) extern void (interrupt_handler_##index)(); \
@@ -23,19 +24,17 @@ void set_interrupt_handler(u8_t index, isr_t func)
 }
 
 // Being called by the common_interrupt_handler :: call the interrupt's handler function and send an EOI if it's an IRQ.
-#include <drivers/screen.h>
 void interrupt_handler(const InterruptData interrupt_data)
 {
-    kprint("INTERRUPT", VGA_BG_ORANGE);
     // call the associated interrupt handler
     if (interrupt_handlers[interrupt_data.interrupt_number] != NULL) {
         interrupt_handlers[interrupt_data.interrupt_number]();
     }
     // send an EOI signal to the PIC if the interrupt is an IRQ
     if (interrupt_data.interrupt_number >= IRQ0 && interrupt_data.interrupt_number <= IRQ15) {
-        kprint("EOI", VGA_BG_GREEN);
         pic_eoi(interrupt_data.interrupt_number);
     }
+    else kprint("NON PIC INTERRUPT", VGA_ATR_WARNING); // [TMP][DEBUG]
     return;
 }
 

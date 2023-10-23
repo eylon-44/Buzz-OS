@@ -15,6 +15,7 @@ void kernel_main() {
 	// Initiate all
 	init_interrupt();
 	init_keyboard();
+	// init_timer(50);
 
 	// Halt forever :: wait for an interrupt, execute it and continue halting
 	for (;;) { __asm__ __volatile__ ("hlt"); }

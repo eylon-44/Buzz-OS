@@ -27,8 +27,8 @@ KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
 
 # Compiler settings
 CC      := gcc
-CFLAGS  := -I$(INCLUDE_DIR) -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
-#CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-pic -ffreestanding -g -fno-pie -no-pie
+#CFLAGS  := -I$(INCLUDE_DIR) -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -Wextra -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
+CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf

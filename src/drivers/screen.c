@@ -19,6 +19,7 @@ static u8_t* vidmem = (u8_t*) VIDEO_ADDRESS;
 static u16_t handle_escape_sequence(char character, u16_t offset)
 {
     // [TODO]
+    UNUSED(character);
     return offset;
 }
 
