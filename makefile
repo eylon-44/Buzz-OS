@@ -1,10 +1,5 @@
 ## Buzz OS Main Makefile ## ~ eylon
 
-###############################################################
-### WARNING! THIS MAKEFILE IS HORRIBLE BUT IT WORKS FOR NOW ###
-###           IF YOU LIKE YOUR EYES DON'T READ IT           ###
-###############################################################
-
 #----------------#
 #---<SETTINGS>---#
 #----------------#
@@ -14,11 +9,11 @@ SRC_DIR := src
 BIN_DIR := bin
 INCLUDE_DIR := $(SRC_DIR)/include
 
-# Meaning to all code that is related to the kernel and not only the kernel directory
+# All kernel related code directories
 KRNL_DIRS := kernel drivers cpu utils
 KRNL_DIRS := $(patsubst %, $(SRC_DIR)/%, $(KRNL_DIRS))
 KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.asm' -or -name '*.c')
-KRNL_OBJS := $(patsubst $(SRC_DIR)/%.c, $(BIN_DIR)/%.o, $(patsubst $(SRC_DIR)/%.asm, $(BIN_DIR)/%.o, $(KRNL_SRCS)))
+KRNL_OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(KRNL_SRCS))
 
 # Executables
 DISK_IMG := $(BIN_DIR)/disk.img
@@ -27,8 +22,7 @@ KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
 
 # Compiler settings
 CC      := gcc
-#CFLAGS  := -I$(INCLUDE_DIR) -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -Wextra -MD -ggdb -m32 -Werror -fno-omit-frame-pointer
-CFLAGS  := -I$(INCLUDE_DIR) -m32 -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
+CFLAGS  := -I$(INCLUDE_DIR) -m32 -nostdlib -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf
@@ -38,7 +32,7 @@ LDFLAGS := -m elf_i386 --oformat binary
 
 # Kernel specifics
 KRNL_OFFSET := 0x1000
-KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.o
+KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.asm.o
 
 #---------------#
 #---<COMPILE>---#
@@ -51,12 +45,12 @@ $(BOOT_BIN): $(SRC_DIR)/bootloader
 	$(MAKE) -C $< BOOT_BIN=$(shell pwd)/$@ -s
 
 # Compile C kernel sources into objects
-$(BIN_DIR)/%.o: $(SRC_DIR)/%.c
+$(BIN_DIR)/%.c.o: $(SRC_DIR)/%.c
 	mkdir -p $(shell dirname $@)
 	gcc -I${INCLUDE_DIR} ${CFLAGS} -c -o $@ $<
 
 # Compile Assembly kernel sources into objects
-$(BIN_DIR)/%.o: $(SRC_DIR)/%.asm
+$(BIN_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 	mkdir -p $(shell dirname $@)
 	nasm ${ASFLAGS} -o $@ $<
 
