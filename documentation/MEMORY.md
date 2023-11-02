@@ -197,4 +197,5 @@ The page could simply have been swapped out. In that case the OS can service the
 If the CPU find the page actually doens’t exist, it fires a page-not-present exception. The upper 10 bits specify the page directory entry (PDE) and the middle 10 bits specify the page table entry (PTE). First check the PDE and see if it’s present bit is set, if not setup a page table and point the PDE to the base address of the page table, set the present bit and iretd. If the PDE is present then the present bit of the PTE will be cleared. Then you’ll need to map some physical memory to the page table, set the present bit and then iretd to continue processing.
 
 ## Page Manipulation
-[...]
+[Self refrenced](https://wiki.osdev.org/Paging#Manipulation) is the ability to access the page directory
+[Structures](https://wiki.osdev.org/Page_Tables)
