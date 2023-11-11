@@ -7,7 +7,7 @@ load_kernel:
     mov cl, 0x02          ; sector number :: where the start of the kernel will be placed
     mov dh, 0x00          ; head number
     mov dl, [BOOT_DRIVE]  ; drive number
-    mov al, 0x16          ; nuber of sectors to read :: TODO! increase the number of sectors to read as kernel grow in size
+    mov al, 40            ; nuber of sectors to read :: MUST BE EQUAL TO [KRNL_SECTORS] IN /makefile
     mov bx, KERNEL_OFFSET ; read from disk and store in [KERNEL_OFFSET](=0x1000)
 
     int 0x13              ; bios disk services interrupt

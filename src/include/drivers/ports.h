@@ -3,7 +3,7 @@
 #if !defined(PORTS_H)
 #define PORTS_H
 
-#include "../utils/type.h"
+#include <utils/type.h>
 
 // Byte I/O
 u8_t port_inb(u16_t port);

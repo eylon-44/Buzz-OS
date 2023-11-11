@@ -6,6 +6,17 @@
 mov [BOOT_DRIVE], dl ; the bios sets up the boot drive in [dl] on boot, saving it for later use
 
 BOOT_START:
+    cli                 ; clear interrupt flag :: disable maskable interrupts, we can't handle them yet
+
+    ;; Zero data segments registers DS, ES and SS and set SP
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7c00
+
+    ;; [TODO]? A20 line
+
     call clear_screen   ; {screen.asm} clear the screen
     mov si, MSG_BOOT_STRT
     call print          ; {screen.asm} print string
@@ -21,8 +32,8 @@ BOOT_START:
 
 [bits 32]
 PM_START:
-    call KERNEL_OFFSET  ; jump to the kernel location in memory
-    jmp $               ; stay here if the kernel returns
+    call KERNEL_OFFSET  ; jump to the kernel's entry in physical memory
+    jmp $               ; stay here if the kernel returns, it should never do
 
 ;: Utils
 %include "protected_mode.asm"

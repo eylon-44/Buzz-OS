@@ -1,10 +1,11 @@
 // Buzz OS Kernel Main // ~ eylon
 
+#include <kernel/memory/paging.h>
+#include <kernel/panic.h>
 #include <drivers/screen.h>
 #include <drivers/keyboard.h>
 #include <cpu/interrupts/isr.h>
 #include <cpu/timer.h>
-#include <kernel/panic.h>
 
 // Kernel main function :: kernel start
 void kernel_main() {
@@ -12,12 +13,13 @@ void kernel_main() {
 	clear_screen();
 	kprint("Welcome to Buzz OS", VGA_ATR_DEFAULT);
 
-	// Initiate all
+	// Initiate all services
 	init_interrupt();
-	init_keyboard();
-	// init_timer(50);
+	init_paging();
 
-	// Halt forever :: wait for an interrupt, execute it and continue halting
+	init_keyboard();
+
+	// Halt forever :: wait for an interrupt, handle it, continue halting
 	for (;;) { __asm__ __volatile__ ("hlt"); }
 
 	// Should never execute this
