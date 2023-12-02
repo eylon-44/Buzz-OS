@@ -6,7 +6,7 @@
 #include <utils/memory.h>
 
 // Screen settings
-#define VIDEO_ADDRESS 0xb8000
+#define VIDEO_ADDRESS 0xc00b8000
 
 // Screen I/O ports
 #define SCREEN_CTRL_PORT 0x3d4

@@ -19,9 +19,10 @@ _start:
     mov eax, page_directory - KERNEL_VIRTUAL
     mov cr3, eax
 
-    ;; Enable paging by setting bit 31 (PG/paging-enable bit) of cr0 to 1.
+    ;; Enable paging and write-protect by enabling bits 31 (PG) and 16 (WP) of cr0
     mov eax, cr0        ; read current cr0
-    or eax, 0x80000000  ; set PG
+    or eax, 0x80000000  ; [bit 31] set PG
+    or eax, 0x00010000  ; [bit 16] set WP
     mov cr0, eax        ; update cr0
 
     ;; Set the stack at the higher half kernel

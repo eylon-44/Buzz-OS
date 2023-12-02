@@ -8,12 +8,23 @@
 #define PAGE_TABLE_ENTRIES 1024 // number of items in page related tables (pd/pt)
 #define PAGE_SIZE          4096 // 4kb :: 0x1000
 
+#define PAGE_FREE 0x0
+#define PAGE_USED 0x1
+
 // Get page directory/table index by virtual address :: max index is 1023 (10 bits)
 #define PD_INDEX(virtual_address)  ((virtual_address) >> 22) 
 #define PT_INDEX(virtual_address)  (((virtual_address) >> 12) & 0x03FF)
 // Get page frame offset :: max 4095/4kb (12 bits)
 #define PF_OFFSET(virtual_address) ((virtual_address) & 0x0FFF)
 
+// Get the page number from its index in the array
+#define INDX_TO_PAGE_NUM(element, index) ((u32_t) (element)*32+(index))
+// Get the page number from its physical base address
+#define BASE_TO_PAGE_NUM(base_address)   ((u32_t) (base_address)/PAGE_SIZE)
+
+
+typedef u32_t physical_address; // clarify the use of physical address
+typedef u32_t virtual_address;  // clarify the use of virtual address
 
 typedef u32_t pte_t; // page table entry
 typedef u32_t pde_t; // page directory entry

@@ -58,7 +58,7 @@ SECTIONS
 	}
 
     /* Define an 'end' symbol to mark the end address of the linked output file */
-	PROVIDE(end = .);
+	_end = .;
 
 
     /* Discard unused sections */
