@@ -24,7 +24,7 @@ typedef u8_t bool;
 #define LOW_8(arg16) ((u8_t) ((arg16) & 0xFF))
 #define HIGH_8(arg16) ((u8_t) (((arg16) >> 8) & 0xFF))
 
-// Unused variables
+// Mark and disable compiler errors for unused variables
 #define UNUSED(variable) ((void) (variable))
 
 // NULL pointer
