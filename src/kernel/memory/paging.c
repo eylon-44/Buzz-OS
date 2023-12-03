@@ -42,7 +42,7 @@ static physical_address pmm_get_page()
                     // update [search_start], mark the page as used and return its base address
                     search_start = n;
                     BITMAP_SET_BIT(bitmap, INDX_TO_PAGE_NUM(n, i), PAGE_USED);
-                    return PAGE_SIZE * INDX_TO_PAGE_NUM(n, i)
+                    return PAGE_SIZE * INDX_TO_PAGE_NUM(n, i);
                 }
             }
         }
