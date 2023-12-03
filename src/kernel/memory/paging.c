@@ -27,6 +27,10 @@ static u32_t bitmap[PAGE_TABLE_ENTRIES*PAGE_TABLE_ENTRIES/sizeof(u32_t)/8];
 static u32_t search_start = 0;
 
 
+/* [TODO][REMOVE][DEBUG] */
+static physical_address pmm_get_page() __attribute__((unused));
+static void pmm_free_page(physical_address page_base) __attribute__((unused));
+
 
 // Allocate a physical page and return its base address in physical memory
 static physical_address pmm_get_page()
@@ -42,7 +46,7 @@ static physical_address pmm_get_page()
                     // update [search_start], mark the page as used and return its base address
                     search_start = n;
                     BITMAP_SET_BIT(bitmap, INDX_TO_PAGE_NUM(n, i), PAGE_USED);
-                    return PAGE_SIZE * INDX_TO_PAGE_NUM(n, i)
+                    return PAGE_SIZE * INDX_TO_PAGE_NUM(n, i);
                 }
             }
         }
