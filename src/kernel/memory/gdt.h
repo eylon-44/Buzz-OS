@@ -16,12 +16,12 @@
 // Macro for easy gdt entry setup
 #define GDT_ENTRY(base, limit, dpl, access_options, flags_options) \
     ((gdt_entry_t) { \
-        .base_24 = (base) & 0xFFFFFF, \
-        .base_8 = (base) >> 24 & 0xFF, \
+        .base_24  = (base) & 0xFFFFFF, \
+        .base_8   = (base) >> 24 & 0xFF, \
         .limit_16 = (limit) & 0xFFFF, \
-        .limit_4 = (limit) >> 16 & 0xF, \
-        .access = (u8_t) (0 | (access_options) | (dpl << 5 & 0b01100000)), \
-        .flags = (u8_t) (flags_options) \
+        .limit_4  = (limit) >> 16 & 0xF, \
+        .access   = (u8_t) (0 | (access_options) | (dpl << 5 & 0b01100000)), \
+        .flags    = (u8_t) (flags_options) \
     })
 
 // GDT entry structure
@@ -73,5 +73,6 @@ typedef enum
     GDT_FLAG_GRANULARITY = 0b1000       // scale the value of [limit] in the descriptor by 4kb, if not set, [limit] is scaled by 1
 } gdt_flags_t;
 
+void init_gdt();
 
 #endif

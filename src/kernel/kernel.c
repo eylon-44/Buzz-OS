@@ -1,6 +1,6 @@
 // Buzz OS Kernel Main // ~ eylon
 
-#include <kernel/memory/paging.h>
+#include <kernel/memory/mm.h>
 #include <kernel/panic.h>
 #include <drivers/screen.h>
 #include <drivers/keyboard.h>
@@ -15,7 +15,7 @@ void kernel_main() {
 
 	// Initiate all services
 	init_interrupt();
-	init_paging();
+	init_mm();
 
 	init_keyboard();
 

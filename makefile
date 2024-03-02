@@ -7,7 +7,7 @@
 # Set main directories
 SRC_DIR := src
 BIN_DIR := bin
-INCLUDE_DIR := $(SRC_DIR)/include
+INCLUDE_DIR := include
 SYMBOLS_DIR := $(BIN_DIR)/symbols
 
 # All kernel related code directories
@@ -51,7 +51,7 @@ $(BOOT_BIN): $(SRC_DIR)/bootloader
 # Compile C kernel sources into objects
 $(BIN_DIR)/%.c.o: $(SRC_DIR)/%.c
 	mkdir -p $(shell dirname $@)
-	gcc -I${INCLUDE_DIR} ${CFLAGS} -c -o $@ $<
+	gcc ${CFLAGS} -c -o $@ $<
 
 # Compile Assembly kernel sources into objects
 $(BIN_DIR)/%.asm.o: $(SRC_DIR)/%.asm

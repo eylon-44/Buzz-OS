@@ -4,7 +4,7 @@
 global _start
 extern kernel_main
 extern gdt_descriptor
-extern page_directory
+extern proc_pd
 
 ;; Kernel virtual offset :: use this to convert virtual to physical addresses
 %define KERNEL_VIRTUAL 0xC0000000
@@ -38,7 +38,7 @@ enable_paging:
     mov cr4, eax
 
     ;; load the startup Page Directory address into cr3
-    mov eax, page_directory - KERNEL_VIRTUAL
+    mov eax, proc_pd - KERNEL_VIRTUAL
     mov cr3, eax
 
     ;; enable paging and write-protect by enabling bits 31 (PG) and 16 (WP) of cr0

@@ -1,0 +1,47 @@
+1024 max processes. A page directory for each process.
+Each page directory is an array of 1024 page table entries (4 bytes each) -> 1024 * 4   = 4kb
+									  -> 4kb * 1024 = 4mb
+So the starting size of the processes page directory array is 4mb, and each time a process need a new page table
+we allocate it *somewhere* in free physical memory and use it. A page table size is also 4kb so it will fit perfectly
+into a physical page.
+
+When a process frees this page table we can just free the physical space this page table has taken and by that "deleting" it.
+
+As far as I understand all the addresses in cr3, PDE and PTE are physcial so it does not really matter where we allocate this page table.
+Just ask a free random physical page and put it there. [CORRECT!]
+
+Using this "lazy allocation" method we solve the problem of having 1024 (max processes) * 1024 (PDE) * 1024 (PTE) * 4 (entry size in bytes)
+bytes for storing virtual memory address (which is way too much over the amount of physical memory we have).
+
+---
+A page directory does not have to have a page table for each entry, meaning we can only disable it (present=0) instead of create a disabled
+page table. This will sum the amount of memory required for having a page directory for 1024 processes into 4mb. If a process needs more space
+we will create a new page table *somewhere* in physical memory and point its directory into that table.
+
+---
+For each process we need to allocate memory for:
+- Its stack [data] [const]
+- Its program [code & data] [const]
+- Its heap [data] [dynamic]
+
+What about a heap?
+
+{} = return
+[] = take
+
+[PMM]
+- Init: set available physical pages
+- Get physical page 	{ physical address } [ void ]
+- Free physical page	{ void } [ physical address ]
+
+[VMM]
+- Init: replace the temporary identity page directory with the kernel's and the first process's one.
+- Get virtual page	{ virtual address } [ process id, virtual address ]
+- Free virtual page  	{ void } [ process id, virtual address ]
+
+[GDT]
+- Init: load the GDT into the GDTR register
+
+[MM]
+- Init: init gdt -> pmm -> vmm
+- 
