@@ -18,7 +18,7 @@ KRNL_OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(KRNL_SRCS))
 
 # Executables
 DISK_IMG := $(BIN_DIR)/disk.img
-BOOT_BIN := $(BIN_DIR)/bootloader/bootsector.bin
+BOOT_BIN := $(BIN_DIR)/boot/bootloader.bin
 KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
 
 # Compiler settings
@@ -36,8 +36,10 @@ KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.asm.o
 
 SECTOR_SIZE  := 512		# sector size in bytes
 DISK_SECTORS := 2048	# disk size in sectors, 2048=1MB
-KRNL_SECTORS := 40		# kernel size in sectors [WARNING!] can't set this value above 54 for now, see issue #1 in github
-BOOT_SECTORS := 1  		# bootloader size in sectors, must be one as this is a bootsector
+KRNL_SECTORS := 512		# kernel size in sectors
+MBR_SECTORS  := 1													# MBR size in sectors
+BM_SECTORS   := 20													# bootmain size in sectors
+BOOT_SECTORS := $(shell expr $(MBR_SECTORS) + $(BM_SECTORS))		# bootloader size in sectors
 #---------------#
 #---<COMPILE>---#
 #---------------#
@@ -45,8 +47,13 @@ BOOT_SECTORS := 1  		# bootloader size in sectors, must be one as this is a boot
 all: $(DISK_IMG)
 
 # Build the bootloader
-$(BOOT_BIN): $(SRC_DIR)/bootloader
-	$(MAKE) -C $< BOOT_BIN=$(shell pwd)/$@ -s
+$(BOOT_BIN): $(SRC_DIR)/boot
+	$(MAKE) -C $< BOOT_BIN_DIR=$(shell pwd)/$(BIN_DIR)/boot \
+				  BOOT_BIN=$(shell pwd)/$@ 					\
+				  INC_DIR=$(shell pwd)/$(INCLUDE_DIR)		\
+				  BIN_DIR=$(shell pwd)/$(BIN_DIR)			\
+				  MBR_SECTORS=$(MBR_SECTORS)				\
+				  BM_SECTORS=$(BM_SECTORS)
 
 # Compile C kernel sources into objects
 $(BIN_DIR)/%.c.o: $(SRC_DIR)/%.c
@@ -68,17 +75,16 @@ $(KRNL_BIN): $(KRNL_OBJS)
 	${LD} -T ${KRNL_LD_SCRIPT} -m elf_i386 -o ${SYMBOLS_DIR}/kernel.elf $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS))
 
 # Build the disk image
-$(DISK_IMG): $(BOOT_BIN) $(KRNL_BIN)
-	@# check that the kernel binary fully fits the disk
-	@if [ $$(stat -c %s $(KRNL_BIN)) -gt $$(( ${KRNL_SECTORS} * ${SECTOR_SIZE} )) ]; then\
-		echo "\n------------<ERROR: KERNEL OVERFLOWS THE DISK>------------" \
-		"\n$$> Change [makefile/KRNL_SECTORS] [makefile/DISK_SECTORS], and [bootloader/disk.asm/load_kernel/al] as needed";\
-		exit 1;\
-	fi
+$(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN)
+	# create an empty disk
+	dd if=/dev/zero   of=${DISK_IMG} bs=${SECTOR_SIZE} count=${DISK_SECTORS}
+	# load the bootloader into the first sector
+	dd if=${BOOT_BIN} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=0 conv=notrunc count=${BOOT_SECTORS}
+	# load the kernel into the second sector
+	dd if=${KRNL_BIN} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=$(BOOT_SECTORS) conv=notrunc count=${KRNL_SECTORS}
 
-	dd if=/dev/zero   of=${DISK_IMG} bs=${SECTOR_SIZE} count=${DISK_SECTORS} 						 # create an empty disk
-	dd if=${BOOT_BIN} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=0 conv=notrunc count=${BOOT_SECTORS}     # load the bootloader into the first sector
-	dd if=${KRNL_BIN} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=1 conv=notrunc count=${KRNL_SECTORS}     # load the kernel into the second sector
+	@echo "\n. . . DONE . . .\n"
+	@tree ${BIN_DIR}
 
 #---------------#
 #---<EXECUTE>---#

@@ -7,7 +7,7 @@
 #include "keymap.h"
 
 // IO ports
-#define KB_scan_code_PORT   0x60     // keyboard scan_code port
+#define KB_SCAN_CODE_PORT   0x60     // keyboard scan_code port
 #define KB_STAT_PORT   0x64     // keyboard controller status port
 
 static u8_t modifiers = 0; // modifier keys flags
@@ -24,7 +24,7 @@ static char get_key()
         return '\0';  // buffer is empty, nothing to read
     }
     // read the scan code from the keyboard's scan_code port
-    scan_code = port_inb(KB_scan_code_PORT);
+    scan_code = port_inb(KB_SCAN_CODE_PORT);
 
 
     // if it's an E0 escape :: set the E0 escape modifier flag and return a null character

@@ -1,7 +1,6 @@
 // Ports Utils // ~ eylon
 
 #include <drivers/ports.h>
-#include <utils/type.h>
 
 // Read a byte from a port
 inline u8_t port_inb(u16_t port)
@@ -33,4 +32,22 @@ inline u16_t port_inw(u16_t port)
 inline void port_outw(u16_t port, u16_t data)
 {
     __asm__ volatile ("out %0, %1" : : "a" (data), "d" (port));
+}
+
+// Input from port to string
+inline void insd(u16_t port, void* dest, u32_t count)
+{
+    asm volatile (
+        "cld \n\t"                  // clear the direction flag
+        "rep insl \n\t"             // repeat the insw instruction count times
+        : "=D" (dest)               // output: Use "=D" to indicate the destination pointer (dest)
+        : "d" (port), "c" (count)   // Input: port is in DX, count is in CX
+        : "memory"                  // clobbered memory
+    );
+}
+
+// Wait a very small amount of time (1 to 4 microseconds)
+inline void io_wait(void)
+{
+    port_outb(0x80, 0);
 }
