@@ -14,8 +14,8 @@
 pde_t proc_pd[PM_MAX_PROCESSES][MM_PD_ENTRIES] __attribute__ ((aligned(MM_PAGE_SIZE))) = {
     /* The first page directory is initiated with the first 4MB of physcial 
         memory mapped to itself and to 0xC0000000 (3GB/Higher Half Kernel) */
-    [0] { [0]                   { .present = 1, .ps = 1, .rw = 1 },
-          [0xC0000000 >> 22]    { .present = 1, .ps = 1, .rw = 1 } }
+    //[0] { [0]                   { .present = 1, .ps = 1, .rw = 1 },
+    //      [0xC0000000 >> 22]    { .present = 1, .ps = 1, .rw = 1 } }
     // [NOTE][TODO][IMPORTANT] THIS INTIALIZATION TAKES 4MB IN THE FINAL IMAGE INSTEAD OF 44KB!!!
     // INITIATE DURING RUNTIME TO SAVE A LOT OF MEMORY
     // THIS SPACE SHOULD BE EMPTY

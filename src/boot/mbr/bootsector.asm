@@ -29,7 +29,7 @@ BOOT_START:
 
 [bits 32]
 PM_START:
-    jmp BOOTLOADER_OFFSET       ; jump to the loaded bootloader location
+    call BOOTLOADER_OFFSET      ; jump to the loaded bootloader location
     jmp $                       ; this code should never run
 
 ;: Include
