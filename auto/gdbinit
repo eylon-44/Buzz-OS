@@ -5,7 +5,8 @@ set print pretty
 # [WARNING][BUG] see issue #2 on github
 
 #add-symbol-file bin/symbols/kernel.elf 0x1000
-add-symbol-file bin/symbols/kernel.elf 0xC0001000
+add-symbol-file bin/symbols/BM.elf 0x1000
+#add-symbol-file bin/symbols/kernel.elf 0xC0001000
 
 layout asm
 layout reg
@@ -14,8 +15,8 @@ target remote localhost:1234
 
 # MBR start
 break *0x7c00
-break *0x7c21
+#break *0x7c21
 # Kernel entry
 #break *0x1000
-break kernel_main
+#break kernel_main
 continue

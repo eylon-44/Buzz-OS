@@ -13,30 +13,34 @@ static void wait_disk() {
     while ((port_inb(PATA_STATUS_PORT) & 0b11000000) != 0b01000000) {}
 }
 
-void read_sector(void* dest, u32_t lba)
+// Read a sector at [lba] from the disk into [dest]
+static void read_sector(void* dest, u32_t lba)
 {
-    wait_disk();                                        // wait for disk to be ready
-    port_outb(PATA_SECTOR_COUNT_PORT, 1);               // set sector count as 1
-    port_outb(PATA_LBA_LOW_PORT, (u8_t) lba);           // set lba-low
-    port_outb(PATA_LBA_MID_PORT, (u8_t) (lba >> 8));    // set lba-mid
-    port_outb(PATA_LBA_HIGH_PORT, (u8_t) (lba >> 16));  // set lba-high
-    port_outb(PATA_CMD_PORT, 0x20);                     // send read command
+    wait_disk();                                                    // wait for disk to be ready
 
-    wait_disk();                                        // wait for disk to be ready
-    insd(PATA_DATA_PORT, dest, PATA_SECTOR_SIZE / 4);   // read the data sector from the PATA data port into RAM
+    port_outb(PATA_SECTOR_COUNT_PORT, 1);                           // set sector count to 1
+    port_outb(PATA_LBA1_PORT,  (u8_t) lba & 0xFF);                  // set bits 0-7 of lba
+    port_outb(PATA_LBA2_PORT,  (u8_t) (lba >> 8) & 0xFF);           // set bits 8-15 of lba
+    port_outb(PATA_LBA3_PORT,  (u8_t) (lba >> 16) & 0xFF);          // set bits 16-23 of lba
+    port_outb(PATA_DRIVE_PORT, (u8_t) ((lba >> 24) | 0xE0) & 0xFF); // set bits 24-27 of lba and drive number
+    port_outb(PATA_CMD_PORT, PATA_READ_SECTOR);                     // send read command
+
+    wait_disk();                                                    // wait for disk to be ready
+    insd(PATA_DATA_PORT, dest, PATA_SECTOR_SIZE / 4);               // copy the sector from the PATA data port into RAM
 }
 
 /* Read [size] bytes from location [disk_offset] in disk into [dest]
-    - might read more data than requested 
-    - [disk_offset] should be [PATA_SECTOR_SIZE] (512) bytes aligned */
-void read_disk(u8_t* dest, u32_t size, u32_t disk_offset)
+    - might read more data than requested
+    - [disk_offset] should be [PATA_SECTOR_SIZE] (512) bytes aligned
+    - [size] should be [PATA_SECTOR_SIZE] (512) bytes aligned 
+    - [dest] should be 4 bytes aligned */
+void read_disk(void* dest, u32_t size, u32_t disk_offset)
 {
-    // Determine the end address of written data
-    u8_t* end = (dest + size);
-    // Convert [disk_offset] bytes into sectors
-    disk_offset /= PATA_SECTOR_SIZE;
+    u8_t* start = (u8_t*) dest; 
+    u8_t* end   = start + size;
+    u32_t lba = disk_offset / PATA_SECTOR_SIZE;
 
-    for (;dest < end; dest += PATA_SECTOR_SIZE, disk_offset++) {
-        read_sector(dest, disk_offset);
+    for (; start < end; start += PATA_SECTOR_SIZE, lba++) {
+        read_sector(start, lba);
     }
 }

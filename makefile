@@ -90,12 +90,9 @@ $(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN)
 #---<EXECUTE>---#
 #---------------#
 
-QEMU_FLAGS := -machine q35 -drive file=$(DISK_IMG),index=0,media=disk,format=raw
+QEMU_FLAGS := -serial mon:stdio -drive file=$(DISK_IMG),index=0,media=disk,format=raw -m 512
 run: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS}
-
-runc:
-	echo TODO
 
 rund: $(DISK_IMG)
 	qemu-system-i386 ${QEMU_FLAGS} -s -S &
@@ -118,4 +115,4 @@ rer: re run
 # fully recompile and run debug
 rerd: re rund
 	
-.PHONY: all clean re rer rerd run runc rund
+.PHONY: all clean re rer rerd run rund

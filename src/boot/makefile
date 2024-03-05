@@ -39,6 +39,7 @@ $(BOOT_BIN_DIR)/$(BM_DIR)/%.o: $(BM_DIR)/%.c
 $(BM_BIN): $(BM_ENTRY) $(filter-out $(BM_ENTRY), $(BM_OBJS))
 	@mkdir -p ${shell dirname $@}
 	ld -m elf_i386 --oformat binary -Ttext=${BOOTMAIN_OFFSET} -o $@ $^ ${BM_UTILS}
+	ld -m elf_i386 -Ttext=${BOOTMAIN_OFFSET} -o /home/eylon/Code/os/bin/symbols/BM.elf $^ ${BM_UTILS}
 
 # Build the full bootloader disk image
 $(BOOT_BIN): $(MBR_BIN) $(BM_BIN)
