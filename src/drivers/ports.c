@@ -3,17 +3,17 @@
 #include <drivers/ports.h>
 
 // Read a byte from a port
-inline u8_t port_inb(u16_t port)
+inline uint8_t port_inb(uint16_t port)
 {
     // "d"  (port)   :: load EDX with [port]
     // "=a" (result) :: set [result] as EAX when finished
-    u8_t result;
+    uint8_t result;
     __asm__ volatile ("in %%dx, %%al" : "=a" (result) : "d" (port));
     return result;
 }
 
 // Write a byte to a port
-inline void port_outb(u16_t port, u8_t data)
+inline void port_outb(uint16_t port, uint8_t data)
 {
     // "d" (port) :: load EDX with [port]
     // "a" (data) :: load EAX with [data]
@@ -21,21 +21,21 @@ inline void port_outb(u16_t port, u8_t data)
 }
 
 // Read a word from a port
-inline u16_t port_inw(u16_t port)
+inline uint16_t port_inw(uint16_t port)
 {
-    u16_t result;
+    uint16_t result;
     __asm__ volatile ("in %%dx, %%ax" : "=a" (result) : "d" (port));
     return result;
 }
 
 // Write a word to a port
-inline void port_outw(u16_t port, u16_t data)
+inline void port_outw(uint16_t port, uint16_t data)
 {
     __asm__ volatile ("out %0, %1" : : "a" (data), "d" (port));
 }
 
 // Input from port to string (4 bytes per call)
-inline void insd(u16_t port, void* dest, u32_t count)
+inline void insd(uint16_t port, void* dest, uint32_t count)
 {
     __asm__ volatile("cld; rep insl" :
         "=D" (dest), "=c" (count) :

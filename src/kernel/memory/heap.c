@@ -4,7 +4,8 @@
 #include "vmm.h"
 #include "pmm.h"
 #include <kernel/memory/mm.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
+#include <libc/stddef.h>
 
 // The kernel heap is initiated with a single page
 static heap_t kheap = { .start = MM_KHEAP_START, .top = MM_KHEAP_START + MM_PAGE_SIZE };
@@ -44,11 +45,11 @@ int heap_extend(heap_t* heap, vaddr_t new_top)
 
 
 // Allocate [size] bytes for the on the kearnel heap and return a pointer to the allocated data
-void* kmalloc(u32_t size)
+void* kmalloc(uint32_t size)
 {
     // calculate padding and the new chunk's size
-    u32_t padding = HEAP_ALIGNMENT - (size % HEAP_ALIGNMENT);
-    u32_t new_chunk_size = sizeof(heap_header_t) + size + padding;
+    uint32_t padding = HEAP_ALIGNMENT - (size % HEAP_ALIGNMENT);
+    uint32_t new_chunk_size = sizeof(heap_header_t) + size + padding;
 
     // [best_chunk] variable will store the choosen chunk at the end of the loop
     heap_header_t* best_chunk = NULL;
@@ -82,7 +83,7 @@ void* kmalloc(u32_t size)
     if (best_chunk == NULL) {
         // in this case the variable [chunk_ptr] represents the last (highest) chunk in the heap
         // alocate more space for the heap; increase the heap size by 4KB
-        if (heap_extend(&kheap, (u32_t) kheap.top + MM_PAGE_SIZE)) {
+        if (heap_extend(&kheap, (uint32_t) kheap.top + MM_PAGE_SIZE)) {
             // if the last chunk (the highest in the address space) is free, merge it with the newly allocated space
             if (!CHUNK_USED(chunk_ptr)) {
                 // add to its size the allocated space and set it as the best chunk
@@ -107,7 +108,7 @@ void* kmalloc(u32_t size)
     // check if we can split the chunk; if it can fit another chunk in the unused area
     if (CHUNK_SIZE(best_chunk) - new_chunk_size  >= sizeof(heap_header_t) + HEAP_ALIGNMENT) {
         // split the chunks that the newly allocated chunk is at the bottom
-        u32_t total_size = CHUNK_SIZE(best_chunk);
+        uint32_t total_size = CHUNK_SIZE(best_chunk);
         best_chunk->size = new_chunk_size;
         chunk_ptr = NEXT_CHUNK(best_chunk);
         chunk_ptr->size = total_size - CHUNK_SIZE(best_chunk);
@@ -178,17 +179,17 @@ void kfree(void* ptr)
     }
 }
 
-// void* kmalloc_aligned(u32_t size, u32_t alignment)
+// void* kmalloc_aligned(uint32_t size, uint32_t alignment)
 // {
 
 // }
 
-// void* kcalloc(u32_t nmemb, u32_t size)
+// void* kcalloc(uint32_t nmemb, uint32_t size)
 // {
 
 // }
 
-// void* krealloc(void* ptr, u32_t size)
+// void* krealloc(void* ptr, uint32_t size)
 // {
 
 // }

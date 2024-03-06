@@ -6,7 +6,7 @@ set print pretty
 
 #add-symbol-file bin/symbols/kernel.elf 0x1000
 add-symbol-file bin/symbols/BM.elf 0x1000
-#add-symbol-file bin/symbols/kernel.elf 0xC0001000
+#add-symbol-file bin/kernel/kernel.elf 0xC0001000
 
 layout asm
 layout reg

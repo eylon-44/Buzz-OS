@@ -1,7 +1,7 @@
 // Global Descriptor Table Handler // ~ eylon
 
 #include "gdt.h"
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // GDT data structure
 static gdt_entry_t gdt[SEG_COUNT] = {
@@ -32,7 +32,7 @@ static gdt_entry_t gdt[SEG_COUNT] = {
 // [TODO] this is also used by the kernel enrty for some reason, fix this later and make it static
 // GDT descriptor :: this will be loaded to memory using the lgdt instruction
 gdt_descriptor_t gdt_descriptor __attribute__((unused)) = { .gdt_size = sizeof(gdt)-1,
-                                           .gdt_address = (u32_t) &gdt };
+                                           .gdt_address = (uint32_t) &gdt };
 
 // GDT initiator
 void init_gdt()

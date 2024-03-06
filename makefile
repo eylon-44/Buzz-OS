@@ -11,7 +11,7 @@ INCLUDE_DIR := include
 SYMBOLS_DIR := $(BIN_DIR)/symbols
 
 # All kernel related code directories
-KRNL_DIRS := kernel drivers cpu utils
+KRNL_DIRS := kernel drivers cpu
 KRNL_DIRS := $(patsubst %, $(SRC_DIR)/%, $(KRNL_DIRS))
 KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.asm' -or -name '*.c')
 KRNL_OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(KRNL_SRCS))
@@ -19,17 +19,18 @@ KRNL_OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(KRNL_SRCS))
 # Executables
 DISK_IMG := $(BIN_DIR)/disk.img
 BOOT_BIN := $(BIN_DIR)/boot/bootloader.bin
-KRNL_BIN := $(BIN_DIR)/kernel/kernel.bin
+KRNL_BIN := $(BIN_DIR)/kernel/kernel.elf
+LIBC_BIN := $(BIN_DIR)/libc/lib_bzlibc.a
 
 # Compiler settings
 CC      := gcc
-CFLAGS  := -I$(INCLUDE_DIR) -m32 -nostdlib -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
+CFLAGS  := -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf
 
 LD      := ld
-LDFLAGS := -m elf_i386 --oformat binary -nostdlib
+LDFLAGS := -m elf_i386 -nostdlib -L$(shell dirname $(LIBC_BIN)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC_BIN)))
 KRNL_LD_SCRIPT := auto/kernel.ld
 
 KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.asm.o
@@ -40,6 +41,7 @@ KRNL_SECTORS := 512		# kernel size in sectors
 MBR_SECTORS  := 1													# MBR size in sectors
 BM_SECTORS   := 20													# bootmain size in sectors
 BOOT_SECTORS := $(shell expr $(MBR_SECTORS) + $(BM_SECTORS))		# bootloader size in sectors
+
 #---------------#
 #---<COMPILE>---#
 #---------------#
@@ -58,21 +60,23 @@ $(BOOT_BIN): $(SRC_DIR)/boot
 # Compile C kernel sources into objects
 $(BIN_DIR)/%.c.o: $(SRC_DIR)/%.c
 	mkdir -p $(shell dirname $@)
-	gcc ${CFLAGS} -c -o $@ $<
+	${CC} ${CFLAGS} -c -o $@ $<
 
 # Compile Assembly kernel sources into objects
 $(BIN_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 	mkdir -p $(shell dirname $@)
-	nasm ${ASFLAGS} -o $@ $<
+	${AS} ${ASFLAGS} -o $@ $<
+
+# Build bzlibc
+$(LIBC_BIN): $(SRC_DIR)/libc
+	$(MAKE) -C $<	INC_DIR=$(shell pwd)/$(INCLUDE_DIR)		\
+					BIN_DIR=$(shell pwd)/$(BIN_DIR)
+					
 
 # Link the kernel into a single binary file
-$(KRNL_BIN): $(KRNL_OBJS)
+$(KRNL_BIN): $(LIBC_BIN) $(KRNL_OBJS)
 	# Make the kernel's binary
-	${LD} -T ${KRNL_LD_SCRIPT} ${LDFLAGS} -o $@ $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS))
-
-	# Make the kernel's symbol table
-	@mkdir -p ${SYMBOLS_DIR}
-	${LD} -T ${KRNL_LD_SCRIPT} -m elf_i386 -o ${SYMBOLS_DIR}/kernel.elf $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS))
+	${LD} -o $@ $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS)) -T ${KRNL_LD_SCRIPT} ${LDFLAGS}
 
 # Build the disk image
 $(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN)

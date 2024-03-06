@@ -1,7 +1,7 @@
 // PATA Driver // ~ eylon
 
 #include "pata.h"
-#include <utils/type.h> 
+#include <libc/stdint.h> 
 #include <drivers/ports.h>
 
 // Wait for the disk to be ready
@@ -14,15 +14,15 @@ static void wait_disk() {
 }
 
 // Read a sector at [lba] from the disk into [dest]
-static void read_sector(void* dest, u32_t lba)
+static void read_sector(void* dest, uint32_t lba)
 {
     wait_disk();                                                    // wait for disk to be ready
 
     port_outb(PATA_SECTOR_COUNT_PORT, 1);                           // set sector count to 1
-    port_outb(PATA_LBA1_PORT,  (u8_t) lba & 0xFF);                  // set bits 0-7 of lba
-    port_outb(PATA_LBA2_PORT,  (u8_t) (lba >> 8) & 0xFF);           // set bits 8-15 of lba
-    port_outb(PATA_LBA3_PORT,  (u8_t) (lba >> 16) & 0xFF);          // set bits 16-23 of lba
-    port_outb(PATA_DRIVE_PORT, (u8_t) ((lba >> 24) | 0xE0) & 0xFF); // set bits 24-27 of lba and drive number
+    port_outb(PATA_LBA1_PORT,  (uint8_t) lba & 0xFF);                  // set bits 0-7 of lba
+    port_outb(PATA_LBA2_PORT,  (uint8_t) (lba >> 8) & 0xFF);           // set bits 8-15 of lba
+    port_outb(PATA_LBA3_PORT,  (uint8_t) (lba >> 16) & 0xFF);          // set bits 16-23 of lba
+    port_outb(PATA_DRIVE_PORT, (uint8_t) ((lba >> 24) | 0xE0) & 0xFF); // set bits 24-27 of lba and drive number
     port_outb(PATA_CMD_PORT, PATA_READ_SECTOR);                     // send read command
 
     wait_disk();                                                    // wait for disk to be ready
@@ -34,11 +34,11 @@ static void read_sector(void* dest, u32_t lba)
     - [disk_offset] should be [PATA_SECTOR_SIZE] (512) bytes aligned
     - [size] should be [PATA_SECTOR_SIZE] (512) bytes aligned 
     - [dest] should be 4 bytes aligned */
-void read_disk(void* dest, u32_t size, u32_t disk_offset)
+void read_disk(void* dest, uint32_t size, uint32_t disk_offset)
 {
-    u8_t* start = (u8_t*) dest; 
-    u8_t* end   = start + size;
-    u32_t lba = disk_offset / PATA_SECTOR_SIZE;
+    uint8_t* start = (uint8_t*) dest; 
+    uint8_t* end   = start + size;
+    uint32_t lba = disk_offset / PATA_SECTOR_SIZE;
 
     for (; start < end; start += PATA_SECTOR_SIZE, lba++) {
         read_sector(start, lba);

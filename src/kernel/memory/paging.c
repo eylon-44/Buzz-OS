@@ -2,7 +2,8 @@
 
 #include "paging.h"
 #include <kernel/memory/mm.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
+#include <libc/stdbool.h>
 
 // Create a page table entry
 pte_t pte_create(bool rw, bool us, bool pcd, bool global, paddr_t pf_address)

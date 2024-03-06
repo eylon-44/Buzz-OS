@@ -3,20 +3,20 @@
 #include <drivers/keyboard.h>
 #include <drivers/ports.h>
 #include <cpu/interrupts/isr.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
 #include "keymap.h"
 
 // IO ports
 #define KB_SCAN_CODE_PORT   0x60     // keyboard scan_code port
 #define KB_STAT_PORT   0x64     // keyboard controller status port
 
-static u8_t modifiers = 0; // modifier keys flags
+static uint8_t modifiers = 0; // modifier keys flags
 
 
 // Read keyboard input and convert the scan code into an ascii
 static char get_key()
 {
-    u8_t status, scan_code, ascii;
+    uint8_t status, scan_code, ascii;
 
     // check status register to see if the keyboard buffer has a scan_code to read
     status = port_inb(KB_STAT_PORT);
@@ -59,8 +59,8 @@ static char get_key()
 
     // if CapsLock flag is on :: uppercase/lowercase -> lowercase/uppercase
     if (modifiers & MFLAG_CAPSLOCK){
-        if (ascii >= (u8_t) 'a' && ascii <= (u8_t) 'z')       { ascii &= ~ASCII_LOWERCASE_FLAG; }  // convert to uppercase
-        else if (ascii >= (u8_t) 'A' && ascii <= (u8_t)  'Z') { ascii |= ASCII_LOWERCASE_FLAG; }   // convert to lowercase
+        if (ascii >= (uint8_t) 'a' && ascii <= (uint8_t) 'z')       { ascii &= ~ASCII_LOWERCASE_FLAG; }  // convert to uppercase
+        else if (ascii >= (uint8_t) 'A' && ascii <= (uint8_t)  'Z') { ascii |= ASCII_LOWERCASE_FLAG; }   // convert to lowercase
     }
 
     return ascii;

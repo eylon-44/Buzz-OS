@@ -2,7 +2,7 @@
 
 #include <cpu/interrupts/pic.h>
 #include <drivers/ports.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // Initialize and config the PIC
 void init_pic()
@@ -33,7 +33,7 @@ void init_pic()
 // [MAY] need to handle "Spurious IRQs" using the ISR (in service register), more likely to happen on real hardware
 
 // Send the PIC an EOI (end of interrupt) signal :: take the interrupt number (0-15) as parameter
-void pic_eoi(u8_t interrupt)
+void pic_eoi(uint8_t interrupt)
 {
     // if interrupt number is out of range ignore request
     if (interrupt < PIC1_START_INTERRUPT || interrupt > PIC2_END_INTERRUPT) {
@@ -65,10 +65,10 @@ void unmask_all_irq()
 }
 
 // Mask (disable) an IRQ by its index
-void mask_irq(u8_t irq_line)
+void mask_irq(uint8_t irq_line)
 {
-    u8_t value;
-    u16_t port;
+    uint8_t value;
+    uint16_t port;
 
     // PIC1 irq
     if (irq_line < 8) {
@@ -86,10 +86,10 @@ void mask_irq(u8_t irq_line)
 }
 
 // Unmask (enable) an IRQ by its index
-void unmask_irq(u8_t irq_line)
+void unmask_irq(uint8_t irq_line)
 {
-    u8_t value;
-    u16_t port;
+    uint8_t value;
+    uint16_t port;
 
     // PIC1 irq
     if (irq_line < 8) {

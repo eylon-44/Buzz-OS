@@ -3,7 +3,7 @@
 #if !defined(SCREEN__DRIVER_H)
 #define SCREEN_DRIVER_H
 
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // Screen measurements
 #define SCREEN_MAX_ROWS 25
@@ -13,10 +13,10 @@
 // Utils
 #define SCREEN_OFFSET(row, column) ((column) + (row) * SCREEN_MAX_COLS)
 
-void kprint(char* string, u8_t attribute);
-void kprint_at(char* string, u8_t attribute, u16_t offset);
-void set_cursor_offset(u16_t offset);
-u16_t get_cursor_offset();
+void kprint(char* string, uint8_t attribute);
+void kprint_at(char* string, uint8_t attribute, uint16_t offset);
+void set_cursor_offset(uint16_t offset);
+uint16_t get_cursor_offset();
 void clear_screen();
 
 // VGA attribute table //

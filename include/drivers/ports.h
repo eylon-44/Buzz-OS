@@ -3,13 +3,13 @@
 #if !defined(PORTS_H)
 #define PORTS_H
 
-#include <utils/type.h>
+#include <libc/stdint.h>
 
-u8_t port_inb(u16_t port);
-void port_outb(u16_t port, u8_t data);
-u16_t port_inw(u16_t port);
-void port_outw(u16_t port, u16_t data);
-void insd(u16_t port, void* dest, u32_t count);
+uint8_t port_inb(uint16_t port);
+void port_outb(uint16_t port, uint8_t data);
+uint16_t port_inw(uint16_t port);
+void port_outw(uint16_t port, uint16_t data);
+void insd(uint16_t port, void* dest, uint32_t count);
 void io_wait(void);
 
 #endif

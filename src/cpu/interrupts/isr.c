@@ -3,18 +3,19 @@
 #include <cpu/interrupts/isr.h>
 #include <cpu/interrupts/pic.h>
 #include <cpu/interrupts/idt.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
+#include <libc/stddef.h>
 #include <drivers/screen.h> // [DEBUG]
 
 // Macro to extern and set an interrupt handler in the IDT
 #define INTERRUPT_HANDLER(index) extern void (interrupt_handler_##index)(); \
-                                 set_interrupt_descriptor(index, (u32_t) interrupt_handler_##index);
+                                 set_interrupt_descriptor(index, (uint32_t) interrupt_handler_##index);
 // Array of interrupt handlers arranged by the interrupt index
 isr_t interrupt_handlers[IDT_ENTRIES_COUNT];
 
 
 // Set a function handler to be called when the selected inerrupt occurs
-void set_interrupt_handler(u8_t index, isr_t func)
+void set_interrupt_handler(uint8_t index, isr_t func)
 {
     interrupt_handlers[index] = func;
     // unmask if it's an IRQ

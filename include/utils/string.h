@@ -3,8 +3,8 @@
 #if !defined(STRING_UTILS_H)
 #define STRING_UTILS_H
 
-#include <utils/type.h>
+#include <libc/stdint.h>
 
-u16_t strlen();
+uint16_t strlen();
 
 #endif

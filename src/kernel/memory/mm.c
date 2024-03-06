@@ -3,7 +3,7 @@
 #include <kernel/memory/mm.h>
 #include <kernel/process/pm.h>
 #include <utils/bitfield.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // [TODO]
 #include "gdt.h" // local

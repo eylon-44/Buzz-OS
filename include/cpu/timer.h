@@ -3,7 +3,7 @@
 #if !defined(TIMER_H)
 #define TIMER_H
 
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // 8 bit IO ports
 #define PIT_CH0_DATA_PORT 0x40         // channel 0 data port (read/write)
@@ -37,7 +37,7 @@
 // Hardware clock at 1193182 Hz with no devider
 #define CLOCK_HZ          1193182       // Hz
 
-void set_timer_hz(u32_t hz);
-void init_timer(u32_t hz);
+void set_timer_hz(uint32_t hz);
+void init_timer(uint32_t hz);
 
 #endif

@@ -3,7 +3,7 @@
 #if !defined(GDT_H)
 #define GDT_H
 
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // Segment Selectors
 #define SELECTOR_KERNEL_CODE 0x08
@@ -20,26 +20,26 @@
         .base_8   = (base) >> 24 & 0xFF, \
         .limit_16 = (limit) & 0xFFFF, \
         .limit_4  = (limit) >> 16 & 0xF, \
-        .access   = (u8_t) (0 | (access_options) | (dpl << 5 & 0b01100000)), \
-        .flags    = (u8_t) (flags_options) \
+        .access   = (uint8_t) (0 | (access_options) | (dpl << 5 & 0b01100000)), \
+        .flags    = (uint8_t) (flags_options) \
     })
 
 // GDT entry structure
 typedef struct 
 {
-    u32_t limit_16: 16;
-    u32_t base_24:  24;
-    u32_t access:   8;
-    u32_t limit_4:  4;
-    u32_t flags:    4;
-    u32_t base_8:   8;
+    uint32_t limit_16: 16;
+    uint32_t base_24:  24;
+    uint32_t access:   8;
+    uint32_t limit_4:  4;
+    uint32_t flags:    4;
+    uint32_t base_8:   8;
 } __attribute__ ((packed)) gdt_entry_t;
 
 // GDT descriptor structure :: gdt size [16 bits], gdt address [32 bits]
 typedef struct
 {
-    u16_t gdt_size;
-    u32_t gdt_address;
+    uint16_t gdt_size;
+    uint32_t gdt_address;
 } __attribute__((packed)) gdt_descriptor_t;
 
 // [gdt_entry_t] access attribute options

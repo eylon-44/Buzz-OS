@@ -5,7 +5,7 @@
 
 #include <kernel/memory/mm.h>
 #include <kernel/process/pm.h>
-#include <utils/type.h>
+#include <libc/stdint.h>
 #include "paging.h"
 
 
@@ -28,13 +28,13 @@
 #define MM_KSTACK_SIZE MM_PROC_KSTACK_SIZE * PM_MAX_PROCESSES
 
 // Kernel stack max pages
-#define MM_KSTACK_PAGES (u32_t) (MM_KSTACK_SIZE / MM_PAGE_SIZE)
+#define MM_KSTACK_PAGES (uint32_t) (MM_KSTACK_SIZE / MM_PAGE_SIZE)
 
 // Kernel heap max size
 #define MM_KHEAP_SIZE  MB(1)
 
 // Kernel heap max pages
-#define MM_KHEAP_PAGES  (u32_t) (MM_KHEAP_SIZE / MM_PAGE_SIZE)
+#define MM_KHEAP_PAGES  (uint32_t) (MM_KHEAP_SIZE / MM_PAGE_SIZE)
 
 
 /* Memory mapped IO area size
@@ -42,7 +42,7 @@
 #define MM_MMIO_SIZE  KB(4)
 
 // Memory mapped IO pages
-#define MM_MMIO_PAGES  (u32_t) (MM_MMIO_SIZE / MM_PAGE_SIZE)
+#define MM_MMIO_PAGES  (uint32_t) (MM_MMIO_SIZE / MM_PAGE_SIZE)
 
 
 // User stack max size
@@ -52,10 +52,10 @@
 #define MM_UHEAP_SIZE  GB(1)
 
 // User stack max pages
-#define MM_USTACK_PAGES (u32_t) (MM_USTACK_SIZE / MM_PAGE_SIZE)
+#define MM_USTACK_PAGES (uint32_t) (MM_USTACK_SIZE / MM_PAGE_SIZE)
 
 // User heap max pages
-#define MM_UHEAP_PAGES  (u32_t) (MM_UHEAP_SIZE / MM_PAGE_SIZE)
+#define MM_UHEAP_PAGES  (uint32_t) (MM_UHEAP_SIZE / MM_PAGE_SIZE)
 
 
 
@@ -93,7 +93,7 @@
 
 void init_vmm();
 pde_t* vmm_get_pd();
-int vmm_map_page(pde_t* pd, paddr_t phys_base, vaddr_t virt_base, u8_t rw, u8_t us, u8_t pcd);
+int vmm_map_page(pde_t* pd, paddr_t phys_base, vaddr_t virt_base, uint8_t rw, uint8_t us, uint8_t pcd);
 int vmm_unmap_page(pde_t* pd, vaddr_t virt_base);
 vaddr_t vmm_attach_page(paddr_t phys_base);
 void vmm_detach_page(vaddr_t virt_base);

@@ -5,7 +5,7 @@
 
 # Constants
 CC 	   := gcc
-CFLAGS := -I$(INC_DIR) -m32 -nostdlib -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
+CFLAGS := -I$(INC_DIR) -I$(INC_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
 BOOTMAIN_OFFSET := 0x1000
 SECTOR_SIZE := 512
 
@@ -39,6 +39,9 @@ $(BOOT_BIN_DIR)/$(BM_DIR)/%.o: $(BM_DIR)/%.c
 $(BM_BIN): $(BM_ENTRY) $(filter-out $(BM_ENTRY), $(BM_OBJS))
 	@mkdir -p ${shell dirname $@}
 	ld -m elf_i386 --oformat binary -Ttext=${BOOTMAIN_OFFSET} -o $@ $^ ${BM_UTILS}
+
+	# [DEBUG]
+	@mkdir -p /home/eylon/Code/os/bin/symbols
 	ld -m elf_i386 -Ttext=${BOOTMAIN_OFFSET} -o /home/eylon/Code/os/bin/symbols/BM.elf $^ ${BM_UTILS}
 
 # Build the full bootloader disk image

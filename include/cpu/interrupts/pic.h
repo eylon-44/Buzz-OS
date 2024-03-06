@@ -3,7 +3,7 @@
 #if !defined(PIC_H)
 #define PIC_H
 
-#include <utils/type.h>
+#include <libc/stdint.h>
 
 // PICs ports
 #define PIC1_CMD_PORT 0x20
@@ -40,9 +40,9 @@
 #define ICW4_SFNM		0b00010000	    // special fully nested (not)
 
 void init_pic();
-void pic_eoi(u8_t interrupt);
-void mask_irq(u8_t irq_line);
-void unmask_irq(u8_t irq_line);
+void pic_eoi(uint8_t interrupt);
+void mask_irq(uint8_t irq_line);
+void unmask_irq(uint8_t irq_line);
 void mask_all_irq();
 void unmask_all_irq();
 

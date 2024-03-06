@@ -23,8 +23,8 @@ pde_t proc_pd[PM_MAX_PROCESSES][MM_PD_ENTRIES] __attribute__ ((aligned(MM_PAGE_S
 
 // Addresses that point to the start and end of the kernel
 // [TODO] make this work
-extern u32_t _start;
-extern u32_t _end;
+extern uint32_t _start;
+extern uint32_t _end;
 
 // 542-824 864-977 1014-1155
 
@@ -51,7 +51,7 @@ This is useful for pinning interrupt handlers in place.*/
 // [TODO] support page size extension (4mb) mapping
 // Map a virtual page into a physical address
 int vmm_map_page(pde_t* pd, paddr_t phys_base, vaddr_t virt_base, 
-    u8_t rw, u8_t us, u8_t pcd)
+    uint8_t rw, uint8_t us, uint8_t pcd)
 {
     pde_t* pde = pd + MM_PDE_INDEX(virt_base);     // PDE pointer
     pte_t* pte;                                    // PTE pointer
@@ -128,7 +128,7 @@ vaddr_t vmm_attach_page(paddr_t phys_base)
     }
 
     // search for a free reserved page
-    for (u16_t i = 0; i < MM_RESERVED_PAGES; i++) {
+    for (uint16_t i = 0; i < MM_RESERVED_PAGES; i++) {
         pte = (pte_t*) pt + (MM_PT_ENTRIES - MM_RESERVED_PAGES - 1 + i);
 
         // if page is not used (not present), attach the physical page to it

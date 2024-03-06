@@ -3,7 +3,7 @@
 #if !defined(PATA_H)
 #define PATA_H
 
-#include <utils/type.h> 
+#include <libc/stdint.h> 
 
 /* Constants */
 
@@ -35,6 +35,6 @@
 
 #define PATA_READ_SECTOR            0x20
 
-void read_disk(void* dest, u32_t size, u32_t disk_offset);
+void read_disk(void* dest, uint32_t size, uint32_t disk_offset);
 
 #endif
