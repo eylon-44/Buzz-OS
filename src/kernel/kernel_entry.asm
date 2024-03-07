@@ -7,11 +7,18 @@ extern gdt_descriptor
 extern proc_pd
 
 ;; Kernel's virtual and physical bases are used to convert virtual addresses to physical ones
-%define KVIRT_BASE 0xC0000000
+%define KVIRT_BASE 0xC0100000
 %define KPHYS_BASE 0x100000
 
 ;; Convert virtual address to physical
 %define V2P(vaddr)  ((vaddr) - (KVIRT_BASE - KPHYS_BASE))
+
+;; Scratch space to place the entry page direcotry in
+%define PD_BASE   0x10000
+;; PDE count in a single PD
+%define PDE_COUNT 1024
+;; PDE size in bytes
+%define PDE_SIZE  4
 
 ;; Physical address of [_entry]; the bootloader should jump to this address because paging is still off
 _start: equ V2P(_entry)
@@ -29,7 +36,10 @@ _entry:
     ;; jump to the kernel's main function in the higher half
     ;; use an indirect call because the assembler produces a PC-relative instruction for a direct jump
     mov eax, kernel_main
-	jmp eax
+	call eax
+
+    ;; This code should next run
+    jmp $
 
 
 ;; Setup the GDT
@@ -45,9 +55,34 @@ enable_paging:
     or eax, 0x00000010
     mov cr4, eax
 
+
+    ;; generate entry page directory; map first 4MB of virtual address 0 and 3GB to physical address 0
+
+    ;; zero out all PDEs
+    mov ebx, PD_BASE            ; page direcotry base address
+    mov ecx, PDE_COUNT          ; number of page directory entries in a single page directory
+
+    .loop_pd:
+        mov [ebx], dword 0      ; zero out the value pointed by ebx
+        add ebx, PDE_SIZE       ; increase ebx's size by the size of a page directory entry in order to point the next one
+        loop .loop_pd           ; loop
+
+    ;; identity map first 4MB of memory [v: 0-4MB = p: 0-4MB]
+    mov ebx, PD_BASE            ; set ebx with the page directory base address
+    mov [ebx], dword 0x83       ; identity map first 4MB of memory [p=1; rw=1; pse=1]
+
+    ;; map first 4MB of virtual 3GB to start of physical [v: 3GB-3GB+4MB = p: 0-4MB]
+    mov eax, KVIRT_BASE >> 22   ; set eax with the index of the kenrel virtual base address in the page directory
+    mov ecx, PDE_SIZE
+    mul ecx                     ; multiple that index by the page directory entry size in order to get the offset from the page directory base
+    add eax, PD_BASE            ; add that offset to the page directory base
+    mov [eax], dword 0x83       ; map the first 4MB of KVIRT_BASE to the first 4MB of physical memory [p=1; rw=1; pse=1]
+  
+
     ;; load the startup Page Directory address into cr3
-    mov eax, V2P(proc_pd)
+    mov eax, PD_BASE
     mov cr3, eax
+
 
     ;; enable paging and write-protect by enabling bits 31 (PG) and 16 (WP) of cr0
     mov eax, cr0        ; read current cr0
