@@ -5,7 +5,7 @@
 
 #include <libc/stdint.h>
 
-#define ELF_MAGIC 0x7F454C46
+#define ELF_MAGIC 0x464C457F
 
 // ELF header
 typedef struct __attribute__((packed))

@@ -6,10 +6,18 @@ extern kernel_main
 extern gdt_descriptor
 extern proc_pd
 
-;; Kernel virtual offset :: use this to convert virtual to physical addresses
-%define KERNEL_VIRTUAL 0xC0000000
+;; Kernel's virtual and physical bases are used to convert virtual addresses to physical ones
+%define KVIRT_BASE 0xC0000000
+%define KPHYS_BASE 0x100000
 
-_start:
+;; Convert virtual address to physical
+%define V2P(vaddr)  ((vaddr) - (KVIRT_BASE - KPHYS_BASE))
+
+;; Physical address of [_entry]; the bootloader should jump to this address because paging is still off
+_start: equ V2P(_entry)
+
+;; Kernel entry point
+_entry:
     cli                     ; disable interrupts
     call enable_paging
     call setup_gdt
@@ -38,7 +46,7 @@ enable_paging:
     mov cr4, eax
 
     ;; load the startup Page Directory address into cr3
-    mov eax, proc_pd - KERNEL_VIRTUAL
+    mov eax, V2P(proc_pd)
     mov cr3, eax
 
     ;; enable paging and write-protect by enabling bits 31 (PG) and 16 (WP) of cr0

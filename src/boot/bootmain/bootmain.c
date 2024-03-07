@@ -30,16 +30,23 @@ void bootmain()
     filesz = elfheader->shoff + (elfheader->shsize * elfheader->shnum);
 
     // Go over all the program headers and load their segments
-    prgheader = (prgheader_t*) (DISK_KERNEL_START + elfheader->phoff);
-    for (int i = 0; i < elfheader->phnum; prgheader++)
+    prgheader = (prgheader_t*) ((uint8_t*) elfheader + elfheader->phoff);
+    for (size_t i = 0; i < elfheader->phnum; prgheader++, i++)
     {
+        // read segment from disk to memory
         read_disk((void*) prgheader->paddr, prgheader->filesz, DISK_KERNEL_START + prgheader->offset);
 
-        // set bss sections with 0!!!!
-        // and set the entry to physical as it is currently points to a virtual.
-        // update the pata drive to round [size] UP for a sector so we won't lose data!!!
+        // if the segment file size is less than the segment memory size fill the undefined area with zeros
+        if (prgheader->filesz < prgheader->memsz) {
+            // set undefined area with zero
+            for (size_t k = prgheader->paddr + prgheader->filesz;
+                    k < prgheader->paddr + prgheader->memsz;
+                    k++)
+            {
+                *((uint8_t*) k) = 0;
+            }
+        }
     }
-
 
     // Jump to the kernel's entry
     void (*entry)() = (void*) elfheader->entry;

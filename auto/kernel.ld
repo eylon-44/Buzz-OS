@@ -5,14 +5,14 @@ OUTPUT_FORMAT(elf32-i386)       /* Specify the output file format :: equivalent 
 OUTPUT_ARCH(i386)               /* Specify the machine architecture */
 
 /* Set the start of the kernel */
-ENTRY(_start)                           /* Define the kernel's entry point */
+ENTRY(_start)                              /* Define the kernel's entry point */
 /*STARTUP(bin/kernel/kernel_entry.asm.o)  /* Put kernel_entry.asm.o at the start of the binary file */
 
 /* Define output sections */
 SECTIONS
 {
     /* Define [_vstart] for [VMA] and [_pstart] for [LMA] */
-    _vstart = 0xC0001000;
+    _vstart = 0xC0000000;
     _pstart = 0x100000;
     . = _vstart;
 
