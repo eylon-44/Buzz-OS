@@ -11,11 +11,12 @@
 void kernel_main() {
 	// Print a welcome message
 	clear_screen();
-	kprint("Welcome to Buzz OS", VGA_ATR_DEFAULT);
+    kprint(". . . Welcome to Buzz OS . . .", VGA_BG_ORANGE | VGA_TXT_BLACK);
+    kprint("\n. . . Loading the system for you; please wait . . .", VGA_ATR_DEFAULT);
 
 	// Initiate all services
-	init_interrupt();
 	init_mm();
+	init_interrupt();
 
 	init_keyboard();
 

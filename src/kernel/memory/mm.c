@@ -1,14 +1,10 @@
 // Paging Hanlder // ~ eylon
 
 #include <kernel/memory/mm.h>
-#include <kernel/process/pm.h>
-#include <utils/bitfield.h>
-#include <libc/stdint.h>
-
-// [TODO]
-#include "gdt.h" // local
-#include "pmm.h" // local
-#include "vmm.h" // global?
+#include "gdt.h"
+#include "pmm.h"
+#include "vmm.h"
+#include "heap.h"
 
 // Initiate Memory Manager
 void init_mm()
@@ -40,11 +36,11 @@ VMM
     [X] convert:  convert virtual addresses to physical ones and the other way around (v->p, p->v)
 HEAP
     [ ] init: allocate an initial page for the heap
-    [ ] kmalloc: 
+    [X] kmalloc: 
     [ ] kmalloc aligned:
-    [ ] kfree:
+    [X] kfree:
     [ ] krealloc:
-    [ ] kextend heap
+    [X] kextend heap
 MM
     [X] init:     init gdt -> pmm -> vmm
 PAGING

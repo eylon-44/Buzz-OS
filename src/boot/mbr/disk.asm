@@ -19,16 +19,13 @@ load_bootloader:
     ret
 
 disk_error:
-    mov si, DISK_ERROR
+    mov si, ERR_DISK
     call print
     jmp disk_loop
 
 sectors_error:
-    mov bx, SECTORS_ERROR
+    mov bx, ERR_SECTORS
     call print
 
 disk_loop:
     jmp $
-
-DISK_ERROR:    db "Disk read error", 0
-SECTORS_ERROR: db "Incorrect number of sectors read", 0
