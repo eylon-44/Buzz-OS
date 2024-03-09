@@ -18,8 +18,8 @@ void init_mm()
 GDT
     [ ] init:     load the GDT descriptor into the GDTR
 PMM
-    [ ] init:     set the bitmap with available pages in the ram
-    [ ] detect:   detect available memory (set _start and _end variables) (only possible when loading the kernel with as an ELF)
+    [X] init:     set the bitmap with available pages in the ram
+    [X] detect:   detect available memory (set _start and _end variables) (only possible when loading the kernel with as an ELF)
     [X] get:      get an available physical page
     [X] free:     free a given physical page
     [ ] is present

@@ -12,8 +12,8 @@ ENTRY(_start)                              /* Define the kernel's entry point */
 SECTIONS
 {
     /* Define [_vstart] for [VMA] and [_pstart] for [LMA] */
-    _vstart = 0xC0100000;
-    _pstart = 0x100000;
+    _vstart = 0xC0100000;   /* 3GB + 1MB */
+    _pstart = 0x00100000;   /* 1MB */
     . = _vstart;
 
 

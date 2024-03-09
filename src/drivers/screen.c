@@ -6,14 +6,11 @@
 #include <libc/stddef.h>
 #include <libc/string.h>
 
-// Screen settings
-#define VIDEO_ADDRESS 0xc00b8000
-
 // Screen I/O ports
 #define SCREEN_CTRL_PORT 0x3d4
 #define SCREEN_DATA_PORT 0x3d5
 
-static uint8_t* vidmem = (uint8_t*) VIDEO_ADDRESS;
+static uint8_t* vidmem = (uint8_t*) VGA_VIRT_MEM;
 
 
 // Process an escape sequence character :: escape sequence characters are not printed and only affect the cursor
@@ -35,13 +32,13 @@ static void put_char(char character, uint8_t attribute, uint16_t offset)
 static uint16_t handle_scrolling(uint16_t offset)
 {
     // if going out of screen bounds scroll the screen
-    if (offset > SCREEN_SIZE) {
-        memcpy(vidmem, vidmem + SCREEN_MAX_COLS * 2, (SCREEN_SIZE - SCREEN_MAX_COLS)*2);
+    if (offset > VGA_SIZE) {
+        memcpy(vidmem, vidmem + VGA_MAX_COLS * 2, (VGA_SIZE - VGA_MAX_COLS)*2);
         // blank the last line
-        for (uint8_t i = 0; i < SCREEN_MAX_COLS; i++) {
-            put_char(' ', VGA_ATR_DEFAULT, (SCREEN_SIZE - SCREEN_MAX_COLS + i));
+        for (uint8_t i = 0; i < VGA_MAX_COLS; i++) {
+            put_char(' ', VGA_ATR_DEFAULT, (VGA_SIZE - VGA_MAX_COLS + i));
         }
-        offset -= (SCREEN_MAX_COLS + 1);
+        offset -= (VGA_MAX_COLS + 1);
     }
     return offset;
 }
@@ -108,10 +105,8 @@ uint16_t get_cursor_offset()
 // Clear the screen and reset the cursor
 void clear_screen()
 {
-    unsigned char* vidmem = (unsigned char*) VIDEO_ADDRESS;
-
     // fill the screen with a blank character (space)
-    for (int i = 0; i < SCREEN_SIZE; i++)
+    for (int i = 0; i < VGA_SIZE; i++)
     {
         vidmem[i*2]     = ' ';
         vidmem[(i*2)+1] = VGA_ATR_DEFAULT;

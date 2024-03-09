@@ -1,8 +1,8 @@
 // Kernel Panic Command Header File // ~ eylon
 
 #if !defined(PANIC_H)
-#define PANIC_C
+#define PANIC_H
 
-void panic(char* msg);
+void KPANIC(char* msg);
 
 #endif

@@ -54,11 +54,11 @@ mm_detect:
     xor cl, cl                  ; set CL to 0 in order for it to not affect the [.detect] loop in its first iteration
 
     ;; make the kernel's meta data entry (20 bytes located at the buffer base)
-    mov [BUFF_BASE], dword MAGIC            ; set the first 4 bytes with the magic number
-    mov [BUFF_BASE+4], dword 0              ; initiate the next 4 bytes with 0, they will later indicate the number of entries in the list 
-    mov [BUFF_BASE+8], dword ENTRY_SIZE     ; initiate the next 4 bytes with the size of an entry in the list
-    mov [BUFF_BASE+12], dword 0xFFFFFFFF    ; 0xFF
-    mov [BUFF_BASE+16], dword 0xFFFFFFFF    ; 0xFF
+    mov [BUFF_BASE], dword MAGIC            ; [base_low]  set the first 4 bytes with the magic number
+    mov [BUFF_BASE+4], dword 0              ; [base_high] initiate the next 4 bytes with 0, they will later indicate the number of entries in the list 
+    mov [BUFF_BASE+8], dword ENTRY_SIZE     ; [size_low]  initiate the next 4 bytes with the size of an entry in the list
+    mov [BUFF_BASE+12], dword 0xFFFFFFFF    ; [size_high] 0xFF
+    mov [BUFF_BASE+16], dword 0xFFFFFFFF    ; [type]      0xFF
     
     add di, word ENTRY_SIZE                 ; increament DI to point to the next entry
 

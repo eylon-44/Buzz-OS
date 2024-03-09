@@ -6,13 +6,6 @@
 #include <libc/stdint.h>
 #include <kernel/process/pm.h>
 
-// [TODO] BITMAP???? PHYSICAL!! move it to there if no one else uses it
-// Get the page number from its index in the array
-#define INDX_TO_PAGE_NUM(element, index) ((uint32_t) (element)*32+(index))
-// Get the page number from its physical base address
-#define BASE_TO_PAGE_NUM(base_address)   ((uint32_t) (base_address)/MM_PAGE_SIZE)
-
-
 /* Utils */
 
 #define KB(x) (uint32_t) ((x) * 0x400)

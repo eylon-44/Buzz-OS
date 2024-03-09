@@ -1,7 +1,7 @@
-// Bitfield Utils Header File // ~ eylon
+// bitfield.h // ~ eylon
 
 #if !defined(BITFIELD_UTILS_H)
-#define BITFIELD_UTILS_H
+#define __LIBC_BITFIELD_H
 
 
 // Get bit number [bit] from [map] bitmap

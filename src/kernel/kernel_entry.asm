@@ -63,16 +63,16 @@ enable_paging:
     mov ecx, PDE_COUNT          ; number of page directory entries in a single page directory
 
     .loop_pd:
-        mov [ebx], dword 0      ; zero out the value pointed by ebx
-        add ebx, PDE_SIZE       ; increase ebx's size by the size of a page directory entry in order to point the next one
+        mov [ebx], dword 0      ; zero out the value pointed by EBX
+        add ebx, PDE_SIZE       ; increase EBX's size by the size of a page directory entry in order to point the next one
         loop .loop_pd           ; loop
 
     ;; identity map first 4MB of memory [v: 0-4MB = p: 0-4MB]
-    mov ebx, PD_BASE            ; set ebx with the page directory base address
+    mov ebx, PD_BASE            ; set EBX with the page directory base address
     mov [ebx], dword 0x83       ; identity map first 4MB of memory [p=1; rw=1; pse=1]
 
     ;; map first 4MB of virtual 3GB to start of physical [v: 3GB-3GB+4MB = p: 0-4MB]
-    mov eax, KVIRT_BASE >> 22   ; set eax with the index of the kenrel virtual base address in the page directory
+    mov eax, KVIRT_BASE >> 22   ; set EAX with the index of the kenrel virtual base address in the page directory
     mov ecx, PDE_SIZE
     mul ecx                     ; multiple that index by the page directory entry size in order to get the offset from the page directory base
     add eax, PD_BASE            ; add that offset to the page directory base

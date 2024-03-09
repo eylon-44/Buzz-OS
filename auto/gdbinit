@@ -13,7 +13,7 @@ layout reg
 target remote localhost:1234
 
 # MBR start
-break *0x7c00
+#break *0x7c00
 
 # Bootmain start
 #break bootmain
@@ -22,6 +22,11 @@ break *0x7c00
 #break _start
 
 # Kernel main start
-break kernel_main
+#break kernel_main
+
+#break mm_detect
+#break pmm.c:83
+break init_pmm
+layout next
 
 continue

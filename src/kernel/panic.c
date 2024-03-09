@@ -6,7 +6,7 @@
 // [TODO] imporove function
 
 // Kernel panic routine
-void panic(char* msg)
+void KPANIC(char* msg)
 {
     // disable interrupts
     __asm__ volatile ("cli");

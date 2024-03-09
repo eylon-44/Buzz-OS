@@ -6,12 +6,17 @@
 #include <libc/stdint.h>
 
 // Screen measurements
-#define SCREEN_MAX_ROWS 25
-#define SCREEN_MAX_COLS 80
-#define SCREEN_SIZE (SCREEN_MAX_ROWS * SCREEN_MAX_COLS)
+#define VGA_MAX_ROWS 25
+#define VGA_MAX_COLS 80
+#define VGA_SIZE (VGA_MAX_ROWS * VGA_MAX_COLS)
+
+// Video memory
+#define VGA_VIRT_MEM 0xC00B8000
+#define VGA_PHYS_MEM 0x000B8000
+#define VGA_MEM_SIZE VGA_SIZE * 2
 
 // Utils
-#define SCREEN_OFFSET(row, column) ((column) + (row) * SCREEN_MAX_COLS)
+#define SCREEN_OFFSET(row, column) ((column) + (row) * VGA_MAX_COLS)
 
 void kprint(char* string, uint8_t attribute);
 void kprint_at(char* string, uint8_t attribute, uint16_t offset);

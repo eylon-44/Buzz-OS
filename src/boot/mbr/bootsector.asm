@@ -15,8 +15,6 @@ BOOT_START:
     mov ss, ax
     mov sp, 0x7C00
 
-    ;; [TODO]? A20 line
-
     call clear_screen       ; {screen.asm} clear the screen
     mov si, MSG_WECLOME
     call print              ; {screen.asm} print string

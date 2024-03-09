@@ -24,5 +24,5 @@ void kernel_main() {
 	for (;;) { __asm__ __volatile__ ("hlt"); }
 
 	// Should never execute this
-	panic("End of kernel");
+	KPANIC("End of kernel");
 }
