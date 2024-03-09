@@ -3,30 +3,20 @@
 #include "vmm.h"
 #include "pmm.h"
 #include "paging.h"
-#include <kernel/process/pm.h>
 #include <kernel/memory/mm.h>
+#include <kernel/process/pm.h>
+#include <libc/string.h>
+#include <libc/stdint.h>
 
 // [!!!] Control register CR3 holds the page-aligned physical address of a single 4 KB long page directory.
 
-/* Structure to hold 1024 PDs (full address space) for each process
-    proc_pd[0] holds the first used page direcoty which is an 
-    identity page directory (0-4MB <---> 3GB-3G+4MB) */
-pde_t proc_pd[PM_MAX_PROCESSES][MM_PD_ENTRIES] __attribute__ ((aligned(MM_PAGE_SIZE))) = {
-    /* The first page directory is initiated with the first 4MB of physcial 
-        memory mapped to itself and to 0xC0000000 (3GB/Higher Half Kernel) */
-    //[0] { [0]                   { .present = 1, .ps = 1, .rw = 1 },
-    //      [0xC0000000 >> 22]    { .present = 1, .ps = 1, .rw = 1 } }
-    // [NOTE][TODO][IMPORTANT] THIS INTIALIZATION TAKES 4MB IN THE FINAL IMAGE INSTEAD OF 44KB!!!
-    // INITIATE DURING RUNTIME TO SAVE A LOT OF MEMORY
-    // THIS SPACE SHOULD BE EMPTY
-};
+// Pointer to the start of the page table directory; 1024 PDs, one for each process, each holds 1024 PDEs
+pde_t* proc_pd = (pde_t*) MM_PTD_START;
 
-// Addresses that point to the start and end of the kernel
-// [TODO] make this work
-extern uint32_t _start;
-extern uint32_t _end;
+// Start and end virtual addresses of the kernel set by the linker
+extern char _vstart;
+extern char _vend;
 
-// 542-824 864-977 1014-1155
 
 // Flush the entire TLB
 static inline void tlb_flush() {
@@ -40,7 +30,7 @@ static inline void invlpg(vaddr_t virt_base) {
 
 // Get the PD of the current running process
 pde_t* vmm_get_pd() {
-    return proc_pd[pm_get_pid()];
+    return &proc_pd[pm_get_pid()];
 }
 
 /* !!!!!!!
@@ -61,7 +51,9 @@ int vmm_map_page(pde_t* pd, paddr_t phys_base, vaddr_t virt_base,
         // allocate a page of physical memory to store the PT and set the PDE to point at it
         pde->pt_address = pmm_get_page() >> 12;
         // [TODO] handle pmm_get_page error
-        // [TODO][IMPORTANT] zero out the allocated memory - create memset function (start working on the libc?)
+
+        // zero out the allocated memory
+        memset((void*) (pde->pt_address << 12), 0, MM_PAGE_SIZE);
         
         // set the PDE as present
         pde->present = 1;
@@ -117,9 +109,6 @@ vaddr_t vmm_attach_page(paddr_t phys_base)
     pde_t* pde = pd + MM_PDE_INDEX(MM_RESERVED_START);
     pte_t* pt  = (pte_t*) MM_GET_PT(pde);
     pte_t* pte;
-
-    // [OHBOY] I might (and I say might because its true and I don't want it to be) need 
-    //          to offset the (pde->pt_address) address in order for it to really point on a PT
 
     // if the PDE is not present, use the vmm_map_page function to map the first reserved page
     if (!pde->present) {

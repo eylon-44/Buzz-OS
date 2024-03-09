@@ -137,6 +137,10 @@ static void mm_detect()
             memset(bitmap + (base_indx/(sizeof(bitmap[0]) * 8)), 0, (top_indx/8) - (base_indx/8));
         }
     }
+
+    /* mark the first page (physical address 0-4kb) as used
+        while its not mendatory, some BIOS stuff that I would prefer not to risk are stored in there */
+    BITMAP_SET_BIT(bitmap, 0, MM_PAGE_USED);
 }
 
 // Mark the phsycial memory area occupied by the kernel as used in the bitmap

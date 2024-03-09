@@ -88,7 +88,6 @@ $(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN)
 	dd if=${KRNL_BIN} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=$(BOOT_SECTORS) conv=notrunc count=${KRNL_SECTORS}
 
 	@echo "\n. . . DONE . . .\n"
-	@tree ${BIN_DIR}
 
 #---------------#
 #---<EXECUTE>---#

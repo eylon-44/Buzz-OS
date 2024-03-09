@@ -16,14 +16,14 @@ void init_mm()
 
 /*
 GDT
-    [ ] init:     load the GDT descriptor into the GDTR
+    [X] init:     load the GDT descriptor into the GDTR
 PMM
     [X] init:     set the bitmap with available pages in the ram
     [X] detect:   detect available memory (set _start and _end variables) (only possible when loading the kernel with as an ELF)
     [X] get:      get an available physical page
     [X] free:     free a given physical page
     [ ] is present
-    [ ] mm.c 250-450
+
 VMM
     [ ] init:     set the page tables for the first process (pid 0, which is used for the initial identity paging).
                     initiate the kernel's stack and heap.
@@ -42,7 +42,7 @@ HEAP
     [ ] krealloc:
     [X] kextend heap
 MM
-    [X] init:     init gdt -> pmm -> vmm
+    [X] init:     init gdt -> pmm -> vmm -> heap
 PAGING
     [X] pte_t, pt_t, pde_t, ptd_t types
     [ ] 4MB page tables ???
