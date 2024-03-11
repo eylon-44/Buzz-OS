@@ -2,7 +2,7 @@
 
 ## Setting ##
 CC	   := gcc
-CFLAGS := -I$(INC_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror
+CFLAGS := -I$(INC_DIR)/libc -g -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf

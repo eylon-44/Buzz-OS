@@ -26,9 +26,10 @@ static uint32_t bitmap[MM_PT_ENTRIES*MM_PT_ENTRIES/sizeof(uint32_t)/8];
 static uint32_t search_start = 0;
 
 
-// Start and end physical addresses of the kernel set by the linker
+// Start and end addresses of the kernel set by the linker
 extern char _pstart;
 extern char _pend;
+extern char _vend;
 
 
 // Allocate a physical page and return its base_addr address in physical memory
@@ -60,15 +61,25 @@ void pmm_free_page(paddr_t page_base)
     // mark the page as free
     BITMAP_SET_BIT(bitmap, BASE_TO_PAGE_NUM(page_base), MM_PAGE_FREE);
     
-    // get the page number in the map to be compared with [search_start]
-    // becuase [search_start] points to a whole value in an array and not to the exact page number
-    // we devide the return of [BASE_TO_PAGE_NUM] with the element size of the bitmap
-    uint32_t page_bitmap_index = BASE_TO_PAGE_NUM(page_base) / sizeof(bitmap[0]); 
-    // if the freed page's base_addr address is below the base_addr address of the page pointed by [search_start],
-    // set [search_start] to the location of the freed page so it will start to search from there in the next allocation
+    /* get the page number in the map to be compared with [search_start]
+        becuase [search_start] points to a whole value in an array and not to the exact page number
+        we devide the return of [BASE_TO_PAGE_NUM] with the element size of the bitmap */
+    uint32_t page_bitmap_index = BASE_TO_PAGE_NUM(page_base) / sizeof(bitmap[0]);
+    /* if the freed page's base_addr address is below the base_addr address of the page pointed by [search_start],
+        set [search_start] to the location of the freed page so it will start to search from there in the next allocation */
     if (page_bitmap_index < search_start) {
         search_start = page_bitmap_index;
     }
+}
+
+
+/* Ensure that the kernel is not too large 
+    We can tell that the kernel is too large when its virtual end address
+    overflows into the MM_MEMIO_START region
+*/
+static void check_ksize()
+{
+    if ((size_t) &_vend >= MM_MMIO_START) KPANIC("PMM: KERNEL IS TOO LARGE! OVERFLOWS MEMIO");
 }
 
 /* Mark all pages in range [start] to [end] as [value]
@@ -96,7 +107,7 @@ static void mm_detect()
     // check that the first entry is valid as described at src/boot/mbr/mm_detect.asm; if not, return
     if (reg_entry->base_low != DETECT_MAGIC || reg_entry->base_high == 0
         || reg_entry->size_low != DETECT_ENTRY_SIZE || reg_entry->size_high != 0xFFFFFFFF
-        || reg_entry->type != 0xFFFFFFFF) KPANIC("PMM: CAN'T DETECT MEMORY");
+        || reg_entry->type != 0xFFFFFFFF) KPANIC("PMM: CAN'T DETECT AVIALABLE MEMORY");
 
     // point to the next entry in the list; the first entry was not a real entry and only held meta data
     reg_entry++;
@@ -115,9 +126,8 @@ static void mm_detect()
             /* round up [base_addr] and round down [top_addr] if they are not page aligned; this is useful in case they 
                 are not aligned and some part of the page belongs to a reserved region. */
 
-            base_addr += (MM_PAGE_SIZE - (base_addr % MM_PAGE_SIZE)) % MM_PAGE_SIZE;
-            top_addr  = base_addr + reg_entry->size_low;
-            top_addr  -= top_addr % MM_PAGE_SIZE;
+            base_addr = MM_ALIGN_UP(base_addr);
+            top_addr  = MM_ALIGN_DOWN(base_addr + reg_entry->size_low);
 
             // set [base_addr] unaligned bitmap pages to free
             for (base_indx = BASE_TO_PAGE_NUM(base_addr); 
@@ -150,8 +160,8 @@ static void kernel_detect()
         round the start address and the end address down to align with a page; this ensures
         we don't miss the first page or over occupying the last one. */
     
-    size_t start = (size_t) &_pstart - ((size_t) &_pstart % MM_PAGE_SIZE);
-    size_t end   = (size_t) &_pend - ((size_t) &_pend % MM_PAGE_SIZE);
+    size_t start = MM_ALIGN_DOWN((size_t) &_pstart);
+    size_t end   = MM_ALIGN_DOWN((size_t) &_pend);
 
     // mark all pages in range [start] to [end] as used
     bitmap_set_range(start, end, MM_PAGE_USED);
@@ -161,8 +171,8 @@ static void kernel_detect()
 static void mmio_detect()
 {
     // round down page aligned
-    size_t start = (VGA_PHYS_MEM) - ((VGA_PHYS_MEM) % MM_PAGE_SIZE);
-    size_t end = (VGA_PHYS_MEM + VGA_MEM_SIZE) - ((VGA_PHYS_MEM + VGA_MEM_SIZE) % MM_PAGE_SIZE);
+    size_t start = MM_ALIGN_DOWN(VGA_PHYS_MEM);
+    size_t end   = MM_ALIGN_DOWN(VGA_PHYS_MEM + VGA_MEM_SIZE);
 
     // make all pages in range [start] to [end] as used
     bitmap_set_range(start, end, MM_PAGE_USED);
@@ -171,6 +181,7 @@ static void mmio_detect()
 // Initiate the physical memory manager; set the bitmap with used and unused pages
 void init_pmm()
 {
+    check_ksize();
     mm_detect();
     kernel_detect();
     mmio_detect();

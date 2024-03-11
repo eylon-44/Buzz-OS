@@ -48,7 +48,6 @@ PAGING
     [ ] 4MB page tables ???
     [X] create page tables and directories utils
 
-[ ] Who sets up the stack?
 [ ] Who handles page faults?
 
 
@@ -56,7 +55,7 @@ Virtual memory within each address space:
 
     ---------------------------------------------------- <------- MM_VIRT_TOP (4GB, 0xFFFF:FFFF)
     |                                                  |
-    |                 Page Directories                 | -------> PM_MAX_PROCESSES (1024) pages (4MB)
+    |          Page Tables of Current Process          | -------> PM_MAX_PROCESSES (1024) pages (4MB)
     |                                                  |
     ---------------------------------------------------- <------- MM_PTD_START (0xFFC0:0000)
     |                                                  |

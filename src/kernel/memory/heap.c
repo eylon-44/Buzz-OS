@@ -27,7 +27,7 @@ int heap_extend(heap_t* heap, vaddr_t new_top)
     // If [new_top] is greater than [heap->top] we need to allocate memory
     if (new_top > heap->top) {
         for (vaddr_t p = heap->top; p < new_top; p += MM_PAGE_SIZE) {
-            vmm_map_page(vmm_get_pd(), pmm_get_page(), p, 1, 1, 0);
+            vmm_map_page(vmm_get_pd(), pmm_get_page(), p, 1, 0, 0, 1);
         }
     }
 

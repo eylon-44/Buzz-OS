@@ -12,13 +12,29 @@
 #define MB(x) (uint32_t) ((x) * 0x100000)
 #define GB(x) (uint32_t) ((x) * 0x40000000)
 
+// 4KB page alignment down
+#define MM_ALIGN_DOWN(addr) ((addr) - ((addr) % MM_PAGE_SIZE))
+// 4KB page alignment up
+#define MM_ALIGN_UP(addr)   ((addr) + ((MM_PAGE_SIZE - ((addr) % MM_PAGE_SIZE)) % MM_PAGE_SIZE))
+
+// 4MB page alignment down
+#define MM_ALIGN_4MB_DOWN(addr) ((addr) - ((addr) % MM_EXT_PAGE_SIZE))
+// 4MB page alignment up
+#define MM_ALIGN_4MB_UP(addr)   ((addr) + ((MM_EXT_PAGE_SIZE - ((addr) % MM_EXT_PAGE_SIZE)) % MM_EXT_PAGE_SIZE))
+
 
 /* - - - - - - - - - - - - - - - - - - */
 /* - Virtual Address Space Constants - */
 /* - - - - - - - - - - - - - - - - - - */
 
-// Page table directories size
-#define MM_PTD_SIZE MM_PAGE_SIZE * PM_MAX_PROCESSES
+// Page size
+#define MM_PAGE_SIZE KB(4)
+
+// Extended page size
+#define MM_EXT_PAGE_SIZE MB(4)
+
+// Page table directorie size
+#define MM_PTD_SIZE MM_PAGE_SIZE * MM_PD_ENTRIES
 
 // Reserved pages count between the top of the kernel stack and the start of the PTD
 #define MM_RESERVED_PAGES 8

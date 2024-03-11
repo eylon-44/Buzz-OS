@@ -34,7 +34,7 @@ _entry:
     call setup_gdt
 
     ;; set the stack at the higher half kernel
-    mov ebp, 0xc0090000
+    mov ebp, 0x0008ffff; mov ebp, 0xc0090000 ; [TMP] IMPROVE!!
     mov esp, ebp
 
     ;; jump to the kernel's main function in the higher half
@@ -78,9 +78,10 @@ enable_paging:
     mov [eax], dword 0x83       ; map the first 4MB of KVIRT_BASE to the first 4MB of physical memory [p=1; rw=1; pse=1]
   
 
-    ;; enable Page Size Extension for 4MB pages
+    ;; enable Page Size Extension for 4MB pages and global pages
     mov eax, cr4
     or eax, 0x00000010
+    or eax, 0x00000080
     mov cr4, eax
 
     ;; load the entry page directory address into cr3

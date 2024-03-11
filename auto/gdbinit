@@ -24,9 +24,10 @@ target remote localhost:1234
 # Kernel main start
 #break kernel_main
 
-#break mm_detect
-#break pmm.c:83
-break init_pmm
+#break vmm.c:217
+break vmm_attach_page
+
 layout next
 
 continue
+break memset.c:23
