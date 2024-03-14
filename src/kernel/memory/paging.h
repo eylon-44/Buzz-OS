@@ -9,11 +9,6 @@
 
 /* Constants & Convertions */
 
-// PDE count in a page directory
-#define MM_PD_ENTRIES 1024
-// PTE count in a page table
-#define MM_PT_ENTRIES 1024
-
 /* Virtual -> Index Conversions */
 // Get PDE index from virtual address           :: max index is 1023 (10 bits)
 #define MM_PDE_INDEX(virtual_address) (((virtual_address) >> 22) & 0x03FF)
@@ -23,7 +18,7 @@
 #define MM_PF_OFFSET(virtual_address) ((virtual_address) & 0x0FFF)
 
 // PDE flag stored in the available region; indicates that the PDE should not be deleted even if it is not used
-#define MM_FPDE_PRESERVE 0b001
+#define MM_AVL_PDE_KEEP 0b001
 
 #define MM_GET_PT(pde_ptr)  ((pte_t*)  ((pde_ptr)->pt_address << 12))
 #define MM_GET_PF(pte_ptr)  ((paddr_t) ((pte_ptr)->pf_address << 12))

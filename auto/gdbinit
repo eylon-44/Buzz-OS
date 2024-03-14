@@ -5,6 +5,7 @@ set print pretty
 # [WARNING][BUG] see issue #2 on github
 
 add-symbol-file bin/symbols/BM.elf 0x1000
+add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 
 layout asm
@@ -25,9 +26,12 @@ target remote localhost:1234
 #break kernel_main
 
 #break vmm.c:217
-break vmm_attach_page
-
-layout next
+#break vmm_attach_page
+break init_vmm
+break _start
+#layout next
+layout asm
+layout reg
 
 continue
-break memset.c:23
+#u 260

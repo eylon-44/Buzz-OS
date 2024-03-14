@@ -13,7 +13,7 @@ SYMBOLS_DIR := $(BIN_DIR)/symbols
 # All kernel related code directories
 KRNL_DIRS := kernel drivers cpu
 KRNL_DIRS := $(patsubst %, $(SRC_DIR)/%, $(KRNL_DIRS))
-KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.asm' -or -name '*.c')
+KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.S' -or -name '*.c')
 KRNL_OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(KRNL_SRCS))
 
 # Executables
@@ -24,7 +24,7 @@ LIBC_BIN := $(BIN_DIR)/libc/lib_bzlibc.a
 
 # Compiler settings
 CC      := gcc
-CFLAGS  := -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb -Og
+CFLAGS  := -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf
@@ -33,7 +33,7 @@ LD      := ld
 LDFLAGS := -m elf_i386 -nostdlib -L$(shell dirname $(LIBC_BIN)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC_BIN)))
 KRNL_LD_SCRIPT := auto/kernel.ld
 
-KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.asm.o
+KRNL_ENTRY  := $(BIN_DIR)/kernel/kernel_entry.S.o
 
 SECTOR_SIZE  := 512		# sector size in bytes
 DISK_SECTORS := 2048	# disk size in sectors, 2048=1MB
@@ -57,15 +57,10 @@ $(BOOT_BIN): $(SRC_DIR)/boot
 				  MBR_SECTORS=$(MBR_SECTORS)				\
 				  BM_SECTORS=$(BM_SECTORS)
 
-# Compile C kernel sources into objects
-$(BIN_DIR)/%.c.o: $(SRC_DIR)/%.c
+# Compile C and Assembly kernel sources
+$(BIN_DIR)/%.o: $(SRC_DIR)/%
 	mkdir -p $(shell dirname $@)
 	${CC} ${CFLAGS} -c -o $@ $<
-
-# Compile Assembly kernel sources into objects
-$(BIN_DIR)/%.asm.o: $(SRC_DIR)/%.asm
-	mkdir -p $(shell dirname $@)
-	${AS} ${ASFLAGS} -o $@ $<
 
 # Build bzlibc
 $(LIBC_BIN): $(SRC_DIR)/libc

@@ -36,7 +36,7 @@ VMM
     [X] convert:  convert virtual addresses to physical ones and the other way around (v->p, p->v)
 HEAP
     [ ] init: allocate an initial page for the heap
-    [X] kmalloc: 
+    [X] kmalloc:
     [ ] kmalloc aligned:
     [X] kfree:
     [ ] krealloc:
@@ -55,7 +55,7 @@ Virtual memory within each address space:
 
     ---------------------------------------------------- <------- MM_VIRT_TOP (4GB, 0xFFFF:FFFF)
     |                                                  |
-    |          Page Tables of Current Process          | -------> PM_MAX_PROCESSES (1024) pages (4MB)
+    |          Page Tables of Current Process          | -------> MM_PD_ENTRIES (1024) pages (4MB)
     |                                                  |
     ---------------------------------------------------- <------- MM_PTD_START (0xFFC0:0000)
     |                                                  |
