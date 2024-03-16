@@ -1,15 +1,11 @@
 set architecture i386:intel
-set disassembly-flavor intel
 set print pretty
-
-# [WARNING][BUG] see issue #2 on github
 
 add-symbol-file bin/symbols/BM.elf 0x1000
 add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 
-layout asm
-layout reg
+layout src
 
 target remote localhost:1234
 
@@ -25,13 +21,7 @@ target remote localhost:1234
 # Kernel main start
 #break kernel_main
 
-#break vmm.c:217
-#break vmm_attach_page
 break init_vmm
-break _start
-#layout next
-layout asm
-layout reg
 
 continue
-#u 260
+u 255

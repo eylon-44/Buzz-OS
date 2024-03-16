@@ -6,6 +6,7 @@
 .extern gdt_descriptor
 .extern proc_pd
 
+#include <kernel/memory/mmlayout.h>
 
 // Kernel's virtual and physical bases are used to convert virtual addresses to physical ones
 #define KVIRT_BASE 0xC0100000
@@ -25,6 +26,16 @@
 // Size of a single page frame; 4MB because of the page size extension
 #define PF_SIZE 0x400000
 
+// [align]-byte align down [value]; stores result in EAX; corrupts EAX, EBX and EDX registers
+.macro ALIGN_DOWN value:req, align:req
+    movl \value, %eax       // load the address of the top of the stack into EAX
+    movl $0, %edx
+    movl \align, %ebx       // move the alignment value into EBX
+    divl %ebx               // devide EDX:EAX by EBX; quotient and reminder will be stored in EAX and EDX respectively
+    movl \value, %eax       // load the address of the top of the stack into EAX
+    sub %edx, %eax          // subtract the reminder of the stack's top
+.endm
+
 // Physical address of [_entry]; the bootloader should jump to this address because paging is still off
 .equ _start, V2P(_entry)
 
@@ -34,9 +45,10 @@ _entry:
     call enable_paging      // enable paging
     call setup_gdt          // setup the gdt
 
-    // set a temporary stack location until memory initialization takes place
-    movl $0x0008fffc, %ebp
-    movl %ebp, %esp
+    // set the stack according to the memory layout; 4-byte align it first
+    ALIGN_DOWN $MM_KSTACK_TOP, $4   // align down
+    movl %eax, %ebp                 // set EBP with the newly aligned address
+    movl %ebp, %esp                 // set ESP with the newly aligned address
 
     // jump to the kernel's main function in the higher half
     // use an indirect call because the assembler produces a PC-relative instruction for a direct jump
@@ -73,20 +85,23 @@ enable_paging:
 
     // map the first 4MB of virtual address 3GB to physical 0 [v: 3GB-(3GB+4MB) = p: 0-4MB]
     movl $KVIRT_BASE, %eax          // set EAX with the kernel virtual base address
-    shr $22, %eax                   // shift right by 22 bits to get the index of the kernel virtual base address in the page directory
+    shr $22, %eax                   // shift right by 22 bits to get the index of the page in the page directory
     movl $PDE_SIZE, %ecx
     mull %ecx                       // multiple that index by the page directory entry size in order to get the offset from the page directory base
     addl $ENTRY_PD_BASE, %eax       // add that offset to the page directory base
     movl $PDE_FLAGS, (%eax)         // map the first 4MB of KVIRT_BASE to the first 4MB of physical memory [p=1; rw=1; pse=1]
   
-    // // map the last 4MB of memory to the 4MB area in which the stack is in
-    // mov eax, 0xFFFFFFFF >> 22   // set EAX with the index of the kenrel virtual base address in the page directory
-    // mov ecx, PDE_SIZE
-    // mul ecx                     // multiple that index by the page directory entry size in order to get the offset from the page directory base
-    // add eax, ENTRY_PD_BASE      // add that offset to the page directory base
-    // mov [eax], dword 0x83       // map the first 4MB of KVIRT_BASE to the first 4MB of physical memory [p=1; rw=1; pse=1]
-    // or  [eax], 0x0008fffc & 0xFFF00000
-
+    // map the entry stack
+    movl $MM_KSTACK_TOP, %eax                           // set EAX with the kernel virtual base address
+    shr $22, %eax                                       // shift right by 22 bits to get the index of the page in the page directory
+    movl $PDE_SIZE, %ecx
+    mull %ecx                                           // multiple that index by the page directory entry size in order to get the offset from the page directory base
+    addl $ENTRY_PD_BASE, %eax                           // add that offset to the page directory base
+    movl %eax, %ecx                                     // move EAX to ECX because we need to use EAX
+    ALIGN_DOWN $MM_PHY_ENTRY_TOS, $MM_EXT_PAGE_SIZE     // 4MB align and set the top of the stack; aligned address will be saved at EAX
+    movl $PDE_FLAGS, (%ecx)                             // map the stack [p=1; rw=1; pse=1]
+    orl %eax, (%ecx)
+    movl $0, %edx
 
     // enable Page Size Extension for 4MB pages and global pages
     movl %cr4, %eax

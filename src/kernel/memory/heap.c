@@ -4,6 +4,7 @@
 #include "vmm.h"
 #include "pmm.h"
 #include <kernel/memory/mm.h>
+#include <kernel/memory/mmlayout.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 

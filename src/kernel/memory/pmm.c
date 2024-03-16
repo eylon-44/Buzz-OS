@@ -3,11 +3,12 @@
 #include "pmm.h"
 #include "paging.h"
 #include <kernel/memory/mm.h>
+#include <kernel/memory/mmlayout.h>
 #include <kernel/panic.h>
-#include <drivers/screen.h>
 #include <libc/stdint.h>
 #include <libc/string.h>
 #include <libc/bitfield.h>
+#include <drivers/screen.h>
 
 // Get the page number from its index in the array
 #define INDX_TO_PAGE_NUM(element, index) ((uint32_t) (element)*32+(index))
@@ -167,6 +168,16 @@ static void kernel_detect()
     bitmap_set_range(start, end, MM_PAGE_USED);
 }
 
+// Mark the phsycial memory area occupied by the kernel's entry stack in the bitmap
+static void stack_detect()
+{
+    size_t start = MM_ALIGN_DOWN((size_t) MM_PHY_ENTRY_TOS);
+    size_t end   = start;
+
+    // mark all pages in range [start] to [end] as used
+    bitmap_set_range(start, end, MM_PAGE_USED);
+}
+
 // Mark the physical memory area occupied by memory IO
 static void mmio_detect()
 {
@@ -184,5 +195,6 @@ void init_pmm()
     check_ksize();
     mm_detect();
     kernel_detect();
+    stack_detect();
     mmio_detect();
 }

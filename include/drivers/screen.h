@@ -4,6 +4,7 @@
 #define SCREEN_DRIVER_H
 
 #include <libc/stdint.h>
+#include <kernel/memory/mmlayout.h>
 
 // Screen measurements
 #define VGA_MAX_ROWS 25
@@ -11,7 +12,7 @@
 #define VGA_SIZE (VGA_MAX_ROWS * VGA_MAX_COLS)
 
 // Video memory
-#define VGA_VIRT_MEM 0xC00B8000
+#define VGA_VIRT_MEM MM_MMIO_START
 #define VGA_PHYS_MEM 0x000B8000
 #define VGA_MEM_SIZE VGA_SIZE * 2
 
@@ -53,9 +54,9 @@ void clear_screen();
 // VGA text attribute presets //
 
 // [NOTE] it is prefered to use the presets over the custom combinations for a painless future :)
-// [TODO] move ATR presets
 #define VGA_ATR_DEFAULT (VGA_TXT_WHITE | VGA_BG_BLACK)
 #define VGA_ATR_ERROR   (VGA_TXT_BLACK | VGA_BG_RED)
 #define VGA_ATR_WARNING (VGA_TXT_BLACK | VGA_BG_ORANGE | VGA_BG_LIGHT)
+#define VGA_ATR_NOTE    (VGA_TXT_WHITE | VGA_BG_BLUE)
 
 #endif
