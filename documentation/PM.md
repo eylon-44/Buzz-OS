@@ -3,24 +3,103 @@
 ### Goals of a Process Manager
 
 * Spawning and killing a process
-* Spawning and killing a new thread for a process
-* Scheduling thread execution and context switching
+* Spawning and killing a thread for a process
+* Jumping between rings 0 and 3
+* Scheduling thread execution
 
 
 ### Programs, Processes & Threads
 
-A **program** is a set of instructions that a computer can execute. When we write a C or Assembly program and compile it, the compiler produces binary code. This compiled binary code is a program. Only when we execute that program, it becomes a **process**. You can think of a process as an ‘active’ entity, opposed to a program which is a ‘passive’ entity. A **thread** is a single flow of control (code) within a process. It is where execution takes place. A process is essentially a group of threads that share the same resources, including address space, code, global data and open file streams, but a different stack. A process must own at least one thread; with no threads, a process won't be able to execute anything and therefore be useless. That means that process creation includes the act of creating at least one thread for that process. By having multiple threads, a process can execute multiple tasks concurrently.
-
-As all code execution (in this OS) takes place on a single processor, there could only be one thread runnnig at any given moment. While we can't truly execute different threads at the same time, we can create a simillar illusion by switching between them really fast using a **scheduler**. A scheduler is the component that manages thread execution order and creates the effect of multi-tasking by swiftly changing between different threads.
-
-There are two main types of threads, **user-level threads** and **kernel-level threads**. User-level threads are managed by a user-level scheduler, that is, a scheduler included in the user's compiled program that manages the program's different streams of execution. Kernel-level threads are managed by a kernel-level scheduler, [...]
+A **program** is a set of instructions that a computer can execute. When we write a C or an Assembly program and compile it, the compiler produces binary code. This compiled binary code is a program. Only when we execute that program, it becomes a **process**. You can think of a process as an ‘active’ entity, opposed to a program which is a ‘passive’ entity. A **thread** is a single flow of control (code) within a process. It is where execution takes place. A process is essentially a group of threads that share the same resources, including address space, code, global data and open file streams, but a different stack. A process must own at least one thread; with no threads, a process won't be able to execute anything and therefore be useless. That means that process creation includes the act of creating at least one thread for that process. By having multiple threads, a process can execute multiple tasks concurrently.
 
 
-### Context Switching & The TSS
+### Context Switching & The Task State Segment
 
+A **context** describes all the attributes that may differ in one running process from another. These attributes may include a virtual address space, common registers (eax, eip, esp, eflgas...) and a kernel stack. In other words, a context describes a thread's execution environment.
 
+As all code execution (in this OS) takes place on a single processor, there could only be one thread runnnig at any given moment. In order for the operating system to achieve a multitasking effect, we can execute many rapid **context switches** between all threads, and by that give each thread its own time splice for executing.
 
+The Task State Segment (TSS) is a data structure originally designed to be used with hardware task-switching, where each individual task has its own TSS. Because software task-switching it faster and more flexable, the TSS is rarely being used for its original purpose. 
 
+The TSS initiation process includes creating a segment for it in the GDT in the following manner:
+
+```c
+// create a gdt entry
+#define GDT_ENTRY(base, limit, dpl, access_options, flags_options) { ... }
+
+// tss segment
+GDT_ENTRY(&TSS, sizeof(TSS)-1, 0,
+        GDT_ACCESS_ACCESSED | GDT_ACCESS_PRESENT | GDT_ACCESS_CODE_SEG,     // 0x89
+        0)
+```
+
+The TSS structure is as follows:
+
+```c
+typedef struct {
+	uint32_t prev_tss;  // The previous TSS - with hardware task switching these form a kind of backward linked list.
+	uint32_t esp0;      // The stack pointer to load when changing to kernel mode.
+	uint32_t ss0;       // The stack segment to load when changing to kernel mode.
+	// Everything below here is unused.
+	uint32_t esp1;      // esp and ss 1 and 2 would be used when switching to rings 1 or 2.
+	uint32_t ss1;
+	uint32_t esp2;
+	uint32_t ss2;
+	uint32_t cr3;
+	uint32_t eip;
+	uint32_t eflags;
+	uint32_t eax;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t ebx;
+	uint32_t esp;
+	uint32_t ebp;
+	uint32_t esi;
+	uint32_t edi;
+	uint32_t es;
+	uint32_t cs;
+	uint32_t ss;
+	uint32_t ds;
+	uint32_t fs;
+	uint32_t gs;
+	uint32_t ldt;
+	uint16_t trap;
+	uint16_t iomap_base;
+} __attribute__ ((packed)) tss_entry;
+```
+
+# TSS FLUSH = TSS LOAD
+## I don't know why people call it that way
+
+#### TSS
+
+Setting up a TSS
+* https://wiki.osdev.org/GDT_Tutorial#What_to_Put_In_a_GDT
+* https://wiki.osdev.org/Getting_to_Ring_3
+* https://forum.osdev.org/viewtopic.php?t=13678
+
+TSS structure and flags
+* https://wiki.osdev.org/Task_State_Segment#Protected_Mode
+* https://pdos.csail.mit.edu/6.828/2018/readings/i386/s07_01.htm
+* https://pdos.csail.mit.edu/6.828/2018/readings/i386/s07_02.htm
+* https://pdos.csail.mit.edu/6.828/2018/readings/i386/s07_03.htm
+* https://stackoverflow.com/questions/54876039/creating-a-proper-task-state-segment-tss-structure-with-and-without-an-io-bitm
+
+TSS workings
+* https://stackoverflow.com/questions/68946642/x86-hardware-software-tss-usage
+
+#### Other
+https://wiki.osdev.org/Kernel_Multitasking
+https://forum.osdev.org/viewtopic.php?f=1&t=15622
+https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial
+https://wiki.osdev.org/Loading_a_Process
+https://wiki.osdev.org/Context_Switching
+https://wiki.osdev.org/Scheduling_Algorithms
+https://forum.osdev.org/viewtopic.php?f=1&t=21251
+
+"You only need one TSS per processor. It's mainly used for the stack pointers upon privilege level switches and the I/O permission bitmap. It used to be used for hardware task switching, but it's no longer supported in 64-bit mode. Even 32-bit OSes opted for software task switching instead because it's faster."
+
+"If you are running everything in Ring 0 then you don't need a TSS as there are no ring transitions that will occur. If however you have code running in Ring 3 (What most people call user mode), you will need a TSS to transition from Ring 3 to Ring 0 on an interrupt. When everything is in Ring 0 when an interrupt occurs the kernel (Ring 0) stack will be used to push interrupt data."
 
 <!--
 Upon entry into the kernel, the kernel stack for the thread is loaded and the user stack, along with its execution state, is saved. Each thread may have its own stack or share a set of stacks. 
@@ -45,6 +124,65 @@ When a thread invokes a syscall for creating a new thread, the kernel handler sh
 | user thread 05 (new thread created by thread 01) | ...                           |
 ---
 
+
+```c
+typedef struct {
+    uint16_t   link;
+    uint16_t   link_h;
+
+    uint32_t   esp0;
+    uint16_t   ss0;
+    uint16_t   ss0_h;
+
+    uint32_t   esp1;
+    uint16_t   ss1;
+    uint16_t   ss1_h;
+
+    uint32_t   esp2;
+    uint16_t   ss2;
+    uint16_t   ss2_h;
+
+    uint32_t   cr3;
+    uint32_t   eip;
+    uint32_t   eflags;
+
+    uint32_t   eax;
+    uint32_t   ecx;
+    uint32_t   edx;
+    uint32_t    ebx;
+
+    uint32_t   esp;
+    uint32_t   ebp;
+
+    uint32_t   esi;
+    uint32_t   edi;
+
+    uint16_t   es;
+    uint16_t   es_h;
+
+    uint16_t   cs;
+    uint16_t   cs_h;
+
+    uint16_t   ss;
+    uint16_t   ss_h;
+
+    uint16_t   ds;
+    uint16_t   ds_h;
+
+    uint16_t   fs;
+    uint16_t   fs_h;
+
+    uint16_t   gs;
+    uint16_t   gs_h;
+
+    uint16_t   ldt;
+    uint16_t   ldt_h;
+
+    uint16_t   trap;
+    uint16_t   iomap;
+
+} tss_struct;
+```
 
 ### Data Structures #prototype
 
