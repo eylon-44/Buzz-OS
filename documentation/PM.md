@@ -124,41 +124,50 @@ The general steps for loading a process include:
 * Setting up scheduler data and queueing the process in the scheduler
 * Returning to caller
 
-
-\<It's not that compilcated, just need to describe how to do it without blocking the entire computer when loading a large program\>
-
----
-***pass ktiva***
-
-When a thread invokes a syscall for creating a new thread, the kernel handler should merge itself to that thread. That way, if a thread takes a lot of time to load it won't block the entire system for a few seconds, but rather, only execute the loader function on that thread time slice.
+Loading a process is really not that complicated. The only concern we should have is to not block the entire system when loading a large program. Say a thread invokes a syscall for loading a 30MB process, this operation could take a few seconds. If the we wait for the kernel to finish loading the process, the entire system will stop for a few seconds, giving the user an unresponsive and laggy exprience. Instead, we should merge the kernel's thread with the caller's thread and then call the kernel's loader function. That way, we will keep all the other processes running as usual but when it's the caller's turn to execute it will execute the kernel's loader function instead of its own userspace code. This solution is essentially implemented by defualt and can illustrated in the following execution flow:
 
 | Thread                                           | Action                        |
 |--------------------------------------------------|-------------------------------|
 | user thread 01                                   | clone syscall                 |
-| kernel loader function thread                    | merge user and kernel threads |
 | user thread 01 (in kernel loader function)       | task switch                   |
 | user thread 15                                   | task switch                   |
 | user thread 38                                   | task switch                   |
-| user thread 01 (in kernel loader function)       | task switch                   |
+| user thread 01 (in kernel loader function)       | finished loading process      |
+| user thread 01 (in user space)                   | task switch                   |
 | user thread 38                                   | task switch                   |
 | user thread 01 (in user space)                   | task switch                   |
 | user thread 05 (new thread created by thread 01) | ...                           |
 
-Alternatively to that, I could also create a kernel thread for that while blocking the calling processes (removing it from scheduler queue)
 
-When I think about it this behavior should be default. After the syscall the EIP will reside in the kernel space and that is all there is to it. Later it will just return to that kernel thread.
+### The Init Process
+
+<span style="font-family: 'Times New Roman', serif; font-size: 18px; line-height: 1.5;">In the beginning God (the kernel) created the heaven (the system call) and the earth (the init process).</span>
+
+The `init` process is the first 
 
 
-### The Initial Process
+
 ### Data Structures
+What are they? 
+Do I need a data structure for both process and thread? It may depened on the scheduling algo
+Where are they going to be stored? kheap?
+
+**TID** = Thread ID
+**PID** = Process ID = **TGID** = Thread Group ID
+
+- process/thread data structure
+
+
 ### Scheduling
+
+
 ### The User Interface
 
+System calls used by the user to manage processes.
 
-<br>
-<br>
-<br>
-**XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX**
+##### fork()
+
+##### clone()
 
 
 # Resources
@@ -185,11 +194,15 @@ When I think about it this behavior should be default. After the syscall the EIP
 
 * https://wiki.osdev.org/Loading_a_Process
 * https://forum.osdev.org/viewtopic.php?f=1&t=15622
+* https://lwn.net/Articles/631631/
+* https://man7.org/linux/man-pages/man2/execve.2.html
 
 
-### The Initial Process
+### The Init Process
 
 * https://stackoverflow.com/questions/4894609/does-a-cpu-process-always-have-at-least-one-thread
+* https://en.wikipedia.org/wiki/Init
+* http://213.254.12.151/~rubini/docs/init/
 
 
 ### Data Structures
@@ -200,8 +213,17 @@ When I think about it this behavior should be default. After the syscall the EIP
 
 ### Scheduling
 
+* https://en.wikipedia.org/wiki/Daemon_(computing)
+* https://en.wikipedia.org/wiki/Booting_process_of_Linux#:~:text=Init%20process,-Once%20the%20kernel&text=The%20init%20system%20is%20the,was%20just%20called%20%22init%22.
+
 
 ### The User Interface
+* https://linasm.sourceforge.net/docs/syscalls/process.php
+* https://filippo.io/linux-syscall-table/
+* https://linux.die.net/man/2/clone
+* https://lwn.net/Articles/631631/
+* https://man7.org/linux/man-pages/man2/execve.2.html
+* https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/
 
 #### Other
 https://wiki.osdev.org/Getting_to_Ring_3
@@ -227,7 +249,3 @@ https://wiki.osdev.org/Category:Processes_and_Threads
 
 
 # DATA STRUCTURES
-**TID** = Thread ID
-**PID** = Process ID = **TGID** = Thread Group ID
-
-- process/thread data structure
