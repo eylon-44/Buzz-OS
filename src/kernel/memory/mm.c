@@ -12,6 +12,7 @@ void init_mm()
     init_gdt();
     init_pmm();
     init_vmm();
+    init_kheap();
 }
 
 /*

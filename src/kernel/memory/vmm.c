@@ -12,7 +12,7 @@
 
 /* Pointer to an array of 1024 PDEs, or a single PD.
     This pointer holds the base address of the PD-per-process list */
-pde_t (*proc_ptd)[MM_PD_ENTRIES]; // [HOLUP] do I really need this? can't just each process point to its own pd?
+pde_t* proc_ptd[MM_PD_ENTRIES]; // [HOLUP] do I really need this? can't just each process point to its own pd?
 
 // Start and end addresses of the kernel set by the linker
 extern char _vstart;
@@ -253,4 +253,7 @@ void init_vmm()
 
     /* map memory mapped IO [CAN DO THIS AFTER LOADING PD AND USING VMM_MAP_PAGE]*/
     vmm_map_page(pd, VGA_PHYS_MEM, VGA_VIRT_MEM, 1, 0, 0, 1);
+
+    // save [pd]
+    proc_ptd[pm_get_pid()] = pd;
 }

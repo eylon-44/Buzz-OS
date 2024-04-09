@@ -19,9 +19,9 @@ target remote localhost:1234
 #break _start
 
 # Kernel main start
-#break kernel_main
+break kernel_main
 
-break init_vmm
+#break init_kheap
+break init_mm
 
 continue
-u 255

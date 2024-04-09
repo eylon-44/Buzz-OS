@@ -4,6 +4,7 @@
 #define KHEAP_H
 
 #include <kernel/memory/mm.h>
+#include <libc/stddef.h>
 
 // Heap data structure
 typedef struct heap_t heap_t;
@@ -39,5 +40,9 @@ typedef struct
 #define PREV_CHUNK(header_ptr)            ((heap_header_t*) ((uint8_t*) (header_ptr) - CHUNK_PREV_SIZE(header_ptr)))
 // Get a pointer to the start of the data in the chunk
 #define CHUNK_DATA(header_ptr)            ((void*) ((uint8_t*) (header_ptr) + sizeof(heap_header_t)))
+
+void init_kheap();
+void* kmalloc(size_t size);
+void kfree(void* ptr);
 
 #endif

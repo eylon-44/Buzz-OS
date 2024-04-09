@@ -8,13 +8,13 @@
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 
-// The kernel heap is initiated with a single page
-static heap_t kheap = { .start = MM_KHEAP_START, .top = MM_KHEAP_START + MM_PAGE_SIZE };
+// The kernel heap; top is initiated with the start of the heap because we need to allocate it
+static heap_t kheap = { .start = MM_KHEAP_START, .top = MM_KHEAP_START };
 
 /* Heap extension function :: set a new top for the heap.
     Return [0] for success and [1] for error.
 */
-int heap_extend(heap_t* heap, vaddr_t new_top)
+static int heap_extend(heap_t* heap, vaddr_t new_top)
 {   
     // [new_top] must be 4KB aligned
     if (new_top % MM_PAGE_SIZE != 0) return 1;
@@ -46,11 +46,11 @@ int heap_extend(heap_t* heap, vaddr_t new_top)
 
 
 // Allocate [size] bytes for the on the kearnel heap and return a pointer to the allocated data
-void* kmalloc(uint32_t size)
+void* kmalloc(size_t size)
 {
     // calculate padding and the new chunk's size
-    uint32_t padding = HEAP_ALIGNMENT - (size % HEAP_ALIGNMENT);
-    uint32_t new_chunk_size = sizeof(heap_header_t) + size + padding;
+    size_t padding = (HEAP_ALIGNMENT - (size % HEAP_ALIGNMENT)) % HEAP_ALIGNMENT;
+    size_t new_chunk_size = sizeof(heap_header_t) + size + padding;
 
     // [best_chunk] variable will store the choosen chunk at the end of the loop
     heap_header_t* best_chunk = NULL;
@@ -84,7 +84,7 @@ void* kmalloc(uint32_t size)
     if (best_chunk == NULL) {
         // in this case the variable [chunk_ptr] represents the last (highest) chunk in the heap
         // alocate more space for the heap; increase the heap size by 4KB
-        if (heap_extend(&kheap, (uint32_t) kheap.top + MM_PAGE_SIZE)) {
+        if (heap_extend(&kheap, (size_t) kheap.top + MM_PAGE_SIZE)) {
             // if the last chunk (the highest in the address space) is free, merge it with the newly allocated space
             if (!CHUNK_USED(chunk_ptr)) {
                 // add to its size the allocated space and set it as the best chunk
@@ -109,7 +109,7 @@ void* kmalloc(uint32_t size)
     // check if we can split the chunk; if it can fit another chunk in the unused area
     if (CHUNK_SIZE(best_chunk) - new_chunk_size  >= sizeof(heap_header_t) + HEAP_ALIGNMENT) {
         // split the chunks that the newly allocated chunk is at the bottom
-        uint32_t total_size = CHUNK_SIZE(best_chunk);
+        size_t total_size = CHUNK_SIZE(best_chunk);
         best_chunk->size = new_chunk_size;
         chunk_ptr = NEXT_CHUNK(best_chunk);
         chunk_ptr->size = total_size - CHUNK_SIZE(best_chunk);
@@ -143,7 +143,7 @@ void kfree(void* ptr)
     if (!CHUNK_USED(chunk_ptr)) return;
 
     // if chunk size or previous chunk size is not aligned
-    if (CHUNK_SIZE(chunk_ptr) % HEAP_ALIGNMENT != 0 || CHUNK_PREV_USED(chunk_ptr) % HEAP_ALIGNMENT != 0) return;
+    if (CHUNK_SIZE(chunk_ptr) % HEAP_ALIGNMENT != 0 || CHUNK_PREV_SIZE(chunk_ptr) % HEAP_ALIGNMENT != 0) return;
     
     // if previous size is 0 and chunk is not at the heap start or chunk is at the heap start but previous size is not 0 
     if ((CHUNK_PREV_SIZE(chunk_ptr) == 0) != ((void*) chunk_ptr == (void*) kheap.start)) return;
@@ -198,11 +198,11 @@ void kfree(void* ptr)
 
 
 
-void kheap_init()
+void init_kheap()
 {
     // allocated a physical page and map it to the start of the heap [TODO] use the extension function instead
     kheap.extension = heap_extend;
-    kheap.extension(&kheap, kheap.top);
+    kheap.extension(&kheap, MM_KHEAP_START + MM_PAGE_SIZE);
     // create the first header in the heap
     *(heap_header_t*) kheap.start = (heap_header_t) { .size = HEAP_SIZE(kheap), .prev_size = 0 };
 }
