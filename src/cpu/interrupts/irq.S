@@ -13,7 +13,7 @@
     interrupt_handler_\inum:            // define the interrupt handler function
         cli                             // disable maskable interrupts
         pushl $0                        // push 0 as error code
-        pushl \inum                     // push the interrupt number
+        pushl $\inum                     // push the interrupt number
         jmp common_interrupt_handler    // jump to the common interrupt handler
 .endm
 
@@ -21,7 +21,7 @@
     .global interrupt_handler_\inum
     interrupt_handler_\inum:            // define the interrupt handler function
         cli                             // disable maskable interrupts
-        pushl \inum                     // push the interrupt number
+        pushl $\inum                     // push the interrupt number
         jmp common_interrupt_handler    // jump to the common interrupt handler
 .endm
 

@@ -18,18 +18,18 @@ static inline uint16_t hz_to_devider(uint32_t hz)
 }
 
 // Set timer rate by Hertz
-void set_timer_hz(uint32_t hz)
+static void set_timer_hz(uint32_t hz)
 {
-    uint16_t devider = hz_to_devider(hz);              // get the devider
+    uint16_t devider = hz_to_devider(hz);           // get the devider
     port_outb(PIT_CH0_DATA_PORT, low16(devider));   // write the low byte of the devider
     port_outb(PIT_CH0_DATA_PORT, high16(devider));  // write the high byte of the devider
 }
 
 // Initiate the timer
-void init_timer(uint32_t hz)
+void init_timer()
 {
     port_outb(PIT_CMD_PORT, PIT_MOD_BIN | PIT_MOD_OP3 | PIT_MOD_ACS_LH | PIT_MOD_CH0);
-    set_timer_hz(hz);
+    set_timer_hz(TICK_HZ);
 
     set_interrupt_handler(IRQ0, timer_callback);
 }

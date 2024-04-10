@@ -36,8 +36,9 @@
 
 // Hardware clock at 1193182 Hz with no devider
 #define CLOCK_HZ          1193182       // Hz
+// Timer callbacks per second
+#define TICK_HZ           200
 
-void set_timer_hz(uint32_t hz);
-void init_timer(uint32_t hz);
+void init_timer();
 
 #endif

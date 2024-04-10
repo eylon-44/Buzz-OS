@@ -102,6 +102,4 @@ void init_interrupt()
     for (int i = 0; i < IDT_ENTRIES_COUNT; i++) {
         interrupt_handlers[i] = NULL;
     }
-
-    __asm__ volatile ("sti");       // set interrupt flag :: enable interrupts
 }
