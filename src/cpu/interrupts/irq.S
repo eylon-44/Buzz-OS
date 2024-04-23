@@ -109,3 +109,6 @@ no_error_code_interrupt_handler 44         // [IRQ12]      PS2 mouse
 no_error_code_interrupt_handler 45         // [IRQ13]      FPU / coprocessor / inter-processor
 no_error_code_interrupt_handler 46         // [IRQ14]      primary ATA hard disk
 no_error_code_interrupt_handler 47         // [IRQ15]      secondary ATA hard disk
+
+// Custom
+no_error_code_interrupt_handler 92         // [syscall]    interrupt performed by the user to invoke a syscall

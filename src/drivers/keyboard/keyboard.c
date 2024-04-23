@@ -1,10 +1,11 @@
 // Keyboard Driver // ~ eylon
 
 #include <drivers/keyboard.h>
+#include "keymap.h"
 #include <drivers/ports.h>
 #include <cpu/interrupts/isr.h>
 #include <libc/stdint.h>
-#include "keymap.h"
+#include <libc/stddef.h>
 
 // IO ports
 #define KB_SCAN_CODE_PORT   0x60     // keyboard scan_code port
@@ -68,7 +69,7 @@ static char get_key()
 
 // Keyboard interrupt handler :: handle keyboard callbacks from the PIC
 #include <drivers/screen.h> // [TMP][DEBUG]
-static void keyboard_handler()
+static void keyboard_handler(UNUSED int_data_t* _)
 {
     // [TMP]
     char key[2] = {get_key(), '\0'};

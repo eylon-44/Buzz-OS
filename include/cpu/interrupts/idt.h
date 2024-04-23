@@ -5,7 +5,7 @@
 
 #include <libc/stdint.h>
 
-#define IDT_ENTRIES_COUNT 48
+#define IDT_ENTRIES_COUNT 256
 
 // Interrupt descriptor: 64 bits
 typedef struct

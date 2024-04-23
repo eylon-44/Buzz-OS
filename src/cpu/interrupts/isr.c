@@ -5,33 +5,37 @@
 #include <cpu/interrupts/idt.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
+#include <kernel/syscall/syscall.h>
 #include <drivers/screen.h> // [DEBUG]
 
 // Macro to extern and set an interrupt handler in the IDT
 #define INTERRUPT_HANDLER(index) extern void (interrupt_handler_##index)(); \
                                  set_interrupt_descriptor(index, (uint32_t) interrupt_handler_##index);
 // Array of interrupt handlers arranged by the interrupt index
-isr_t interrupt_handlers[IDT_ENTRIES_COUNT];
+static isr_t interrupt_handlers[IDT_ENTRIES_COUNT];
 
 
 // Set a function handler to be called when the selected inerrupt occurs
 void set_interrupt_handler(uint8_t index, isr_t func)
 {
     interrupt_handlers[index] = func;
-    // unmask if it's an IRQ
+    // Unmask if it's an IRQ
     if (index >= IRQ0 && index <= IRQ15) { 
         unmask_irq(index-IRQ0);
     }
 }
 
 // Being called by the common_interrupt_handler :: call the interrupt's handler function and send an EOI if it's an IRQ.
-void interrupt_handler(const InterruptData interrupt_data)
+void interrupt_handler(int_data_t interrupt_data)
 {
-    // call the associated interrupt handler
+    /* !!! ANY CHANGE BEING DONE TO interrupt_data WILL AFFECT THE RESTORING OF THE USER CONTEXT !!! 
+        This is required for returning values from syscalls. */
+
+    // Call the associated interrupt handler
     if (interrupt_handlers[interrupt_data.interrupt_number] != NULL) {
-        interrupt_handlers[interrupt_data.interrupt_number]();
+        interrupt_handlers[interrupt_data.interrupt_number](&interrupt_data);
     }
-    // send an EOI signal to the PIC if the interrupt is an IRQ
+    // Send an EOI signal to the PIC if the interrupt is an IRQ
     if (interrupt_data.interrupt_number >= IRQ0 && interrupt_data.interrupt_number <= IRQ15) {
         pic_eoi(interrupt_data.interrupt_number);
     }
@@ -46,7 +50,7 @@ void init_interrupt()
 
     init_pic();                     // config and initiate the PIC :: all IRQs will be masked (except IRQ2)
 
-    // set the IDT
+    // Set the IDT
     INTERRUPT_HANDLER(0)
     INTERRUPT_HANDLER(1)
     INTERRUPT_HANDLER(2)
@@ -96,9 +100,11 @@ void init_interrupt()
     INTERRUPT_HANDLER(46)
     INTERRUPT_HANDLER(47)
 
+    INTERRUPT_HANDLER(92);  // syscall 0x5C
+
     load_idt();                     // load the IDT into the PIC
 
-    // initiate the interrupt handlers array with NULL pointers
+    // Initiate the interrupt handlers array with NULL pointers
     for (int i = 0; i < IDT_ENTRIES_COUNT; i++) {
         interrupt_handlers[i] = NULL;
     }

@@ -4,10 +4,11 @@
 #include <cpu/interrupts/isr.h>
 #include <drivers/ports.h>
 #include <libc/stdint.h>
+#include <libc/stddef.h>
 
 uint32_t tick = 0;
 
-static void timer_callback() {
+static void timer_callback(UNUSED int_data_t* _) {
     tick++;
 }
 
