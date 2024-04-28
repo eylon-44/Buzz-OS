@@ -3,7 +3,6 @@
 .code32
 .global _start
 .extern kernel_main
-.extern gdt_descriptor
 .extern proc_pd
 
 #include <kernel/memory/mmlayout.h>
@@ -43,7 +42,6 @@
 _entry:
     cli                     // disable interrupts
     call enable_paging      // enable paging
-    call setup_gdt          // setup the gdt
 
     // set the stack according to the memory layout; 4-byte align it first
     ALIGN_DOWN $MM_KSTACK_TOP, $4   // align down
@@ -57,13 +55,6 @@ _entry:
 
     // This code should never run
     jmp .
-
-
-// Setup the GDT
-setup_gdt:
-    // load the gdt
-    lgdt (gdt_descriptor)
-    ret
 
 // Enable paging and set a basic startup page directory
 enable_paging:

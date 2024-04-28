@@ -5,8 +5,7 @@ add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 
-layout asm
-layout reg
+layout src
 
 target remote localhost:1234
 

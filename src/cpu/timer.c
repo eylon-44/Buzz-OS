@@ -4,12 +4,17 @@
 #include <cpu/interrupts/isr.h>
 #include <drivers/ports.h>
 #include <libc/stdint.h>
-#include <libc/stddef.h>
+#include <kernel/process/scheduler.h>
 
-uint32_t tick = 0;
+// Array of void functions() to be called uppon a timer interrupt
+static void (*callbacks[])() = { sched_tick };
 
-static void timer_callback(UNUSED int_data_t* _) {
-    tick++;
+/* This function is being called uppon a timer interrupt;
+    it calls all of the functions in the [callbacks] array. */
+static void timer_callback() {
+    for (size_t i = 0; i < sizeof(callbacks)/sizeof(callbacks[0]); i++) {
+        callbacks[i]();
+    }
 }
 
 // Convert Hertz to timer devider

@@ -8,9 +8,6 @@
 #include <drivers/keyboard.h>
 #include <cpu/interrupts/isr.h>
 #include <cpu/timer.h>
-#include <libc/string.h>
-
-extern void* interrupt_handler_47();
 
 // Kernel main function :: kernel start
 void kernel_main() 

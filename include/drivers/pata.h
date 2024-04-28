@@ -35,6 +35,6 @@
 
 #define PATA_READ_SECTOR            0x20
 
-void read_disk(void* dest, uint32_t size, uint32_t disk_offset);
+void pata_read_disk(void* dest, uint32_t size, uint32_t disk_offset);
 
 #endif

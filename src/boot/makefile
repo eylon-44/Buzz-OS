@@ -19,7 +19,7 @@ BM_DIR   := bootmain
 BM_SRCS  := $(shell find $(BM_DIR) -name '*.c')
 BM_OBJS  := $(patsubst %.c, $(BOOT_BIN_DIR)/%.o, $(BM_SRCS))
 BM_BIN   := $(BOOT_BIN_DIR)/$(BM_DIR)/bootmain.bin
-BM_UTILS := $(BIN_DIR)/drivers/ports.c.o
+BM_UTILS := $(BIN_DIR)/drivers/ports.c.o $(BIN_DIR)/drivers/pata.c.o
 BM_ENTRY := $(BOOT_BIN_DIR)/$(BM_DIR)/bootmain.o
 
 # Compile

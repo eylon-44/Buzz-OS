@@ -1,6 +1,6 @@
 // PATA Driver // ~ eylon
 
-#include "pata.h"
+#include <drivers/pata.h>
 #include <libc/stdint.h> 
 #include <drivers/ports.h>
 
@@ -34,7 +34,7 @@ static void read_sector(void* dest, uint32_t lba)
     - [disk_offset] should be [PATA_SECTOR_SIZE] (512) bytes aligned
     - [size] should be [PATA_SECTOR_SIZE] (512) bytes aligned 
     - [dest] should be 4 bytes aligned */
-void read_disk(void* dest, uint32_t size, uint32_t disk_offset)
+void pata_read_disk(void* dest, uint32_t size, uint32_t disk_offset)
 {
     uint8_t* start = (uint8_t*) dest; 
     uint8_t* end   = start + size;

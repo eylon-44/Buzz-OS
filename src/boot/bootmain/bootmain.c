@@ -1,8 +1,8 @@
 // Bootmain // ~ eylon
 
 #include <kernel/process/elf.h>
+#include <drivers/pata.h>
 #include <libc/stddef.h>
-#include "pata.h"
 
 // Kernel start address in disk
 #define DISK_KERNEL_START (21 * PATA_SECTOR_SIZE)
@@ -20,7 +20,7 @@ void bootmain()
     elfheader_t* elfheader = (elfheader_t*) SCRATCH_SPACE;
 
     // Load a page from the kernel's ELF into memory
-    read_disk((void*) elfheader, PAGE_SIZE, DISK_KERNEL_START);
+    pata_read_disk((void*) elfheader, PAGE_SIZE, DISK_KERNEL_START);
 
     // Check for the ELF magic; return to the bootsector if there is no match
     if (elfheader->identify.magic != ELF_MAGIC)
@@ -34,7 +34,7 @@ void bootmain()
     for (size_t i = 0; i < elfheader->phnum; prgheader++, i++)
     {
         // read segment from disk to memory
-        read_disk((void*) prgheader->paddr, prgheader->filesz, DISK_KERNEL_START + prgheader->offset);
+        pata_read_disk((void*) prgheader->paddr, prgheader->filesz, DISK_KERNEL_START + prgheader->offset);
 
         // if the segment file size is less than the segment memory size fill the undefined area with zeros
         if (prgheader->filesz < prgheader->memsz) {

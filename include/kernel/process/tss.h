@@ -3,6 +3,9 @@
 #if !defined(TSS_H)
 #define TSS_H
 
+#include <libc/stddef.h>
+
+// TSS data structure
 typedef struct {
 	uint32_t prev_tss;      // unused
 	uint32_t esp0;          // stack pointer to load when changing to ring 0
@@ -32,5 +35,8 @@ typedef struct {
 	uint16_t trap;          // unused
 	uint16_t iomap_base;    // unused
 } __attribute__((packed)) tss_t;
+
+void tss_set_stack(size_t esp0, size_t ss0);
+void init_tss();
 
 #endif

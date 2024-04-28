@@ -1,6 +1,6 @@
 // Paging Utils // ~ eylon
 
-#include "paging.h"
+#include <kernel/memory/paging.h>
 #include <kernel/memory/mm.h>
 #include <libc/stdint.h>
 #include <libc/stdbool.h>

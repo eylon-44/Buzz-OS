@@ -5,13 +5,13 @@
 
 #include <libc/stdint.h>
 
-// Segment Selectors
-#define SELECTOR_KERNEL_CODE 0x08
-#define SELECTOR_KERNEL_DATA 0x10
-#define SELECTOR_USER_CODE   0x18
-#define SELECTOR_USER_DATA   0x20
-#define SELECTOR_TSS         0x28
-#define SEG_COUNT            5
+// Segment selectors
+#define GDT_KCODE_SEG   0x08 | 0x00
+#define GDT_KDATA_SEG   0x10 | 0x00
+#define GDT_UCODE_SEG   0x18 | 0x03
+#define GDT_UDATA_SEG   0x20 | 0x03
+#define GDT_TSS_SEG     0x28 | 0x00
+#define SEG_COUNT       5
 
 // Macro for easy gdt entry setup
 #define GDT_ENTRY(base, limit, dpl, access_options, flags_options) \

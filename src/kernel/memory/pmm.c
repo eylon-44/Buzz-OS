@@ -1,7 +1,7 @@
 // Physical Memory Manager // ~ eylon
 
-#include "pmm.h"
-#include "paging.h"
+#include <kernel/memory/pmm.h>
+#include <kernel/memory/paging.h>
 #include <kernel/memory/mm.h>
 #include <kernel/memory/mmlayout.h>
 #include <kernel/panic.h>

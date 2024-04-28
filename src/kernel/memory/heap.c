@@ -1,8 +1,8 @@
 // Kernel Heap Implementation // ~ eylon
 
-#include "heap.h"
-#include "vmm.h"
-#include "pmm.h"
+#include <kernel/memory/heap.h>
+#include <kernel/memory/vmm.h>
+#include <kernel/memory/pmm.h>
 #include <kernel/memory/mm.h>
 #include <kernel/memory/mmlayout.h>
 #include <libc/stdint.h>
@@ -194,8 +194,6 @@ void kfree(void* ptr)
 // {
 
 // }
-
-
 
 
 void init_kheap()

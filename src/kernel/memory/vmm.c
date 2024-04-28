@@ -1,8 +1,8 @@
 // Virtual Memory Manager // ~ eylon
 
-#include "vmm.h"
-#include "pmm.h"
-#include "paging.h"
+#include <kernel/memory/vmm.h>
+#include <kernel/memory/pmm.h>
+#include <kernel/memory/paging.h>
 #include <kernel/memory/mm.h>
 #include <kernel/memory/mmlayout.h>
 #include <kernel/process/pm.h>
@@ -36,7 +36,7 @@ static inline void load_pd(paddr_t pd_base) {
     asm volatile("mov %0, %%cr3" : : "r"(pd_base));
 }
 
-// Get the PD of the current running process
+// Get a physical address pointer of the PD of the current active process
 pde_t* vmm_get_pd() {
     return proc_ptd[pm_get_pid()];
 }
@@ -156,6 +156,16 @@ void vmm_detach_page(vaddr_t virt_base)
     invlpg(virt_base);
 }
 
+// Check if a page is mapped or not in a certain page directory; returns 1 for true and 0 for false
+int vmm_is_mapped(pde_t* pd, vaddr_t virt_base)
+{
+    pde_t* pde = (pde_t*) vmm_attach_page((paddr_t) pd) + MM_PDE_INDEX(virt_base);
+    pte_t* pte = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(virt_base); // [WARNING] this should not work
+    int is_mapped = pde->present && pte->present;
+    vmm_detach_page((vaddr_t) pde);
+
+    return is_mapped;
+}
 
 // Initiate the virtual memory manager; map the kernel into each process's PD
 void init_vmm()
@@ -251,8 +261,11 @@ void init_vmm()
         using the vmm_attach_page function. Also note, we can now use all of the 
         vmm's functions. */
 
-    /* map memory mapped IO [CAN DO THIS AFTER LOADING PD AND USING VMM_MAP_PAGE]*/
+    // map memory mapped IO
     vmm_map_page(pd, VGA_PHYS_MEM, VGA_VIRT_MEM, 1, 0, 0, 1);
+
+    // map the TSS
+    vmm_map_page(pd, pmm_get_page(), MM_TSS_START, 1, 0, 0, 1);
 
     // save [pd]
     proc_ptd[pm_get_pid()] = pd;
