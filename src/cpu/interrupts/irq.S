@@ -1,6 +1,7 @@
 // Interrupt Request Handler // ~ eylon
 
 .extern interrupt_handler
+.extern switch_to
 
 // The CPU does not push the interrupt number so we will have to do it ourselves.
 // Define for each interrupt an interrupt_handler_[X] function, where [X] is the interrupt number.
@@ -32,13 +33,21 @@
 // Restore the interrupted process, restore the stack to the state as the cpu gave it to us. 
 // Return to the interrupted code.
 common_interrupt_handler:
+    movl $20, switch_to      // reset switch to
     pushal                  // save all registers :: save the state of the interrupted process
     call interrupt_handler  // call the C function to handle the interrupt
-    popal                   // restore the registers :: restore the state of the interrupted process
 
-    addl $8, %esp           // iret expectes the stack to be the same as the time of the interrupt
-    sti                     // enable interrupts
-    iretl                   // return to the code that got interrupted
+    // Performe a task switch (load a different page directory) if necessary (switch_to is not 0)
+    movl switch_to, %eax
+    testl %eax, %eax
+    jz .return
+    movl %eax, %cr3
+
+    .return:
+        popal               // restore the registers :: restore the state of the interrupted process
+        addl $8, %esp       // iret expectes the stack to be the same as the time of the interrupt
+        sti                 // enable interrupts
+        iretl               // return to the code that got interrupted
 
 
 

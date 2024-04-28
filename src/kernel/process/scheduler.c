@@ -12,7 +12,11 @@
 squeue_t queue = { .thread_n=NULL, .count=0, .psum=0, .active=NULL };
 // Scheduler's sleeped tasks linked list
 static sleep_node_t* sleep_n = NULL;
-
+/* If not zero, the value in this variable will be loaded into the CR3 register before returning
+    back to the user space. It is set to 0 by default each time an interrupt occurs, and allow
+    the kernel to perform a context switch into  a certain process by loading the physical address
+    of its page directory into it. */
+size_t switch_to;
 
 /* ~~~ Utils ~~~ */
 
@@ -156,11 +160,11 @@ static void update_task()
 }
 
 // Perform a task switch into a given thread
-void sched_switch(UNUSED thread_t* t)
+void sched_switch(thread_t* t)
 {
-    // temp attach the current kstack and set ESP to it
-    // switch a page directory
-    // [before doing an iret change the stack]   
+    get_thread()->status = TS_READY;
+    t->status            = TS_ACTIVE;
+    switch_to            = t->cr3;
 }
 
 /* Add a thread to the end of the queue.

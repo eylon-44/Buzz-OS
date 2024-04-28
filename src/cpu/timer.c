@@ -11,7 +11,7 @@ static void (*callbacks[])() = { sched_tick };
 
 /* This function is being called uppon a timer interrupt;
     it calls all of the functions in the [callbacks] array. */
-static void timer_callback() {
+static void timer_callback(UNUSED int_data_t*) {
     for (size_t i = 0; i < sizeof(callbacks)/sizeof(callbacks[0]); i++) {
         callbacks[i]();
     }
