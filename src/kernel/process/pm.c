@@ -189,7 +189,6 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         .priority   = priority,                         // task's priority
         .entry      = (void (*)()) elfhdr.entry,        // process' entry function
         .exit_status= 0,                                // task's exit status
-        .force_exit = 0                                 // reset force exit
     };
 
     // Increment the child count of the parent
@@ -199,12 +198,12 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
     return sched_add_thread(thread);
 }
 
-// Kill a process
+/* Kill a process.
+    Set its status to DONE and let the scheduler handle the rest. */
 void pm_kill(thread_t* t)
 {
-    // If it's the current process who is being killed, switch a process
-    vmm_del_dir((pde_t*) t->cr3);       // delete the page directory of the process
-    sched_rem_thread(t);                // remove the thread from the scheduler's queue; function sets the status to DONE
+    sched_set_status(t, TS_DONE);
+    sched_switch_next();
 }
 
 // Initiate the initiation process

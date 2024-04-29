@@ -158,9 +158,9 @@ void vmm_detach_page(vaddr_t virt_base)
 }
 
 // Delete a page directory
-void vmm_del_dir(pde_t* pd)
+void vmm_del_dir(paddr_t pd)
 {
-    pde_t* pd_p = (pde_t*) vmm_attach_page((paddr_t) pd); 
+    pde_t* pd_v = (pde_t*) vmm_attach_page(pd);
 
     // Go over all the page directory entries
     for (int i = 0; i < MM_PD_ENTRIES; i++)
@@ -168,8 +168,8 @@ void vmm_del_dir(pde_t* pd)
         pte_t* pt;
 
         // If PDE is present, seek for present PTEs inside it
-        if (pd_p[i].present) {
-            pt = vmm_attach_page((paddr_t) MM_GET_PT(pd+i));    // map the PDE's page table in order to access it
+        if (pd_v[i].present) {
+            pt = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT((pde_t*) pd+i));  // map the PDE's page table in order to access it
 
             // Go over all the page directory entries
             for (int k = 0; k < MM_PT_ENTRIES; k++)
@@ -181,12 +181,12 @@ void vmm_del_dir(pde_t* pd)
             }
 
             vmm_detach_page((vaddr_t) pt);                      // free the temporarly attached page
-            pmm_free_page((paddr_t) MM_GET_PT(pd+i));           // free the physical page of the page table
+            pmm_free_page((paddr_t) MM_GET_PT((pde_t*) pd+i));  // free the physical page of the page table
         }
     }
 
-    vmm_detach_page((vaddr_t) pd_p);                            // free the temporarly attached page
-    pmm_free_page(pd);                                          // free the page directory
+    vmm_detach_page((vaddr_t) pd_v);                            // free the temporarly attached page
+    pmm_free_page((paddr_t) pd);                                // free the page directory
 }
 
 // Check if a page is mapped or not in a certain page directory; returns 1 for true and 0 for false

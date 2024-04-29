@@ -44,9 +44,9 @@ void sched_tick();
 void sched_sleep(int pid, int tid, size_t ticks);
 void sched_switch(thread_t* t);
 thread_t* sched_add_thread(thread_t t);
-void sched_rem_thread(thread_t* t);
 void sched_set_status(thread_t* t, tstatus_t status);
 void sched_set_priority(thread_t* t, int priority);
+void sched_switch_next();
 void init_scheduler();
 
 #endif

@@ -34,13 +34,11 @@ struct thread {
     uint32_t cr3;           // CR3 register - address space
 
     tstatus_t status;       // thread status
-    uint32_t ticks;         // cpu ticks while the thread is active
+    int ticks;              // cpu ticks while the thread is active
     int priority;           // thread's scheduler priority
 
     void (*entry)();        // thread entry function
     uint8_t exit_status;    // exit status
-
-    int force_exit;         // set this non-0 to force exit of a task
 };
 
 int pm_get_pid();

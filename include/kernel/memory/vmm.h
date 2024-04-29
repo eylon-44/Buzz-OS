@@ -14,6 +14,6 @@ void vmm_unmap_page(pde_t* pd, vaddr_t virt_base);
 vaddr_t vmm_attach_page(paddr_t phys_base);
 void vmm_detach_page(vaddr_t virt_base);
 int vmm_is_mapped(pde_t* pd, vaddr_t virt_base);
-void vmm_del_dir(pde_t* pd);
+void vmm_del_dir(paddr_t pd);
 
 #endif

@@ -134,6 +134,44 @@ void sched_sleep(int pid, int tid, size_t ticks)
 
 /* ~~~ Task Management ~~~ */
 
+/* Remove a thread from the queue.
+    Takes a pointer to the thread structure in the queue.
+    The function assumes that [len(queue.thread_n)>1] while being called. */
+static void rem_thread(thread_t* t)
+{
+    thread_node_t* node = queue.thread_n;
+    thread_node_t* tmp;
+
+    // Set the status of the task to DONE and by that remove its priority from the queue's priority sum
+    sched_set_status(t, TS_DONE);
+
+    // Get the node the comes before the node of the thread we would like to remove
+    while (node->next != NULL) {
+        if (&node->next->thread == t) {
+            goto remove;            // found the thread, go to the code that removes it 
+        }
+        node = node->next;          // step the queue
+    }
+    // If reached this line, there is no such thread on the list, abort
+    return;
+
+    // Remove the node from the queue
+    remove:
+        tmp = node;
+
+        // Remove the node from the queue
+        node->next = node->next->next;
+
+        // Delete the address space of the process
+        vmm_del_dir(tmp->thread.cr3);
+
+        // Deallocate the node from the heap
+        kfree(tmp->next);
+
+    // Decrement the queue count
+    queue.count--;
+}
+
 // Update currently running task on scheduler tick
 static void update_task()
 {
@@ -143,28 +181,43 @@ static void update_task()
     // If the current thread`s ticks are less than or equal to 0, perform a task switch
     if (t->ticks <= 0)
     {
-        t->status = TS_READY;       // set current thread to READY (was ACTIVE)
+        sched_set_status(t, TS_READY);  // set current thread to READY (was ACTIVE)
 
-        /* Step the queue until finding a READY thread to run.
+        /* Step the queue until finding a READY thread to run. Remove all DONE threads.
             We can be sure that the loop won't loop forever as if there is no other
             READY thread to execute it will execute again the thread we have just switched from. */
-        do {
+        for (;;) {
             step_queue();
-        } while(get_thread()->status == TS_READY);
-        
-        // Switch to that thread and set it as ACTIVE
-        sched_switch(get_thread());
-        get_thread()->status = TS_ACTIVE;
-        get_thread()->ticks = get_time_slice();
+            if (get_thread()->status == TS_DONE) rem_thread(get_thread());
+            else if (get_thread()->status == TS_READY) break;
+        }
+
+        sched_switch(get_thread());             // switch to that thread (function sets it as ACTIVE)
+        get_thread()->ticks = get_time_slice(); // set the execution time slice of the thread
     }
 }
 
 // Perform a task switch into a given thread
 void sched_switch(thread_t* t)
 {
-    get_thread()->status = TS_READY;
-    t->status            = TS_ACTIVE;
-    switch_to            = t->cr3;
+    sched_set_status(get_thread(), TS_READY);
+    sched_set_status(t, TS_ACTIVE);
+    switch_to = t->cr3;
+}
+
+// Perform a task switch into the next READY thread
+void sched_switch_next()
+{
+    sched_set_status(get_thread(), TS_READY);           // set the status of the current thread to READY
+
+    // Step the queue until finding a READY thread that we can execute
+    do {
+        step_queue();
+    }
+    while (get_thread()->status != TS_READY);
+
+    sched_set_status(get_thread(), TS_ACTIVE);          // set the status of the thread we are going to switch to to ACTIVE
+    switch_to = get_thread()->cr3;                      // set switch_to to that thread
 }
 
 /* Add a thread to the end of the queue.
@@ -193,44 +246,12 @@ thread_t* sched_add_thread(thread_t t)
     return &node->next->thread;
 }
 
-/* Remove a thread from the queue.
-    Takes a pointer to the thread structure in the queue.
-    The function assumes that [len(queue.thread_n)>1] while being called. */
-void sched_rem_thread(thread_t* t)
-{
-    thread_node_t* node = queue.thread_n;
-    thread_node_t* tmp;
-
-    // Set the status of the task to DONE and by that remove its priority from the queue's priority sum
-    sched_set_status(t, TS_DONE);
-
-    // Get the node the comes before the node of the thread we would like to remove
-    while (node->next != NULL) {
-        if (&node->next->thread == t) {
-            goto remove;            // found the thread, go to the code that removes it 
-        }
-        node = node->next;          // step the queue
-    }
-    // If reached this line, there is no such thread on the list, abort
-    return;
-
-    // Remove the node from the queue
-    remove:
-        tmp = node;
-
-        // Remove the node from the queue
-        node->next = node->next->next;
-
-        // Deallocate the node from the heap
-        kfree(tmp->next);
-
-    // Decrement the queue count
-    queue.count--;
-}
-
 // Update the status of the given thread
 void sched_set_status(thread_t* t, tstatus_t status)
 {
+    /* Status DONE cannot be changed. */
+    if (t->status == TS_DONE) return;
+
     /* If was READY or ACTIVE and is now changed to something that is neither READY nor ACTIVE,
         exclude the thread's priority from the queue's priority sum. */
     if ((t->status | TS_ACTIVE | TS_READY)
