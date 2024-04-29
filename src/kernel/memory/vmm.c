@@ -90,7 +90,7 @@ int vmm_map_page(pde_t* pd, paddr_t phys_base, vaddr_t virt_base,
 void vmm_unmap_page(pde_t* pd, vaddr_t virt_base)
 {
     pde_t* pde = (pde_t*) vmm_attach_page((paddr_t) pd) + MM_PDE_INDEX(virt_base);
-    pte_t* pte = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(virt_base); 
+    pte_t* pte = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT(pde)) + MM_PTE_INDEX(virt_base); 
 
     // if PDE is not present, the page is not mapped so this function can't continue
     if (!pde->present) goto exit;
@@ -117,6 +117,7 @@ void vmm_unmap_page(pde_t* pd, vaddr_t virt_base)
     // free temporary attached pages and return
     exit:
         vmm_detach_page((vaddr_t) pde);
+        vmm_detach_page((vaddr_t) pte);
         return;
 }
 
@@ -160,10 +161,12 @@ void vmm_detach_page(vaddr_t virt_base)
 int vmm_is_mapped(pde_t* pd, vaddr_t virt_base)
 {
     pde_t* pde = (pde_t*) vmm_attach_page((paddr_t) pd) + MM_PDE_INDEX(virt_base);
-    pte_t* pte = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(virt_base); // [WARNING] this should not work
+    pte_t* pte = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT(pde)) + MM_PTE_INDEX(virt_base); 
+    
     int is_mapped = pde->present && pte->present;
-    vmm_detach_page((vaddr_t) pde);
 
+    vmm_detach_page((vaddr_t) pde);
+    vmm_detach_page((vaddr_t) pte);
     return is_mapped;
 }
 
