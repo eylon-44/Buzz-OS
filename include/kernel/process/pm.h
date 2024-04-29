@@ -37,9 +37,10 @@ struct thread {
     uint32_t ticks;         // cpu ticks while the thread is active
     int priority;           // thread's scheduler priority
 
-    // [TODO] argv argc (pass through the stack)
     void (*entry)();        // thread entry function
     uint8_t exit_status;    // exit status
+
+    int force_exit;         // set this non-0 to force exit of a task
 };
 
 int pm_get_pid();

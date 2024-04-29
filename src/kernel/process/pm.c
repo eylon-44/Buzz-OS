@@ -39,9 +39,8 @@ static inline int gen_tid()
 int pm_get_pid() {
     return 0;
 }
-/* I am not sure how to store process ids. One way to have for each thread an int PID (TGID) and an int TID.
-    Another is to have a struct or just a single int to hold both. */
 
+// Create a new process process
 thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 {
     /* Merge the kernel thread with the calling thread */
@@ -189,7 +188,8 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         .ticks      = 0,                                // ACTIVE time left; set by the scheduler
         .priority   = priority,                         // task's priority
         .entry      = (void (*)()) elfhdr.entry,        // process' entry function
-        .exit_status= 0                                 // task's exit status
+        .exit_status= 0,                                // task's exit status
+        .force_exit = 0                                 // reset force exit
     };
 
     // Increment the child count of the parent
@@ -197,6 +197,14 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 
     // Queue the task in the scheduler's queue and return it
     return sched_add_thread(thread);
+}
+
+// Kill a process
+void pm_kill(thread_t* t)
+{
+    // If it's the current process who is being killed, switch a process
+    vmm_del_dir((pde_t*) t->cr3);       // delete the page directory of the process
+    sched_rem_thread(t);                // remove the thread from the scheduler's queue; function sets the status to DONE
 }
 
 // Initiate the initiation process
