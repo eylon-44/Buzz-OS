@@ -1,5 +1,6 @@
 // Interrupt Request Handler // ~ eylon
 
+.section .text
 .extern interrupt_handler
 .extern switch_to
 

@@ -1,5 +1,6 @@
 // Kernel Entry // ~ eylon
 
+.section .text
 .code32
 .global _start
 .extern kernel_main

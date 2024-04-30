@@ -5,9 +5,6 @@
 
 #include <cpu/interrupts/isr.h>
 
-// Interrupt number to invoke a syscall
-#define SYSCALL_INT 92  // 0x5C (SysCall)
-
 // Number of syscalls
 #define SYSCALL_NUM 256
 

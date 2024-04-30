@@ -3,6 +3,7 @@
 #include <kernel/syscall/syscall.h>
 #include <cpu/interrupts/isr.h>
 #include <libc/stddef.h>
+#include <libc/sys/syscall.h>
 
 // Array of syscall handlers arranged by their syscall number
 static syscall_t syscall_handlers[SYSCALL_NUM];
@@ -24,7 +25,7 @@ static void common_syscall_handler(int_data_t* param)
 void init_syscall()
 {
     // Set the syscall interrupt handler
-    set_interrupt_handler(SYSCALL_INT, common_syscall_handler);
+    set_interrupt_handler(SYS_int, common_syscall_handler);
 
     // Initiate the syscall handlers array with NULL pointers
     for (int i = 0; i < SYSCALL_NUM; i++) {
