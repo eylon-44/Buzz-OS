@@ -36,15 +36,15 @@ static inline int gen_tid()
 }
 
 // Get the PID of the currently active process
-int pm_get_pid() {
-    return 0;
+inline int pm_get_pid() {
+    return sched_get_active()->pid;
 }
 
-// Create a new process process
+// Create a new process
 thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 {
     /* Merge the kernel thread with the calling thread */
-    __asm__ volatile ("sti");                                   // enable interrupts
+    //__asm__ volatile ("sti");                                   // enable interrupts
 
 
     /* Create a new page directory for the process */
@@ -55,17 +55,20 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
     pd_v = (pde_t*) vmm_attach_page((paddr_t) vmm_get_pd());    // map the current page directory as well so we can access it
 
     memset(new_pd_v, 0, MM_PAGE_SIZE);                          // initiate the new page directory with zeros
-    memcpy(new_pd_v + MM_PD_ENTRIES*(3/4),                      // copy the kernel space mapping into the new page directory
-        pd_v + MM_PD_ENTRIES*(3/4),
-        MM_PAGE_SIZE*(1/4));
-
-    vmm_detach_page((vaddr_t) pd_v);                            // free the temporarily attached page
+    
+    memcpy(new_pd_v + MM_PD_ENTRIES * 3/4,                      // copy the kernel space mapping into the new page directory
+        pd_v + MM_PD_ENTRIES * 3/4,
+        MM_PD_ENTRIES*sizeof(pde_t) * 1/4);
 
     vmm_map_page(new_pd_v, pmm_get_page(),                      // allocate and map a kernel stack for the new process
         MM_ALIGN_DOWN(MM_KSTACK_TOP), 1, 0, 0, 0);
-    /* !!! I am pretty sure that the last 4mb of self refrenced mapping isn't correct after a copy because 
-        it includes pages from the user space. FIX THIS!!! */
 
+    // Remove the user space part (3/4 - until 3GB) of the last 4MB of self refrenced mapping
+    for (size_t vbase = MM_PTD_START; vbase < MM_PTD_START + (MB(4) * 3/4); vbase += MM_PAGE_SIZE) {
+        vmm_unmap_page(new_pd_p, vbase);
+    }
+
+    vmm_detach_page((vaddr_t) new_pd_v);                        // free the temporarily attached page that held the current page directory
 
     /* Load and map the process into memory */
     paddr_t elfload_p; vaddr_t elfload_v;
@@ -73,8 +76,8 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
     size_t filesz UNUSED;
 
     // Allocate and map a scratch space to load the ELF file into
-    elfload_p = pmm_get_page();
-    elfload_v = vmm_attach_page(elfload_p);
+    elfload_p = pmm_get_page();                                 // physical address of scratch space
+    elfload_v = vmm_attach_page(elfload_p);                     // virtual address of scratch space
 
     // Load the first page of the ELF file into a scratch space and read the elfheader
     pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset);
@@ -88,7 +91,10 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         || elfhdr.identify.abi != 0             // System-V
         || elfhdr.machine != 3)                 // x86
     {
-        // [TODO] free resources
+        // Free resources and return
+        pmm_free_page(elfload_p);
+        vmm_detach_page(elfload_v);
+        // [TODO] free: kstack, pd_p, pd_v
         return NULL;   // [TODO] ERRNUM
     }
 
@@ -98,9 +104,15 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
     // Read and load all segments
     for (size_t i = 0; i < elfhdr.phnum; i++)
     {
-        size_t ph_offset, load_offset;
-        prgheader_t prgheader;
-        size_t start_offset, copy_size, end_offset, copy_dest;
+        size_t ph_offset;           // program header offset in the file
+        size_t load_offset;         // offset in file to load into the scratch space (elfload_v)
+        prgheader_t prgheader;      // program header of current segment
+        size_t start_offset;        // offset in file to start loading the segment's data from
+        size_t end_offset;          // offset in file to the end of the segment's data
+        size_t copy_dest;           // virtual address to load the segment's data into in the user address space
+        size_t copy_size;           // how many bytes to copy from the scratch space to the user address space
+        paddr_t dest_p;             // copy destination physical page
+        vaddr_t dest_v;             // copy destination virtual page
 
         // Offset of the program header inside the file
         ph_offset = elfhdr.phoff + elfhdr.phsize * i;
@@ -136,29 +148,37 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
                 copy_size = end_offset - start_offset;
             }
 
-            // If the segment's page is not mapped already, allocate and map it
-            if (!vmm_is_mapped(new_pd_p, MM_ALIGN_DOWN(copy_dest))) {
-                vmm_map_page(new_pd_p, pmm_get_page(),
+            // If the segment's page is mapped already, get the physical page of it
+            if ( vmm_is_mapped(new_pd_p, MM_ALIGN_DOWN(copy_dest)) ) {
+                dest_p = vmm_get_physical(new_pd_p, MM_ALIGN_DOWN(copy_dest));
+            }
+            // If it is not, allocate a physical page for it and map it in the page directory of the new process
+            else {
+                dest_p = pmm_get_page();
+
+                vmm_map_page(new_pd_p, dest_p,
                     MM_ALIGN_DOWN(copy_dest), prgheader.flags & 2,    // writable
                     1, 0, 0);
             }
+            // Temporarily attach the physical page so we can write to it; add the copy_dest offset to it
+            dest_v = vmm_attach_page(dest_p) + (copy_dest % MM_PAGE_SIZE);
 
             /* Copy the segment's data into its destination */
             // Data only
             if (copy_size <= prgheader.filesz) {
-                memcpy((void*) copy_dest, (void*) (elfload_v + (start_offset-load_offset)), copy_size);
+                memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), copy_size);
             }
             // BSS only
             else if (prgheader.filesz <= 0) {
-                memset((void*) copy_dest, 0, copy_size);
+                memset((void*) dest_v, 0, copy_size);
             }
             // Data & BSS
             else {
                 // Copy data
-                memcpy((void*) copy_dest, (void*) (elfload_v + (start_offset-load_offset)), prgheader.filesz);
+                memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), prgheader.filesz);
 
                 // Zero out BSS
-                memset((void*) (copy_dest + prgheader.filesz), 0, copy_size - prgheader.filesz);
+                memset((void*) (dest_v + prgheader.filesz), 0, copy_size - prgheader.filesz);
             }
 
             prgheader.filesz -= copy_size;
@@ -166,6 +186,7 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
             load_offset     += MM_PAGE_SIZE;
             start_offset    += copy_size;
             copy_dest       += copy_size;
+            vmm_detach_page(dest_v);
         }
     }
 
@@ -203,7 +224,9 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 void pm_kill(thread_t* t)
 {
     sched_set_status(t, TS_DONE);
-    sched_switch_next();
+    if (t == sched_get_active()) {
+        sched_switch_next();
+    }
 }
 
 // Initiate the initiation process
@@ -211,27 +234,22 @@ static void init_init()
 {
     /* As all of the function are implemented with the assumption that there is already at least one
         process in the queue (which should be the init process), we will have to manipulate them by
-        creating a dummy process. That way we could use these function in order to create the actual
-        first process - the init process. */
+        using the dummy process created by the VMM in init_vmm and already stored in the queue for us.
+        By using this dummy we gain access to all process related functions that will help us to create
+        the actual first process - the init process. The dummy represents the process of the current
+        init context, that holds no user process, and therefore should be deleted after initiation. */
 
-    thread_t* init_t;                       // init thread
-    thread_node_t dummy = { .next=NULL };   // dummy process
-    extern squeue_t queue;                  // extern the scheduler's queue to manipulate it for the init process
+    thread_t* init_t;                                                       // init thread
+    extern sched_queue_t queue;                                             // extern the scheduler's queue to manipulate it for the init process
+    
+    // Load the init process
+    init_t = pm_load(&queue.active->thread, 512, 20); // DEBUG SECTOR NUMBER
 
-    // Set the dummy process
-    queue.active = &dummy;
+    // Remove the dummy as being the parnet
+    init_t->parnet = NULL;
 
-    // Load the process into memory
-    init_t = pm_load(NULL, 0, 20); // ??? [TODO]
-
-    /* The [pm_load] function uses the [sched_add_thread] function which places our [init_t]
-        thread at the end of the queue - right after the dummy process. We can now delete the
-        dummy process and replace it with the init process. */
-    queue.thread_n = queue.active->next;
-    queue.active   = queue.thread_n;
-
-    // Switch to the init process
-    sched_switch(init_t);
+    // Switch to the init process which should be located right after the dummy in the queue
+    sched_switch_next();
 }
 
 void init_pm()

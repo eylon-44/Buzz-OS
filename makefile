@@ -82,6 +82,9 @@ $(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN)
 	# load the kernel into the second sector
 	dd if=${KRNL_BIN} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=$(BOOT_SECTORS) conv=notrunc count=${KRNL_SECTORS}
 
+	# debug
+	dd if=test/test of=${DISK_IMG} bs=${SECTOR_SIZE} seek=512 conv=notrunc count=10
+
 	@echo "\n. . . DONE . . .\n"
 
 #---------------#

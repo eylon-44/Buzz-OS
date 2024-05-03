@@ -31,14 +31,14 @@ static void read_sector(void* dest, uint32_t lba)
 
 /* Read [size] bytes from location [disk_offset] in disk into [dest]
     - might read more data than requested
-    - [disk_offset] should be [PATA_SECTOR_SIZE] (512) bytes aligned
-    - [size] should be [PATA_SECTOR_SIZE] (512) bytes aligned 
+    - [disk_offset] is the sector offset in the disk; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
+    - [size] is the amount of sectors to load; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     - [dest] should be 4 bytes aligned */
 void pata_read_disk(void* dest, uint32_t size, uint32_t disk_offset)
 {
     uint8_t* start = (uint8_t*) dest; 
     uint8_t* end   = start + size;
-    uint32_t lba = disk_offset / PATA_SECTOR_SIZE;
+    uint32_t lba = disk_offset;
 
     for (; start < end; start += PATA_SECTOR_SIZE, lba++) {
         read_sector(start, lba);

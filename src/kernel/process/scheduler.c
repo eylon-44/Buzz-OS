@@ -9,18 +9,14 @@
 #include <libc/stddef.h>
 
 // Scheduler's thread queue
-squeue_t queue = { .thread_n=NULL, .count=0, .psum=0, .active=NULL };
+sched_queue_t queue = { .active=NULL, .thread_n=NULL, .count=0, .psum=0 };
 // Scheduler's sleeped tasks linked list
 static sleep_node_t* sleep_n = NULL;
-/* If not zero, the value in this variable will be loaded into the CR3 register before returning
-    back to the user space. It is set to 0 by default each time an interrupt occurs, and allow
-    the kernel to perform a context switch into  a certain process by loading the physical address
-    of its page directory into it. */
-size_t switch_to;
+
 
 /* ~~~ Utils ~~~ */
 
-// Step the index in the queue
+// Step the queue; change the active thread
 static inline void step_queue()
 {
     queue.active = queue.active->next;
@@ -28,7 +24,7 @@ static inline void step_queue()
 }
 
 // Get the currently active thread
-static inline thread_t* get_thread()
+inline thread_t* sched_get_active()
 {
     return &queue.active->thread;
 }
@@ -50,13 +46,14 @@ static thread_t* get_thread_by_id(int pid, int tid)
     return NULL;
 }
 
-// Calculate time slice in ticks for the current task to execute
-static size_t get_time_slice()
+// Calculate and set the time slice in ticks for the active thread
+static void set_active_time_slice()
 {
-    size_t ticks = SCHED_CYCLE_TICKS * (get_thread()->priority / queue.psum);
+    size_t ticks = SCHED_CYCLE_TICKS * (sched_get_active()->priority / queue.psum);
     // Ensure that the task gets at the minimum amount of execution time
     if (ticks < SCHED_MIN_TICKS) ticks = SCHED_MIN_TICKS;
-    return ticks;
+
+    sched_get_active()->ticks = ticks;
 }
 
 
@@ -125,8 +122,8 @@ void sched_sleep(int pid, int tid, size_t ticks)
         get_thread_by_id(pid, tid)->status = TS_BLOCKED;
 
         // If it is the current running process that has asked to sleep, switch a task
-        if (get_thread()->status == TS_BLOCKED) {
-            sched_switch(get_thread());
+        if (sched_get_active()->status == TS_BLOCKED) {
+            sched_switch(sched_get_active());
         }
         return;
 }
@@ -175,57 +172,69 @@ static void rem_thread(thread_t* t)
 // Update currently running task on scheduler tick
 static void update_task()
 {
-    thread_t* t = get_thread(); // current thread
+    thread_t* t = sched_get_active(); // current thread
     t->ticks--;                 // tick
 
-    // If the current thread`s ticks are less than or equal to 0, perform a task switch
-    if (t->ticks <= 0)
-    {
-        sched_set_status(t, TS_READY);  // set current thread to READY (was ACTIVE)
-
-        /* Step the queue until finding a READY thread to run. Remove all DONE threads.
-            We can be sure that the loop won't loop forever as if there is no other
-            READY thread to execute it will execute again the thread we have just switched from. */
-        for (;;) {
-            step_queue();
-            if (get_thread()->status == TS_DONE) rem_thread(get_thread());
-            else if (get_thread()->status == TS_READY) break;
-        }
-
-        sched_switch(get_thread());             // switch to that thread (function sets it as ACTIVE)
-        get_thread()->ticks = get_time_slice(); // set the execution time slice of the thread
+    // If the current thread`s ticks are less than or equal to 0, switch to the next READY thread in the queue
+    if (t->ticks <= 0) {
+        sched_switch_next();
     }
 }
 
-// Perform a task switch into a given thread
+// Setup a task switch into a given thread
 void sched_switch(thread_t* t)
 {
-    sched_set_status(get_thread(), TS_READY);
+    thread_node_t* node = queue.thread_n;
+
+    sched_set_status(sched_get_active(), TS_READY);
     sched_set_status(t, TS_ACTIVE);
-    switch_to = t->cr3;
+
+    // Set the thread as the active thread
+    while (node != NULL && node->thread.status != TS_ACTIVE) {
+        node = node->next;
+    }
+    if (node != NULL) {
+        queue.active = node;
+    }
+
 }
 
-// Perform a task switch into the next READY thread
+// Setup a task switch into the next READY thread
 void sched_switch_next()
 {
-    sched_set_status(get_thread(), TS_READY);           // set the status of the current thread to READY
+    sched_set_status(sched_get_active(), TS_READY);   // set current thread to READY (was ACTIVE)
 
-    // Step the queue until finding a READY thread that we can execute
-    do {
+    /* Step the queue until finding a READY thread to run. Remove all DONE threads.
+        We can be sure that this loop won't last forever as if there is no other
+        READY thread to execute, the thread we have just switched from will execute again. */
+    for (;;) {
+        // Step the queue; change the active thread
         step_queue();
-    }
-    while (get_thread()->status != TS_READY);
 
-    sched_set_status(get_thread(), TS_ACTIVE);          // set the status of the thread we are going to switch to to ACTIVE
-    switch_to = get_thread()->cr3;                      // set switch_to to that thread
+        // Check if the active thread should be terminated
+        if (sched_get_active()->status == TS_DONE) {
+            rem_thread(sched_get_active());
+        }
+        // Check if the active thread is READY to run
+        else if (sched_get_active()->status == TS_READY) {
+            break;
+        }
+    }
+
+    sched_set_status(sched_get_active(), TS_ACTIVE);      // set the status of the active thread to ACTIVE
+    set_active_time_slice();                        // set the execution time slice for it
 }
 
 /* Add a thread to the end of the queue.
     Takes a thread data structure and returns a pointer to the new thread in the queue.
-    The function assumes that [queue.active!=NULL] while being called. */
+    The function assumes that [queue.active!=NULL] while being called.
+    Function aborts for thread with status that is not TS_NEW. */
 thread_t* sched_add_thread(thread_t t)
 {
     thread_node_t* node = queue.active;
+
+    // Abort if thread is not new
+    if (t.status != TS_NEW) return NULL;
 
     // Get the last node from the queue
     while (node->next != NULL) {
@@ -246,7 +255,7 @@ thread_t* sched_add_thread(thread_t t)
     return &node->next->thread;
 }
 
-// Update the status of the given thread
+// Update the status of a given thread; updates the queue's priority sum accordingly
 void sched_set_status(thread_t* t, tstatus_t status)
 {
     /* Status DONE cannot be changed. */
@@ -254,15 +263,15 @@ void sched_set_status(thread_t* t, tstatus_t status)
 
     /* If was READY or ACTIVE and is now changed to something that is neither READY nor ACTIVE,
         exclude the thread's priority from the queue's priority sum. */
-    if ((t->status | TS_ACTIVE | TS_READY)
-        && !(status | TS_ACTIVE | TS_READY)) 
+    if ((t->status == TS_ACTIVE || t->status == TS_READY)
+        && !(status == TS_ACTIVE || status == TS_READY)) 
     {
         queue.psum -= t->priority;
     }
     /* If wasn't READY or ACTIVE and is now changed to something that is READY or ACTIVE,
         add the thread's priority to the queue's priority sum. */
-    else if (!(t->status | TS_ACTIVE | TS_READY)
-        && (status | TS_ACTIVE | TS_READY)) 
+    else if (!(t->status == TS_ACTIVE || t->status == TS_READY)
+        && (status == TS_ACTIVE || status == TS_READY)) 
     {
         queue.psum += t->priority;
     }
@@ -271,7 +280,7 @@ void sched_set_status(thread_t* t, tstatus_t status)
     t->status = status;
 }
 
-// Update the priority of the given thread
+// Update the priority of a given thread
 void sched_set_priority(thread_t* t, int priority)
 {
     // If the thread is ACTIVE or READY, update the queue's priority sum accordingly

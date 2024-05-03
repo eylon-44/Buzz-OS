@@ -6,13 +6,14 @@
 #include <kernel/memory/mm.h>
 #include <kernel/memory/mmlayout.h>
 #include <kernel/process/pm.h>
+#include <kernel/process/scheduler.h>
 #include <drivers/screen.h>
 #include <libc/string.h>
 #include <libc/stdint.h>
 
-/* Pointer to an array of 1024 PDEs, or a single PD.
-    This pointer holds the base address of the PD-per-process list */
-pde_t* proc_ptd[MM_PD_ENTRIES]; // [HOLUP] do I really need this? can't just each process point to its own pd?
+/* The physical address of the init page directory (the one that is created in the vmm_init function)
+    should be loaded into this variable at the end of the vmm_init function. */
+thread_node_t init_thread_node;
 
 // Start and end addresses of the kernel set by the linker
 extern char _vstart;
@@ -37,8 +38,8 @@ static inline void load_pd(paddr_t pd_base) {
 }
 
 // Get a physical address pointer of the PD of the current active process
-pde_t* vmm_get_pd() {
-    return proc_ptd[pm_get_pid()];
+inline pde_t* vmm_get_pd() {
+    return (pde_t*) sched_get_active()->cr3;
 }
 
 
@@ -202,6 +203,18 @@ int vmm_is_mapped(pde_t* pd, vaddr_t virt_base)
     return is_mapped;
 }
 
+paddr_t vmm_get_physical(pde_t* pd, vaddr_t virt_base)
+{
+    pde_t* pde = (pde_t*) vmm_attach_page((paddr_t) pd) + MM_PDE_INDEX(virt_base);
+    pte_t* pte = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT(pde)) + MM_PTE_INDEX(virt_base); 
+
+    paddr_t base_p = MM_GET_PF(pte);
+
+    vmm_detach_page((vaddr_t) pde);
+    vmm_detach_page((vaddr_t) pte);
+    return base_p;
+}
+
 // Initiate the virtual memory manager; map the kernel into each process's PD
 void init_vmm()
 {
@@ -214,39 +227,36 @@ void init_vmm()
     paddr_t kstart_p = MM_ALIGN_DOWN(((size_t) &_pstart));
     paddr_t kend_p   = MM_ALIGN_UP((size_t) &_pend);
 
-    /* FOR NOW we can keep a list of pointers for the PDs but LATER when we have process structures,
-        keep the PD address in the structure
-    */
 
-    // allocate a page to hold the first page directory
+    // Allocate a page to hold the first page directory
     pde_t* pd = (pde_t*) pmm_get_page();
-    // initiate it with zeros
+    // Initiate it with zeros
     memset((void*) pd, 0, MM_PAGE_SIZE);
 
 
-    /* map the kernel's code and data into [pd] using the linker labels.
+    /* Map the kernel's code and data into [pd] using the linker labels.
         map virtual [kstart_v]-[kend_v] to physical [kstart_p]-[kend_p]. */
     for (size_t p = kstart_p, v = kstart_v;
             (p < kend_p) && (v < kend_v);
             p += MM_PAGE_SIZE, v += MM_PAGE_SIZE)
     {
-        // find the PDE
+        // Dind the PDE
         pde_t* pde = (pde_t*) pd + MM_PDE_INDEX(v);
         pte_t* pte;
         
-        // if there is no page table in that area already create an empty one
+        // If there is no page table in that area already create an empty one
         if (!pde->present) {
             *pde = pde_create(pmm_get_page(), 1, 0, 0, MM_AVL_PDE_KEEP);
             memset(MM_GET_PT(pde), 0, MM_PAGE_SIZE);
         }
 
-        // find and set the PTE
+        // Find and set the PTE
         pte  = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(v);
         *pte = pte_create(p, 1, 0, 0, 1);
     }
     
 
-    /* create empty page tables for the rest of the kernel space in [pd].
+    /* Create empty page tables for the rest of the kernel space in [pd].
         create page tables to cover the area from [MM_MMIO_START] to [MM_VIRT_TOP]. */
     for (size_t v = MM_ALIGN_4MB_DOWN(MM_MMIO_START); v != MM_ALIGN_4MB_UP(MM_VIRT_TOP); v += MM_EXT_PAGE_SIZE)
     {
@@ -261,7 +271,7 @@ void init_vmm()
         memset(MM_GET_PT(pde), 0, MM_PAGE_SIZE);
     }
 
-    /* map the last 4MB of memory (from [MM_PTD_START] to [MM_VIRT_TOP]) to all present page 
+    /* Map the last 4MB of memory (from [MM_PTD_START] to [MM_VIRT_TOP]) to all present page 
         tables of current PD. [pi] is the page table index in the PD that should be mapped 
         to virtual address [v]. */
     for (size_t v = MM_PTD_START, pi = 0; v != MM_ALIGN_UP(MM_VIRT_TOP); v += MM_PAGE_SIZE, pi++)
@@ -280,7 +290,7 @@ void init_vmm()
         *pte = pte_create((paddr_t) MM_GET_PT(pde_to_map), 1, 0, 0, 1);
     }
 
-    /* map the entry stack; assuming the current stack's size is not over 4KB */
+    /* Map the entry stack; assuming the current stack's size is not over 4KB */
     {
         pde_t* pde = (pde_t*) pd + MM_PDE_INDEX(MM_KSTACK_TOP);
         pte_t* pte = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(MM_KSTACK_TOP);
@@ -288,7 +298,7 @@ void init_vmm()
     }
 
 
-    // switch to [pd]
+    // Switch to [pd]
     load_pd((paddr_t) pd);
 
     /* NOTE: we can't use [pd] directly anymore as it points to the physical address 
@@ -296,12 +306,20 @@ void init_vmm()
         using the vmm_attach_page function. Also note, we can now use all of the 
         vmm's functions. */
 
-    // map memory mapped IO
+    // Map memory mapped IO
     vmm_map_page(pd, VGA_PHYS_MEM, VGA_VIRT_MEM, 1, 0, 0, 1);
 
-    // map the TSS
+    // Map the TSS
     vmm_map_page(pd, pmm_get_page(), MM_TSS_START, 1, 0, 0, 1);
 
-    // save [pd]
-    proc_ptd[pm_get_pid()] = pd;
+    /* Create a dummy process to represent this context and place it in the scheduler's queue */
+    extern sched_queue_t queue;
+
+    init_thread_node.next          = NULL;          // the dummy is set as the first and last thread in the queue
+    init_thread_node.thread.ticks  = -1;            // will cause the shceduler to switch from the dummy on a timer interrupt
+    init_thread_node.thread.status = TS_DONE;       // will cause the scheduler to delete the dummy completely
+    init_thread_node.thread.cr3    = (size_t) pd;   // used by the scheduler to delete the current address space and by the vmm to access this page directory
+
+    queue.thread_n = &init_thread_node;
+    queue.active   = &init_thread_node;
 }

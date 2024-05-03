@@ -16,11 +16,11 @@ struct thread_node {
 // Scheduler's queue type
 typedef struct
 {
+    thread_node_t* active;  // currently active thread from the linked list
     thread_node_t* thread_n;// pointer to the head of the threads linked list
     size_t count;           // thread count in list
     size_t psum;            // priority sum of all READY threads in queue
-    thread_node_t* active;  // currently active thread from the linked list
-} squeue_t;
+} sched_queue_t;
 
 // Scheduler's sleeping threads list type
 typedef struct sleep_node sleep_node_t;
@@ -42,11 +42,12 @@ struct sleep_node {
 
 void sched_tick();
 void sched_sleep(int pid, int tid, size_t ticks);
-void sched_switch(thread_t* t);
 thread_t* sched_add_thread(thread_t t);
 void sched_set_status(thread_t* t, tstatus_t status);
 void sched_set_priority(thread_t* t, int priority);
+void sched_switch(thread_t* t);
 void sched_switch_next();
+thread_t* sched_get_active();
 void init_scheduler();
 
 #endif

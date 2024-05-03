@@ -2,14 +2,14 @@
 
 .section .text
 .extern interrupt_handler
-.extern switch_to
+.extern queue
 
-// The CPU does not push the interrupt number so we will have to do it ourselves.
-// Define for each interrupt an interrupt_handler_[X] function, where [X] is the interrupt number.
-// Each of these functions will be set in the IDT with its corresponding interrupt number.
-// If this is a non error interrupt, the function will push 0 as the error code to keep a constant struct size.
-// The function will push the interrupt number onto the stack and call the common_interrupt_handler to continue from there.
-// These values will later be passed to the C function to interpret them and call the corresponding C handler.
+/* The CPU does not push the interrupt number so we will have to do it ourselves.
+    Define for each interrupt an interrupt_handler_[X] function, where [X] is the interrupt number.
+    Each of these functions will be set in the IDT with its corresponding interrupt number.
+    If this is a non error interrupt, the function will push 0 as the error code to keep a constant struct size.
+    The function will push the interrupt number onto the stack and call the common_interrupt_handler to continue from there.
+    These values will later be passed to the C function to interpret them and call the corresponding C handler. */
 .macro no_error_code_interrupt_handler inum
     .global interrupt_handler_\inum
     interrupt_handler_\inum:            // define the interrupt handler function
@@ -28,22 +28,79 @@
 .endm
 
 
-// The common parts of the generic interrupt handler.
-// Save all registers in order to save the state of the interrupted process the just stopped.
-// Call the C interrupt_handler to handle the interrupt.
-// Restore the interrupted process, restore the stack to the state as the cpu gave it to us. 
-// Return to the interrupted code.
+/* The common parts of the generic interrupt handler.
+    Save all registers in order to save the state of the interrupted process the just stopped.
+    Call the C interrupt_handler to handle the interrupt.
+    Restore the interrupted process, restore the stack to the state as the cpu gave it to us. 
+    Return to the interrupted code. */
 common_interrupt_handler:
-    movl $20, switch_to      // reset switch to
+    /* The sched_queue_t and thread_node_t types are defined in scheduler.h as follows:
+            typedef struct
+            {
+                thread_node_t* active;  // currently active thread from the linked list
+
+                ...
+            } sched_queue_t;
+
+            struct thread_node {
+                thread_t thread;        // current
+                thread_node_t* next;    // next
+            };
+
+        And the thread_t type is defined in pm.h as described below:
+            struct thread {
+                size_t cr3;             // CR3 register - address space
+                size_t kesp;            // kernel stack pointer
+
+                ...
+            };
+
+        Based on that we can access [cr3] and [kesp] of the [active] thread as so:
+            movl queue+0, %eax     
+            movl 0(%eax), %ebx      // EBX=cr3
+            movl 4(%eax), %ecx      // ECX=kesp
+        
+*/
+
+
+    /*[TODO] delete */
+    // /* Save ESP in queue.active->thread.kesp. We must use a register to access the pointer
+    //     because x86 won't allow double refrencing, but we are not allowed to override any
+    //     register because we haven't saved them yet (using pushal). We can save EAX in the
+    //     stack without changing ESP and later restore it. */
+
+    // movl %eax, -4(%esp)     // save EAX in the stack
+
+    // mov queue+0, %eax       // EAX = queue.active
+    // movl %esp, 4(%eax)      // queue.active->thread.kesp = ESP
+    
+    // movl -4(%esp), %eax     // restore EAX from the stack
+    
+
+    // Handle interrupt
     pushal                  // save all registers :: save the state of the interrupted process
+
+    // Save ESP in for the active thread (queue.active->thread.kesp)
+    mov queue+0, %eax       // EAX = queue.active
+    movl %esp, 4(%eax)      // queue.active->thread.kesp = ESP
+
     call interrupt_handler  // call the C function to handle the interrupt
 
-    // Performe a task switch (load a different page directory) if necessary (switch_to is not 0)
-    movl switch_to, %eax
-    testl %eax, %eax
-    jz .return
-    movl %eax, %cr3
+    // Perform a task switch (load a different page directory and ESP) if necessary
+    movl queue+0, %eax      // EAX = queue.active
+    movl 0(%eax), %ebx      // EBX = queue.active->thread.cr3
+    movl 4(%eax), %ecx      // ECX = queue.active->thread.kesp
+    movl %cr3, %edx         // EDX = CR3
 
+    cmpl %ebx, %edx         // if (queue.active->thread.cr3 == CR3) {
+    je .return              //  return;
+                            // }
+                            // else {
+    movl %ebx, %cr3         //  CR3 = switch_to.cr3
+    movl %ecx, %esp         //  ESP = switch_to.kesp
+                            // }
+
+    // Return to user space
     .return:
         popal               // restore the registers :: restore the state of the interrupted process
         addl $8, %esp       // iret expectes the stack to be the same as the time of the interrupt

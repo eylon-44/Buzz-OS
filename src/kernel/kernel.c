@@ -16,8 +16,8 @@ void kernel_main()
     init_interrupt();
     init_syscall();
     init_keyboard();
-    init_timer();
     init_pm();
+    init_timer();
 
     // Print a welcome message
     clear_screen();

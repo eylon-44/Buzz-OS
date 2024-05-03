@@ -96,10 +96,10 @@
 #define MM_RESERVED_START   ( (MM_PTD_START) - ((MM_PAGE_SIZE) * (MM_RESERVED_PAGES)) )
 
 // Kernel top of stack
-#define MM_KSTACK_TOP       ( (MM_RESERVED_START) - 1 )
+#define MM_KSTACK_TOP       ( (MM_RESERVED_START) - 4 )
 
 // Kernel start of heap
-#define MM_KHEAP_START      ( (MM_KSTACK_TOP) - (MM_KSTACK_SIZE) - (MM_KHEAP_SIZE) + 1 )
+#define MM_KHEAP_START      ( (MM_RESERVED_START) - (MM_KSTACK_SIZE) - (MM_KHEAP_SIZE))
 
 // TSS page start
 #define MM_TSS_START        ( (MM_KHEAP_START) - (MM_PAGE_SIZE) )
@@ -111,10 +111,10 @@
 #define MM_KSPACE_START     0xC0000000
 
 // User top of stack
-#define MM_USTACK_TOP       ( (MM_KSPACE_START) - 1 )
+#define MM_USTACK_TOP       ( (MM_KSPACE_START) - 4 )
 
 // User start of heap
-#define MM_UHEAP_START      ( (MM_USTACK_TOP) - (MM_USTACK_SIZE) - (MM_UHEAP_SIZE) + 1 )
+#define MM_UHEAP_START      ( (MM_KSPACE_START) - (MM_USTACK_SIZE) - (MM_UHEAP_SIZE) )
 
 // User space start (1MB) / User code, bss and data start
 #define MM_USPACE_START     0x100000

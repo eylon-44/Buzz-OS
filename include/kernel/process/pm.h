@@ -25,13 +25,13 @@ typedef enum
 // Thread data structure
 typedef struct thread thread_t ;
 struct thread {
+    size_t cr3;             // CR3 register - address space
+    size_t kesp;            // kernel stack pointer
+
     int pid;                // process id - thread group id
     int tid;                // thread id
     thread_t* parnet;       // parent thread pointer
     size_t child_count;     // child threads count
-
-    uint32_t kesp;          // kernel stack pointer
-    uint32_t cr3;           // CR3 register - address space
 
     tstatus_t status;       // thread status
     int ticks;              // cpu ticks while the thread is active
