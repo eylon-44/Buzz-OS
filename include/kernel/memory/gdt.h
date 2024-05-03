@@ -3,8 +3,6 @@
 #if !defined(GDT_H)
 #define GDT_H
 
-#include <libc/stdint.h>
-
 // Segment selectors
 #define GDT_KCODE_SEG   0x08 | 0x00
 #define GDT_KDATA_SEG   0x10 | 0x00
@@ -12,6 +10,10 @@
 #define GDT_UDATA_SEG   0x20 | 0x03
 #define GDT_TSS_SEG     0x28 | 0x00
 #define SEG_COUNT       5
+
+#if !defined(__ASSEMBLER__)
+
+#include <libc/stdint.h>
 
 // Macro for easy gdt entry setup
 #define GDT_ENTRY(base, limit, dpl, access_options, flags_options) \
@@ -75,4 +77,5 @@ typedef enum
 
 void init_gdt();
 
+#endif
 #endif

@@ -9,6 +9,8 @@
 #include <kernel/memory/pmm.h>
 #include <kernel/memory/heap.h>
 #include <kernel/memory/mmlayout.h>
+#include <kernel/memory/gdt.h>
+#include <cpu/interrupts/isr.h>
 #include <drivers/pata.h>
 #include <libc/stdint.h>
 #include <libc/string.h>
@@ -49,6 +51,7 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 
     /* Create a new page directory for the process */
     pde_t *new_pd_p, *new_pd_v, *pd_v;
+    int_data_t* int_data_p;     // interrupt data pointer
 
     new_pd_p = (pde_t*) pmm_get_page();                         // allocate a physical page to hold the page directory of the new process
     new_pd_v = (pde_t*) vmm_attach_page((paddr_t) new_pd_p);    // temporarily map that page so we can access it
@@ -60,15 +63,24 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         pd_v + MM_PD_ENTRIES * 3/4,
         MM_PD_ENTRIES*sizeof(pde_t) * 1/4);
 
-    vmm_map_page(new_pd_v, pmm_get_page(),                      // allocate and map a kernel stack for the new process
+    // Prepare the kernel stack of the new process so that IRET will return to the user process
+    int_data_p = (int_data_t*) pmm_get_page();          // allocate a physical page for the kernel stack
+
+    vmm_map_page(new_pd_v, (paddr_t) int_data_p,        // map it for the new process
         MM_ALIGN_DOWN(MM_KSTACK_TOP), 1, 0, 0, 0);
+
+    // int_data_p = vmm_attach_page((paddr_t) int_data_p); // temporarly attach the kernel stack of the new process
+    // int_data_p->eip = [entry];
+    // int_data_p->cs  = GDT_UCODE_SEG; // MAKE THE STACK FRAME FOR RETURNING USING IRED
 
     // Remove the user space part (3/4 - until 3GB) of the last 4MB of self refrenced mapping
     for (size_t vbase = MM_PTD_START; vbase < MM_PTD_START + (MB(4) * 3/4); vbase += MM_PAGE_SIZE) {
         vmm_unmap_page(new_pd_p, vbase);
     }
 
-    vmm_detach_page((vaddr_t) new_pd_v);                        // free the temporarily attached page that held the current page directory
+    // Free temporarily attached pages
+    vmm_detach_page((vaddr_t) new_pd_v);
+    vmm_detach_page((vaddr_t) int_data_p);
 
     /* Load and map the process into memory */
     paddr_t elfload_p; vaddr_t elfload_v;

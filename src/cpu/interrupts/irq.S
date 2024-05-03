@@ -1,5 +1,7 @@
 // Interrupt Request Handler // ~ eylon
 
+#include <kernel/memory/gdt.h>
+
 .section .text
 .extern interrupt_handler
 .extern queue
@@ -62,23 +64,15 @@ common_interrupt_handler:
         
 */
 
-
-    /*[TODO] delete */
-    // /* Save ESP in queue.active->thread.kesp. We must use a register to access the pointer
-    //     because x86 won't allow double refrencing, but we are not allowed to override any
-    //     register because we haven't saved them yet (using pushal). We can save EAX in the
-    //     stack without changing ESP and later restore it. */
-
-    // movl %eax, -4(%esp)     // save EAX in the stack
-
-    // mov queue+0, %eax       // EAX = queue.active
-    // movl %esp, 4(%eax)      // queue.active->thread.kesp = ESP
-    
-    // movl -4(%esp), %eax     // restore EAX from the stack
-    
-
     // Handle interrupt
     pushal                  // save all registers :: save the state of the interrupted process
+
+    // Set data segments to GDT_KDATA_SEG (SS is managed by the CPU)
+    movw $GDT_KDATA_SEG, %ax    // load segment selector into AX
+    movw %ax, %ds               // data segment
+    movw %ax, %es               // extra segment
+    movw %ax, %fs               // general purpose F segment
+    movw %ax, %gs               // general purpose G segment
 
     // Save ESP in for the active thread (queue.active->thread.kesp)
     mov queue+0, %eax       // EAX = queue.active
@@ -102,6 +96,22 @@ common_interrupt_handler:
 
     // Return to user space
     .return:
+        /* Get the Code Segment selector that was pushed by the CPU at the moment of the
+            interrupt from the stack and add 8 (GDT entry size in bytes) to it in order
+            to get the Data Segment selector of the same privilege. We get the CS selector
+            by offset the stack by 44 bytes:
+                - user eip          | 4 bytes
+                - interrupt number  | 4 bytes
+                - error code        | 4 bytes
+                - pushal            | 8*4=32 bytes
+        */
+        movw 44(%esp), %ax          // load the CS selector into AX
+        addw $8, %ax                // add AX with 8 in order to get the DS selector of the same privilege level 
+        movw %ax, %ds               // load the data segment
+        movw %ax, %es               // load the extra segment
+        movw %ax, %fs               // load the general purpose F segment
+        movw %ax, %gs               // load the general purpose G segment
+
         popal               // restore the registers :: restore the state of the interrupted process
         addl $8, %esp       // iret expectes the stack to be the same as the time of the interrupt
         sti                 // enable interrupts
