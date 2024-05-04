@@ -98,8 +98,12 @@
 // Kernel top of stack
 #define MM_KSTACK_TOP       ( (MM_RESERVED_START) - 4 )
 
+/* Start of the context diff area - the kernel space area that is unique to the current context.
+    Must be 4MB aligned. */
+#define MM_CTX_DIFF_START   ( (MM_VIRT_TOP) - MB(8) + 1 )
+
 // Kernel start of heap
-#define MM_KHEAP_START      ( (MM_RESERVED_START) - (MM_KSTACK_SIZE) - (MM_KHEAP_SIZE))
+#define MM_KHEAP_START      ( (MM_CTX_DIFF_START) - (MM_KHEAP_SIZE))
 
 // TSS page start
 #define MM_TSS_START        ( (MM_KHEAP_START) - (MM_PAGE_SIZE) )
@@ -146,6 +150,10 @@ Virtual memory within each address space:
     |                   Kernel Stack                   | -------> MM_KSTACK_PAGES pages
     |                                                  |
     ----------------------------------------------------
+    |                                                  |
+    |             4MB-KSTACK-RSRV Padding              |
+    |                                                  |
+    ---------------------------------------------------- <------- MM_CTX_DIFF_START
     |                                                  |
     |                   Kernel Heap                    | -------> MM_KHEAP_PAGES pages
     |                                                  |

@@ -69,7 +69,7 @@ static char get_key()
 
 // Keyboard interrupt handler :: handle keyboard callbacks from the PIC
 #include <drivers/screen.h> // [TMP][DEBUG]
-static void keyboard_handler(UNUSED int_data_t*)
+static void keyboard_handler(UNUSED int_frame_t*)
 {
     // [TMP]
     char key[2] = {get_key(), '\0'};

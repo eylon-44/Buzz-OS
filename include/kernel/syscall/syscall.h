@@ -8,7 +8,7 @@
 // Number of syscalls
 #define SYSCALL_NUM 256
 
-typedef void (*syscall_t)(int_data_t*);
+typedef void (*syscall_t)(int_frame_t*);
 
 void init_syscall();
 

@@ -9,7 +9,7 @@
 static syscall_t syscall_handlers[SYSCALL_NUM];
 
 // Common syscall handler; calls the required syscall handler
-static void common_syscall_handler(int_data_t* param)
+static void common_syscall_handler(int_frame_t* param)
 {
     // Check that the syscall number is valid; if not, exit
     if (param->eax >= SYSCALL_NUM || syscall_handlers[param->eax] == NULL) {

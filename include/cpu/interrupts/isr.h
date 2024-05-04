@@ -24,15 +24,21 @@
 #define IRQ15 47
 
 // Using uint32_t values as the stack values are 4 bytes long (32 bit mode)
-// Interrupt request stack data
+// Software interrupt frame
 typedef struct 
 {
     uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;       // cpu registers values from interrupted code
     uint32_t interrupt_number, error_code;                 // interrupt number and error code
-    uint32_t eip, cs, eflags;                              // irq information pushed by the cpu
-} __attribute__((packed)) int_data_t;
+} __attribute__((packed)) int_frame_t;
 
-typedef void (*isr_t)(int_data_t*); 
+// Hardware interrupt frame
+typedef struct
+{
+    uint32_t eip, cs, eflags;
+    uint32_t esp, ss;
+} __attribute__((packed)) iret_frame_t;
+
+typedef void (*isr_t)(int_frame_t*); 
 
 void init_interrupt();
 void set_interrupt_handler(uint8_t index, isr_t func);

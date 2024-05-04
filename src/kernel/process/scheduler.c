@@ -160,7 +160,7 @@ static void rem_thread(thread_t* t)
         node->next = node->next->next;
 
         // Delete the address space of the process
-        vmm_del_dir(tmp->thread.cr3);
+        vmm_del_ctx(tmp->thread.cr3);
 
         // Deallocate the node from the heap
         kfree(tmp->next);

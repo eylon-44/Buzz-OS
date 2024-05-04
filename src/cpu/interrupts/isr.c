@@ -26,7 +26,7 @@ void set_interrupt_handler(uint8_t index, isr_t func)
 }
 
 // Being called by the common_interrupt_handler :: call the interrupt's handler function and send an EOI if it's an IRQ.
-void interrupt_handler(int_data_t interrupt_data)
+void interrupt_handler(int_frame_t interrupt_data)
 {
     /* !!! ANY CHANGE BEING DONE TO interrupt_data WILL AFFECT THE RESTORING OF THE USER CONTEXT !!! 
         This is required for returning values from syscalls. */

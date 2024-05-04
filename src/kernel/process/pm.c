@@ -45,167 +45,153 @@ inline int pm_get_pid() {
 // Create a new process
 thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 {
+
     /* Merge the kernel thread with the calling thread */
     //__asm__ volatile ("sti");                                   // enable interrupts
 
 
     /* Create a new page directory for the process */
-    pde_t *new_pd_p, *new_pd_v, *pd_v;
-    int_data_t* int_data_p;     // interrupt data pointer
+    pde_t *new_pd_p, *new_pd_v;
+    {
+        pde_t *pd_v;
 
-    new_pd_p = (pde_t*) pmm_get_page();                         // allocate a physical page to hold the page directory of the new process
-    new_pd_v = (pde_t*) vmm_attach_page((paddr_t) new_pd_p);    // temporarily map that page so we can access it
-    pd_v = (pde_t*) vmm_attach_page((paddr_t) vmm_get_pd());    // map the current page directory as well so we can access it
+        new_pd_p = (pde_t*) pmm_get_page();                         // allocate a physical page to hold the page directory of the new process
+        new_pd_v = (pde_t*) vmm_attach_page((paddr_t) new_pd_p);    // temporarily map that page so we can access it
+        pd_v = (pde_t*) vmm_attach_page((paddr_t) vmm_get_pd());    // map the current page directory as well so we can access it
 
-    memset(new_pd_v, 0, MM_PAGE_SIZE);                          // initiate the new page directory with zeros
-    
-    memcpy(new_pd_v + MM_PD_ENTRIES * 3/4,                      // copy the kernel space mapping into the new page directory
-        pd_v + MM_PD_ENTRIES * 3/4,
-        MM_PD_ENTRIES*sizeof(pde_t) * 1/4);
+        memset(new_pd_v, 0, MM_PAGE_SIZE);                          // initiate the new page directory with zeros
 
-    // Prepare the kernel stack of the new process so that IRET will return to the user process
-    int_data_p = (int_data_t*) pmm_get_page();          // allocate a physical page for the kernel stack
-
-    vmm_map_page(new_pd_v, (paddr_t) int_data_p,        // map it for the new process
-        MM_ALIGN_DOWN(MM_KSTACK_TOP), 1, 0, 0, 0);
-
-    // int_data_p = vmm_attach_page((paddr_t) int_data_p); // temporarly attach the kernel stack of the new process
-    // int_data_p->eip = [entry];
-    // int_data_p->cs  = GDT_UCODE_SEG; // MAKE THE STACK FRAME FOR RETURNING USING IRED
-
-    // Remove the user space part (3/4 - until 3GB) of the last 4MB of self refrenced mapping
-    for (size_t vbase = MM_PTD_START; vbase < MM_PTD_START + (MB(4) * 3/4); vbase += MM_PAGE_SIZE) {
-        vmm_unmap_page(new_pd_p, vbase);
+        memcpy(new_pd_v + MM_PDE_INDEX(MM_KSPACE_START),            // copy the common kernel space mapping into the new page directory
+            pd_v + MM_PDE_INDEX(MM_KSPACE_START),
+            (MM_PDE_INDEX(MM_CTX_DIFF_START) - MM_PDE_INDEX(MM_KSPACE_START)) * sizeof(pde_t));
     }
 
-    // Free temporarily attached pages
-    vmm_detach_page((vaddr_t) new_pd_v);
-    vmm_detach_page((vaddr_t) int_data_p);
 
     /* Load and map the process into memory */
-    paddr_t elfload_p; vaddr_t elfload_v;
     elfheader_t elfhdr;
-    size_t filesz UNUSED;
-
-    // Allocate and map a scratch space to load the ELF file into
-    elfload_p = pmm_get_page();                                 // physical address of scratch space
-    elfload_v = vmm_attach_page(elfload_p);                     // virtual address of scratch space
-
-    // Load the first page of the ELF file into a scratch space and read the elfheader
-    pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset);
-
-    // The ELF header is located at the start of the ELF file
-    elfhdr = *(elfheader_t*) elfload_v;
-
-    // Check ELF validity by reading it's header; if not valid, abort
-    if (elfhdr.identify.magic != ELF_MAGIC      // ELF magic
-        || elfhdr.identify.bitness != 1         // 32 bit executable
-        || elfhdr.identify.abi != 0             // System-V
-        || elfhdr.machine != 3)                 // x86
     {
-        // Free resources and return
+        paddr_t elfload_p; vaddr_t elfload_v;
+        size_t filesz UNUSED;
+
+        // Allocate and map a scratch space to load the ELF file into
+        elfload_p = pmm_get_page();                                 // physical address of scratch space
+        elfload_v = vmm_attach_page(elfload_p);                     // virtual address of scratch space
+
+        // Load the first page of the ELF file into a scratch space and read the elfheader
+        pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset);
+
+        // The ELF header is located at the start of the ELF file
+        elfhdr = *(elfheader_t*) elfload_v;
+
+        // Check ELF validity by reading it's header; if not valid, abort
+        if (elfhdr.identify.magic != ELF_MAGIC      // ELF magic
+            || elfhdr.identify.bitness != 1         // 32 bit executable
+            || elfhdr.identify.abi != 0             // System-V
+            || elfhdr.machine != 3)                 // x86
+        {
+            // Free resources and return
+            pmm_free_page(elfload_p);
+            vmm_detach_page(elfload_v);
+            // [TODO] free: kstack, pd_p, pd_v
+            return NULL;   // [TODO] ERRNUM
+        }
+
+        // Calculate the size of the ELF file; [start of section headers] + ([section header size] * [number of section headers])
+        filesz = elfhdr.shoff + (elfhdr.shsize * elfhdr.shnum);
+
+        // Read and load all segments
+        for (size_t i = 0; i < elfhdr.phnum; i++)
+        {
+            size_t ph_offset;           // program header offset in the file
+            size_t load_offset;         // offset in file to load into the scratch space (elfload_v)
+            prgheader_t prgheader;      // program header of current segment
+            size_t start_offset;        // offset in file to start loading the segment's data from
+            size_t end_offset;          // offset in file to the end of the segment's data
+            size_t copy_dest;           // virtual address to load the segment's data into in the user address space
+            size_t copy_size;           // how many bytes to copy from the scratch space to the user address space
+            paddr_t dest_p;             // copy destination physical page
+            vaddr_t dest_v;             // copy destination virtual page
+
+            // Offset of the program header inside the file
+            ph_offset = elfhdr.phoff + elfhdr.phsize * i;
+            // Offset in file to load into [elfload_v]
+            load_offset = MM_ALIGN_X_DOWN(ph_offset, PATA_SECTOR_SIZE);
+            // Load 2 sectors from offset [load_offset] in the file into [elfload_v]
+            pata_read_disk((void*) elfload_v, PATA_SECTOR_SIZE * 2, disk_offset + load_offset);
+            // Read the program header
+            prgheader = *(prgheader_t*) (elfload_v + ph_offset - load_offset);
+
+            /* If it's not a LOAD segment (seg_type=1), continue; else, load and map it into the process. */
+            if (prgheader.seg_type != 1) continue;
+
+            start_offset    = prgheader.offset;             // segment start offset in file
+            copy_size       = prgheader.filesz;             // number of bytes to copy from the start offset
+            end_offset      = start_offset + copy_size;     // segment end offset in file
+            copy_dest       = prgheader.vaddr;              // virtual address to load the data into
+            load_offset     = MM_ALIGN_DOWN(start_offset);  // the file offset loaded as the base of the page
+
+            // While not finished loading the segment from start to end
+            while(end_offset - start_offset > 0)
+            {
+                // Read 4KB from offset [load_offset] in the file into the scratch space
+                pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset + load_offset);
+
+                /* Calculate the size needed to copy from the loaded segment into memory */
+                // If the segment does not fit fully in the loaded page
+                if (end_offset - load_offset > MM_PAGE_SIZE) {
+                    copy_size = load_offset + MM_PAGE_SIZE - start_offset;
+                }
+                // If it does fit fully in the loaded page
+                else {
+                    copy_size = end_offset - start_offset;
+                }
+
+                // If the segment's page is mapped already, get the physical page of it
+                if ( vmm_is_mapped(new_pd_p, MM_ALIGN_DOWN(copy_dest)) ) {
+                    dest_p = vmm_get_physical(new_pd_p, MM_ALIGN_DOWN(copy_dest));
+                }
+                // If it is not, allocate a physical page for it and map it in the page directory of the new process
+                else {
+                    dest_p = pmm_get_page();
+
+                    vmm_map_page(new_pd_p, dest_p,
+                        MM_ALIGN_DOWN(copy_dest), prgheader.flags & 2,    // writable
+                        1, 0, 0);
+                }
+                // Temporarily attach the physical page so we can write to it; add the copy_dest offset to it
+                dest_v = vmm_attach_page(dest_p) + (copy_dest % MM_PAGE_SIZE);
+
+                /* Copy the segment's data into its destination */
+                // Data only
+                if (copy_size <= prgheader.filesz) {
+                    memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), copy_size);
+                }
+                // BSS only
+                else if (prgheader.filesz <= 0) {
+                    memset((void*) dest_v, 0, copy_size);
+                }
+                // Data & BSS
+                else {
+                    // Copy data
+                    memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), prgheader.filesz);
+
+                    // Zero out BSS
+                    memset((void*) (dest_v + prgheader.filesz), 0, copy_size - prgheader.filesz);
+                }
+
+                prgheader.filesz -= copy_size;
+                prgheader.memsz  -= copy_size;
+                load_offset     += MM_PAGE_SIZE;
+                start_offset    += copy_size;
+                copy_dest       += copy_size;
+                vmm_detach_page(dest_v);
+            }
+        }
+
+        // Free resources
         pmm_free_page(elfload_p);
         vmm_detach_page(elfload_v);
-        // [TODO] free: kstack, pd_p, pd_v
-        return NULL;   // [TODO] ERRNUM
     }
-
-    // Calculate the size of the ELF file; [start of section headers] + ([section header size] * [number of section headers])
-    filesz = elfhdr.shoff + (elfhdr.shsize * elfhdr.shnum);
-    
-    // Read and load all segments
-    for (size_t i = 0; i < elfhdr.phnum; i++)
-    {
-        size_t ph_offset;           // program header offset in the file
-        size_t load_offset;         // offset in file to load into the scratch space (elfload_v)
-        prgheader_t prgheader;      // program header of current segment
-        size_t start_offset;        // offset in file to start loading the segment's data from
-        size_t end_offset;          // offset in file to the end of the segment's data
-        size_t copy_dest;           // virtual address to load the segment's data into in the user address space
-        size_t copy_size;           // how many bytes to copy from the scratch space to the user address space
-        paddr_t dest_p;             // copy destination physical page
-        vaddr_t dest_v;             // copy destination virtual page
-
-        // Offset of the program header inside the file
-        ph_offset = elfhdr.phoff + elfhdr.phsize * i;
-        // Offset in file to load into [elfload_v]
-        load_offset = MM_ALIGN_X_DOWN(ph_offset, PATA_SECTOR_SIZE);
-        // Load 2 sectors from offset [load_offset] in the file into [elfload_v]
-        pata_read_disk((void*) elfload_v, PATA_SECTOR_SIZE * 2, disk_offset + load_offset);
-        // Read the program header
-        prgheader = *(prgheader_t*) (elfload_v + ph_offset - load_offset);
-
-        /* If it's not a LOAD segment (seg_type=1), continue; else, load and map it into the process. */
-        if (prgheader.seg_type != 1) continue;
-
-        start_offset    = prgheader.offset;             // segment start offset in file
-        copy_size       = prgheader.filesz;             // number of bytes to copy from the start offset
-        end_offset      = start_offset + copy_size;     // segment end offset in file
-        copy_dest       = prgheader.vaddr;              // virtual address to load the data into
-        load_offset     = MM_ALIGN_DOWN(start_offset);  // the file offset loaded as the base of the page
-
-        // While not finished loading the segment from start to end
-        while(end_offset - start_offset > 0)
-        {
-            // Read 4KB from offset [load_offset] in the file into the scratch space
-            pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset + load_offset);
-
-            /* Calculate the size needed to copy from the loaded segment into memory */
-            // If the segment does not fit fully in the loaded page
-            if (end_offset - load_offset > MM_PAGE_SIZE) {
-                copy_size = load_offset + MM_PAGE_SIZE - start_offset;
-            }
-            // If it does fit fully in the loaded page
-            else {
-                copy_size = end_offset - start_offset;
-            }
-
-            // If the segment's page is mapped already, get the physical page of it
-            if ( vmm_is_mapped(new_pd_p, MM_ALIGN_DOWN(copy_dest)) ) {
-                dest_p = vmm_get_physical(new_pd_p, MM_ALIGN_DOWN(copy_dest));
-            }
-            // If it is not, allocate a physical page for it and map it in the page directory of the new process
-            else {
-                dest_p = pmm_get_page();
-
-                vmm_map_page(new_pd_p, dest_p,
-                    MM_ALIGN_DOWN(copy_dest), prgheader.flags & 2,    // writable
-                    1, 0, 0);
-            }
-            // Temporarily attach the physical page so we can write to it; add the copy_dest offset to it
-            dest_v = vmm_attach_page(dest_p) + (copy_dest % MM_PAGE_SIZE);
-
-            /* Copy the segment's data into its destination */
-            // Data only
-            if (copy_size <= prgheader.filesz) {
-                memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), copy_size);
-            }
-            // BSS only
-            else if (prgheader.filesz <= 0) {
-                memset((void*) dest_v, 0, copy_size);
-            }
-            // Data & BSS
-            else {
-                // Copy data
-                memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), prgheader.filesz);
-
-                // Zero out BSS
-                memset((void*) (dest_v + prgheader.filesz), 0, copy_size - prgheader.filesz);
-            }
-
-            prgheader.filesz -= copy_size;
-            prgheader.memsz  -= copy_size;
-            load_offset     += MM_PAGE_SIZE;
-            start_offset    += copy_size;
-            copy_dest       += copy_size;
-            vmm_detach_page(dest_v);
-        }
-    }
-
-    // Free resources
-    pmm_free_page(elfload_p);
-    vmm_detach_page(elfload_v);
-
 
     /* Queue the process in the scheduler */
 
@@ -215,7 +201,7 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         .tid        = gen_tid(),                        // find an available TID for and set it
         .parnet     = parent,                           // parent of this process; NULL for init process
         .child_count= 0,                                // 0 children by defualt
-        .kesp       = MM_KSTACK_TOP,                    // kernel stack top to set when entering ring 0
+        .kesp       = 0,                                // kernel stack pointer to set when entering ring 0
         .cr3        = (uint32_t) new_pd_p,              // physical address of the process' page directory
         .status     = TS_NEW,                           // status of the task; will be set to READY once placed into the scheduler's queue
         .ticks      = 0,                                // ACTIVE time left; set by the scheduler
@@ -226,6 +212,69 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 
     // Increment the child count of the parent
     parent->child_count++;
+
+    /* Allocate and set up kernel and user stacks for the new process.
+    The interrupt frame will affect the initial values of the common register
+    in the user space. These registers are used to pass argc and argc data.
+    The IRET frame will affect the user entry point (EIP) and initial stack
+    pointer (ESP).
+    KESP = MM_KSTACK_TOP - sizeof(int_frame_t) - sizeof(iret_frame_t). */
+    {
+        size_t kesp;
+        int_frame_t int_frame = {
+            .eax=0xBABABABA,
+            .ebx=0xCAFECAFE,
+            .ecx=0xBEEFBEEF,
+            .edx=0xDEAFDEAF,
+            .esi=0xDEADDEAD,
+            .ebp=0xBABEBABE,
+            .error_code=0xABCDEFFF,
+            .esp=MM_KSTACK_TOP - sizeof(int_frame_t)
+        };
+        iret_frame_t iret_frame = {
+            .cs=GDT_UCODE_SEG,
+            .eip=(size_t) thread.entry,
+            .ss=GDT_UDATA_SEG,
+            .esp=MM_USTACK_TOP};
+
+        // Allocate and map a page for the kernel stack of the new process
+        kesp = pmm_get_page();
+        vmm_map_page(new_pd_p, (paddr_t) kesp,
+            MM_ALIGN_DOWN(MM_KSTACK_TOP), 1, 0, 0, 0);
+
+        // Temporarly attach the stack so we can access it
+        kesp = vmm_attach_page(kesp) + (MM_KSTACK_TOP % MM_PAGE_SIZE);
+
+        // Place the frames in the stack
+        kesp -= sizeof(iret_frame_t);
+        *(iret_frame_t*) kesp = iret_frame;
+        kesp -= sizeof(int_frame_t);
+        *(int_frame_t*) kesp = int_frame;
+
+        // Preserve the stack pointer as the initial kernel stack pointer of the process
+        thread.kesp = MM_KSTACK_TOP - sizeof(int_frame_t) - sizeof(iret_frame_t);
+
+        // Allocate a user stack
+        vmm_map_page(new_pd_p,
+            pmm_get_page(),
+            MM_ALIGN_DOWN(MM_USTACK_TOP),
+            1, 1, 0, 0);
+
+        // Free temporarily attached page
+        vmm_detach_page((vaddr_t) kesp);
+    }
+
+    /* Map the last 4MB of self refrenced paging */
+    for (size_t i = 0; i < MM_PD_ENTRIES; i++) {
+        if (!new_pd_v[i].present) continue;                 // skip if there is no page table for this area
+        vmm_map_page(new_pd_p,
+            (paddr_t) MM_GET_PT(new_pd_v+i),                // physical address of page table
+            (vaddr_t) MM_PTD_START + (MM_PAGE_SIZE * i),    // virtual address of page table
+                1, 0, 0, 0);
+    }
+
+    // Free temporarily attached page
+    vmm_detach_page((vaddr_t) new_pd_v);
 
     // Queue the task in the scheduler's queue and return it
     return sched_add_thread(thread);
@@ -260,8 +309,9 @@ static void init_init()
     // Remove the dummy as being the parnet
     init_t->parnet = NULL;
 
+    // [TODO] Do I need this?
     // Switch to the init process which should be located right after the dummy in the queue
-    sched_switch_next();
+    //sched_switch_next();
 }
 
 void init_pm()

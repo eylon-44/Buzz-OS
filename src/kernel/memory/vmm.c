@@ -51,7 +51,7 @@ int vmm_map_page(pde_t* pd, paddr_t phys_base, vaddr_t virt_base,
     pte_t* pt = NULL;
     pte_t* pte;
 
-    // if the PDE is not present
+    // if the PDE is not present, create a new PT
     if (!pde->present) {
         // allocate a page of physical memory to store the PT and set the PDE
         *pde = pde_create(pmm_get_page(), rw, us, pcd, 0);
@@ -158,14 +158,22 @@ void vmm_detach_page(vaddr_t virt_base)
     invlpg(virt_base);
 }
 
-// Delete a page directory
-void vmm_del_dir(paddr_t pd)
+/* Delete page directory.
+    The function only deletes the unique parts of the context in the page directory, which
+    are the entire user space and anything after MM_CTX_DIFF_START, and the page directory
+    itself; the kernel's page tables that cover the code, data, mmio and heap are untouched. */
+void vmm_del_ctx(paddr_t pd)
 {
     pde_t* pd_v = (pde_t*) vmm_attach_page(pd);
 
     // Go over all the page directory entries
-    for (int i = 0; i < MM_PD_ENTRIES; i++)
+    for (size_t i = 0; i < MM_PD_ENTRIES; i++)
     {
+        // Reserve common kernel area
+        if (i >= MM_PDE_INDEX(MM_KSPACE_START) && i < MM_PDE_INDEX(MM_CTX_DIFF_START)) {
+            continue;
+        }
+
         pte_t* pt;
 
         // If PDE is present, seek for present PTEs inside it
@@ -173,9 +181,9 @@ void vmm_del_dir(paddr_t pd)
             pt = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT((pde_t*) pd+i));  // map the PDE's page table in order to access it
 
             // Go over all the page directory entries
-            for (int k = 0; k < MM_PT_ENTRIES; k++)
+            for (size_t k = 0; k < MM_PT_ENTRIES; k++)
             {
-                // If PTE is present, free it
+                // If PTE is present, free the physical page
                 if (pt[k].present) {
                     pmm_free_page((paddr_t) MM_GET_PF(pt+k));
                 }
@@ -235,7 +243,7 @@ void init_vmm()
 
 
     /* Map the kernel's code and data into [pd] using the linker labels.
-        map virtual [kstart_v]-[kend_v] to physical [kstart_p]-[kend_p]. */
+        Map virtual [kstart_v]-[kend_v] to physical [kstart_p]-[kend_p]. */
     for (size_t p = kstart_p, v = kstart_v;
             (p < kend_p) && (v < kend_v);
             p += MM_PAGE_SIZE, v += MM_PAGE_SIZE)
@@ -260,37 +268,37 @@ void init_vmm()
         create page tables to cover the area from [MM_MMIO_START] to [MM_VIRT_TOP]. */
     for (size_t v = MM_ALIGN_4MB_DOWN(MM_MMIO_START); v != MM_ALIGN_4MB_UP(MM_VIRT_TOP); v += MM_EXT_PAGE_SIZE)
     {
-        // get the PDE of address [v]
+        // Get the PDE of address [v]
         pde_t* pde = pd + MM_PDE_INDEX(v);
 
-        // if there is already a page table in there, skip it
+        // If there is already a page table in there, skip it
         if (pde->present) continue;
 
-        // create a PDE; allocate a PT and initiate it with zeros
+        // Else, create a PDE; allocate a PT and initiate it with zeros
         *pde = pde_create(pmm_get_page(), 1, 0, 0, MM_AVL_PDE_KEEP);
         memset(MM_GET_PT(pde), 0, MM_PAGE_SIZE);
     }
 
-    /* Map the last 4MB of memory (from [MM_PTD_START] to [MM_VIRT_TOP]) to all present page 
+    /* Map the last 4MB of memory (from [MM_PTD_START] to [MM_VIRT_TOP]) to all present page
         tables of current PD. [pi] is the page table index in the PD that should be mapped 
         to virtual address [v]. */
     for (size_t v = MM_PTD_START, pi = 0; v != MM_ALIGN_UP(MM_VIRT_TOP); v += MM_PAGE_SIZE, pi++)
     {
-        // find the PDE to map the page table into
+        // Find the PDE to map the page table into
         pde_t* pde = (pde_t*) pd + MM_PDE_INDEX(v);
         // find the PDE that points to the page table we want to map into [pde]
         pde_t* pde_to_map = (pde_t*) pd + pi;
         pte_t* pte;
 
-        // if there is no page table in that area continue
+        // If there is no page table in that area continue
         if (!pde_to_map->present) continue;
 
-        // find and set the PTE
+        // Find and set the PTE
         pte  = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(v);
         *pte = pte_create((paddr_t) MM_GET_PT(pde_to_map), 1, 0, 0, 1);
     }
 
-    /* Map the entry stack; assuming the current stack's size is not over 4KB */
+    /* Map the entry stack; the physical page of the stack is already allocated by the PMM. */
     {
         pde_t* pde = (pde_t*) pd + MM_PDE_INDEX(MM_KSTACK_TOP);
         pte_t* pte = (pte_t*) MM_GET_PT(pde) + MM_PTE_INDEX(MM_KSTACK_TOP);
@@ -312,14 +320,17 @@ void init_vmm()
     // Map the TSS
     vmm_map_page(pd, pmm_get_page(), MM_TSS_START, 1, 0, 0, 1);
 
+
     /* Create a dummy process to represent this context and place it in the scheduler's queue */
-    extern sched_queue_t queue;
+    {
+        extern sched_queue_t queue;
 
-    init_thread_node.next          = NULL;          // the dummy is set as the first and last thread in the queue
-    init_thread_node.thread.ticks  = -1;            // will cause the shceduler to switch from the dummy on a timer interrupt
-    init_thread_node.thread.status = TS_DONE;       // will cause the scheduler to delete the dummy completely
-    init_thread_node.thread.cr3    = (size_t) pd;   // used by the scheduler to delete the current address space and by the vmm to access this page directory
+        init_thread_node.next          = NULL;          // the dummy is set as the first and last thread in the queue
+        init_thread_node.thread.ticks  = -1;            // will cause the shceduler to switch from the dummy on a timer interrupt
+        init_thread_node.thread.status = TS_DONE;       // will cause the scheduler to delete the dummy completely
+        init_thread_node.thread.cr3    = (size_t) pd;   // used by the scheduler to delete the current address space and by the vmm to access this page directory
 
-    queue.thread_n = &init_thread_node;
-    queue.active   = &init_thread_node;
+        queue.thread_n = &init_thread_node;
+        queue.active   = &init_thread_node;
+    }
 }
