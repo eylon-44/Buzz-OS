@@ -64,88 +64,106 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         memcpy(new_pd_v + MM_PDE_INDEX(MM_KSPACE_START),            // copy the common kernel space mapping into the new page directory
             pd_v + MM_PDE_INDEX(MM_KSPACE_START),
             (MM_PDE_INDEX(MM_CTX_DIFF_START) - MM_PDE_INDEX(MM_KSPACE_START)) * sizeof(pde_t));
+
+        vmm_detach_page((vaddr_t) pd_v);                            // free temporarly attached page
     }
 
 
     /* Load and map the process into memory */
     elfheader_t elfhdr;
     {
-        paddr_t elfload_p; vaddr_t elfload_v;
-        size_t filesz UNUSED;
+        /* Note: offset variables ending with _d count sectors - offset within the disk, while offset
+            variable ending with _f count bytes - offset within the file. */
 
-        // Allocate and map a scratch space to load the ELF file into
-        elfload_p = pmm_get_page();                                 // physical address of scratch space
-        elfload_v = vmm_attach_page(elfload_p);                     // virtual address of scratch space
+        paddr_t scratch_p; vaddr_t scratch_v;
+        size_t filesz;
+        paddr_t* elfload_p;
 
-        // Load the first page of the ELF file into a scratch space and read the elfheader
-        pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset);
+        // Allocate and map a scratch space to load the ELF header into
+        scratch_p = pmm_get_page();                 // physical address of scratch space
+        scratch_v = vmm_attach_page(scratch_p);     // virtual address of scratch space
+
+        // Load the first sector of the ELF file into the scratch space and read the elfheader
+        pata_read_disk((void*) scratch_v, 1, disk_offset);
 
         // The ELF header is located at the start of the ELF file
-        elfhdr = *(elfheader_t*) elfload_v;
+        elfhdr = *(elfheader_t*) scratch_v;
 
-        // Check ELF validity by reading it's header; if not valid, abort
+        // Free scratch space
+        pmm_free_page(scratch_p);
+        vmm_detach_page(scratch_v);
+
+        // Check ELF validity; if not valid, abort
         if (elfhdr.identify.magic != ELF_MAGIC      // ELF magic
             || elfhdr.identify.bitness != 1         // 32 bit executable
             || elfhdr.identify.abi != 0             // System-V
             || elfhdr.machine != 3)                 // x86
         {
-            // Free resources and return
-            pmm_free_page(elfload_p);
-            vmm_detach_page(elfload_v);
-            // [TODO] free: kstack, pd_p, pd_v
+            // [TODO] free PD
             return NULL;   // [TODO] ERRNUM
         }
 
         // Calculate the size of the ELF file; [start of section headers] + ([section header size] * [number of section headers])
         filesz = elfhdr.shoff + (elfhdr.shsize * elfhdr.shnum);
 
-        // Read and load all segments
-        for (size_t i = 0; i < elfhdr.phnum; i++)
+        // Allocate a list of pointers to save the physical pages to which we are going to load the ELF file into
+        elfload_p = (paddr_t*) kmalloc(sizeof(paddr_t) * (MM_ALIGN_UP(filesz)/MM_PAGE_SIZE));
+
+        // Load the entire file to memory and save the physical pages to the [elfload_p] list
+        for (size_t i = 0; i < MM_ALIGN_UP(filesz)/MM_PAGE_SIZE; i++)
         {
-            size_t ph_offset;           // program header offset in the file
-            size_t load_offset;         // offset in file to load into the scratch space (elfload_v)
-            prgheader_t prgheader;      // program header of current segment
-            size_t start_offset;        // offset in file to start loading the segment's data from
-            size_t end_offset;          // offset in file to the end of the segment's data
-            size_t copy_dest;           // virtual address to load the segment's data into in the user address space
-            size_t copy_size;           // how many bytes to copy from the scratch space to the user address space
-            paddr_t dest_p;             // copy destination physical page
-            vaddr_t dest_v;             // copy destination virtual page
+            // Allocate a physical page and map it so we can access it
+            elfload_p[i] = pmm_get_page();
+            scratch_v    = vmm_attach_page(elfload_p[i]);
 
-            // Offset of the program header inside the file
-            ph_offset = elfhdr.phoff + elfhdr.phsize * i;
-            // Offset in file to load into [elfload_v]
-            load_offset = MM_ALIGN_X_DOWN(ph_offset, PATA_SECTOR_SIZE);
-            // Load 2 sectors from offset [load_offset] in the file into [elfload_v]
-            pata_read_disk((void*) elfload_v, PATA_SECTOR_SIZE * 2, disk_offset + load_offset);
-            // Read the program header
-            prgheader = *(prgheader_t*) (elfload_v + ph_offset - load_offset);
+            // Read disk into the new page
+            pata_read_disk((void*) scratch_v, MM_PAGE_SIZE/PATA_SECTOR_SIZE, disk_offset + i*(MM_PAGE_SIZE/PATA_SECTOR_SIZE));
 
-            /* If it's not a LOAD segment (seg_type=1), continue; else, load and map it into the process. */
-            if (prgheader.seg_type != 1) continue;
+            // Free the temporarly attached page
+            vmm_detach_page(scratch_v);
+        }
 
-            start_offset    = prgheader.offset;             // segment start offset in file
-            copy_size       = prgheader.filesz;             // number of bytes to copy from the start offset
-            end_offset      = start_offset + copy_size;     // segment end offset in file
-            copy_dest       = prgheader.vaddr;              // virtual address to load the data into
-            load_offset     = MM_ALIGN_DOWN(start_offset);  // the file offset loaded as the base of the page
+        /* Read all program headers and load their segments while mapping the user space for them.
+            Assuming all program headers are located in the first 4KB of the file */
+        for (size_t i = 0; i < elfhdr.phnum; i++) {
+            prgheader_t prghdr;
 
-            // While not finished loading the segment from start to end
-            while(end_offset - start_offset > 0)
+            // Attach the first page of file, read program header and free
+            scratch_v = vmm_attach_page(elfload_p[0]);
+            prghdr = *(prgheader_t*) (scratch_v + (elfhdr.phoff + elfhdr.phsize*i)); 
+            vmm_detach_page(scratch_v);
+
+            // If the segment is not a LOAD segment, skip it
+            if (prghdr.seg_type != 1) continue;
+
+            size_t seg_start;          // offset in file to start loading the segment's data from
+            size_t seg_end;            // offset in file to the end of the segment's data
+            size_t file_pos;           // current offset in file
+            paddr_t dest_p;            // segment's destination physical page
+            vaddr_t dest_v;            // segment's destination virtual page
+            size_t copy_size;          // how many bytes to copy
+            size_t copy_dest;           // virtual address to load the data into
+
+            seg_start = prghdr.offset;
+            seg_end   = seg_start + prghdr.memsz;
+            file_pos  = seg_start;
+            copy_dest = prghdr.vaddr;
+
+            // Load the segment
+            while (seg_end - file_pos > 0)
             {
-                // Read 4KB from offset [load_offset] in the file into the scratch space
-                pata_read_disk((void*) elfload_v, MM_PAGE_SIZE, disk_offset + load_offset);
-
-                /* Calculate the size needed to copy from the loaded segment into memory */
-                // If the segment does not fit fully in the loaded page
-                if (end_offset - load_offset > MM_PAGE_SIZE) {
-                    copy_size = load_offset + MM_PAGE_SIZE - start_offset;
+                /* Calculate the size needed to copy from the segment into memory */
+                // If the data from [file_pos] to [seg_end] does not fit in the same page
+                if (seg_end / MM_PAGE_SIZE != file_pos / MM_PAGE_SIZE) {
+                    copy_size = MM_ALIGN_UP(file_pos) - file_pos;
                 }
-                // If it does fit fully in the loaded page
+                // If it does fit in the same page
                 else {
-                    copy_size = end_offset - start_offset;
+                    copy_size = seg_end - file_pos;
                 }
 
+
+                /* Map the user space for the segment */   
                 // If the segment's page is mapped already, get the physical page of it
                 if ( vmm_is_mapped(new_pd_p, MM_ALIGN_DOWN(copy_dest)) ) {
                     dest_p = vmm_get_physical(new_pd_p, MM_ALIGN_DOWN(copy_dest));
@@ -155,42 +173,47 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
                     dest_p = pmm_get_page();
 
                     vmm_map_page(new_pd_p, dest_p,
-                        MM_ALIGN_DOWN(copy_dest), prgheader.flags & 2,    // writable
+                        MM_ALIGN_DOWN(copy_dest), prghdr.flags & 2,    // writable
                         1, 0, 0);
                 }
-                // Temporarily attach the physical page so we can write to it; add the copy_dest offset to it
-                dest_v = vmm_attach_page(dest_p) + (copy_dest % MM_PAGE_SIZE);
+                // Temporarily attach the user physical page so we can access it
+                dest_v = vmm_attach_page(dest_p);// + (copy_dest % MM_PAGE_SIZE);
+
 
                 /* Copy the segment's data into its destination */
+                // Attach the file page so we can read from it
+                scratch_v = vmm_attach_page(elfload_p[file_pos / MM_PAGE_SIZE]);
+
                 // Data only
-                if (copy_size <= prgheader.filesz) {
-                    memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), copy_size);
+                if (seg_end - (file_pos+copy_size) >= prghdr.memsz - prghdr.filesz) {
+                    memcpy((void*) dest_v, (void*) (scratch_v + (file_pos%MM_PAGE_SIZE)), copy_size);
                 }
+                // [TODO] finish BSS AND DATA&BSS
                 // BSS only
-                else if (prgheader.filesz <= 0) {
+                else if (seg_end - file_pos < prghdr.memsz - prghdr.filesz) {
                     memset((void*) dest_v, 0, copy_size);
                 }
                 // Data & BSS
                 else {
                     // Copy data
-                    memcpy((void*) dest_v, (void*) (elfload_v + (start_offset-load_offset)), prgheader.filesz);
+                    // memcpy((void*) dest_v, (void*) (elfload_v + (file_start-file_pos)), prghdr.filesz);
 
-                    // Zero out BSS
-                    memset((void*) (dest_v + prgheader.filesz), 0, copy_size - prgheader.filesz);
+                    // // Zero out BSS
+                    // memset((void*) (dest_v + prghdr.filesz), 0, copy_size - prghdr.filesz);
                 }
 
-                prgheader.filesz -= copy_size;
-                prgheader.memsz  -= copy_size;
-                load_offset     += MM_PAGE_SIZE;
-                start_offset    += copy_size;
-                copy_dest       += copy_size;
+                // Seek the file
+                copy_dest += copy_size;
+                file_pos  += copy_size;
+
+                // Free temporarly attached page
+                vmm_detach_page(scratch_v);
                 vmm_detach_page(dest_v);
             }
         }
 
         // Free resources
-        pmm_free_page(elfload_p);
-        vmm_detach_page(elfload_v);
+        kfree(elfload_p);
     }
 
     /* Queue the process in the scheduler */

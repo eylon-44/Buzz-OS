@@ -29,8 +29,8 @@ static void read_sector(void* dest, uint32_t lba)
     insd(PATA_DATA_PORT, dest, PATA_SECTOR_SIZE / 4);               // copy the sector from the PATA data port into RAM
 }
 
-/* Read [size] bytes from location [disk_offset] in disk into [dest]
-    - might read more data than requested
+/* Read [size] sections from location [disk_offset] in disk into [dest].
+    !!! [size] and [disk_offset] are in sector units (1 sector = PATA_SECTOR_SIZE = 512) !!!
     - [disk_offset] is the sector offset in the disk; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     - [size] is the amount of sectors to load; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     - [dest] should be 4 bytes aligned */

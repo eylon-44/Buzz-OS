@@ -22,6 +22,7 @@ target remote localhost:1234
 
 # Kernel main start
 break kernel_main
+#break pm_load
 
 break common_interrupt_handler
 #break timer_callback

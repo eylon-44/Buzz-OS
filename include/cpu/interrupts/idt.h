@@ -7,18 +7,28 @@
 
 #define IDT_ENTRIES_COUNT 256
 
-// Interrupt descriptor: 64 bits
+// Type gates
+typedef enum
+{
+    GT_32BIT_INT  = 0b1110,
+    GT_32BIT_TRAP = 0b1111
+} gate_type_t;
+
+// Interrupt descriptor
 typedef struct
 {
     uint16_t offset_low;       // lower 16 bits of the starting address of the interrupt handler code.
-    uint16_t segment_selector; // segment selector :: offset in the GDT :: which segment is the handler code in
+    uint16_t segment_selector; // segment selector in which the segment handler code is in
     uint8_t  reserved_zero;    // reserved null byte :: 0b00000000
-    uint8_t  type_attributes;  // type attributes :: full explanation can be found in "documentation/INERRUPTS.md"
-                            //  | bits |    name   | description
-                            //  |  0-3 | Gate Type | a 4-bit value which defines the type of gate this interrupt descriptor represents
-                            //  |    4 |     0     | reserved
-                            //  |  5-6 |    DPL    | a 2-bit value to define cpu privilige levels which are allowed to access this interrupt via the INT instruction.
-                            //  |    7 |     P     | present bit, must be set to [1] for the descriptor to be valid.
+    struct
+    {
+        gate_type_t gate_type : 4;  // [0-3] gate type; type of gate this interrupt descriptor represents
+        uint8_t     _reserved : 1;  // [4]   reserved; set to 0 at initiation
+        uint8_t     dpl       : 2;  // [5-6] DPL; privilige levels which are allowed to access this interrupt via the INT instruction
+        uint8_t     present   : 1;  // [7]   present bit; must be set to [1] for the descriptor to be valid
+
+    } __attribute__((packed)) type_attributes;
+    
     uint16_t offset_high;      // higher 16 bits of the starting address of the interrupt handler code.bnn 
 
 } __attribute__((packed)) InterruptDescriptor;
@@ -31,7 +41,7 @@ typedef struct
 } __attribute__((packed)) IDTR;
 
 
-void set_interrupt_descriptor(uint8_t index, uint32_t handler_address);
+void set_interrupt_descriptor(uint8_t index, uint32_t handler_address, gate_type_t gate_type, uint8_t dpl);
 void load_idt();
 
 #endif
