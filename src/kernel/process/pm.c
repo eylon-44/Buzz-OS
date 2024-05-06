@@ -258,7 +258,8 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
             .cs=GDT_UCODE_SEG,
             .eip=(size_t) thread.entry,
             .ss=GDT_UDATA_SEG,
-            .esp=MM_USTACK_TOP};
+            .esp=MM_USTACK_TOP,
+            .eflags=1<<9 /*IF*/ };
 
         // Allocate and map a page for the kernel stack of the new process
         kesp = pmm_get_page();
