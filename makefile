@@ -11,7 +11,7 @@ INCLUDE_DIR := include
 SYMBOLS_DIR := $(BIN_DIR)/symbols
 
 # All kernel related code directories
-KRNL_DIRS := kernel drivers cpu
+KRNL_DIRS := kernel drivers
 KRNL_DIRS := $(patsubst %, $(SRC_DIR)/%, $(KRNL_DIRS))
 KRNL_SRCS := $(shell find $(KRNL_DIRS) -name '*.S' -or -name '*.c')
 KRNL_OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(KRNL_SRCS))

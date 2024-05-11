@@ -1,7 +1,7 @@
 // Programable Interval Timer // ~ eylon
 
-#include <cpu/timer.h>
-#include <cpu/interrupts/isr.h>
+#include <drivers/timer.h>
+#include <kernel/interrupts/isr.h>
 #include <drivers/ports.h>
 #include <libc/stdint.h>
 #include <kernel/process/scheduler.h>

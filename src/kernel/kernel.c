@@ -6,8 +6,8 @@
 #include <kernel/syscall/syscall.h>
 #include <drivers/screen.h>
 #include <drivers/keyboard.h>
-#include <cpu/interrupts/isr.h>
-#include <cpu/timer.h>
+#include <kernel/interrupts/isr.h>
+#include <drivers/timer.h>
 
 // Kernel main function :: kernel start
 void kernel_main() 

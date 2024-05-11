@@ -3,7 +3,7 @@
 #if !defined(SYSCALL_H)
 #define SYSCALL_H
 
-#include <cpu/interrupts/isr.h>
+#include <kernel/interrupts/isr.h>
 
 // Number of syscalls
 #define SYSCALL_NUM 256

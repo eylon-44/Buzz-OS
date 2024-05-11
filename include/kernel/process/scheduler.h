@@ -4,7 +4,7 @@
 #define SCHEDULER_H
 
 #include <kernel/process/pm.h>
-#include <cpu/timer.h>
+#include <drivers/timer.h>
 
 // Thread node type
 typedef struct thread_node thread_node_t;

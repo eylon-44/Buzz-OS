@@ -1,7 +1,7 @@
 // Syscall Handler // ~ eylon
 
 #include <kernel/syscall/syscall.h>
-#include <cpu/interrupts/isr.h>
+#include <kernel/interrupts/isr.h>
 #include <libc/stddef.h>
 #include <libc/sys/syscall.h>
 

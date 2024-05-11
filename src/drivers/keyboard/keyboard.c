@@ -3,7 +3,7 @@
 #include <drivers/keyboard.h>
 #include "keymap.h"
 #include <drivers/ports.h>
-#include <cpu/interrupts/isr.h>
+#include <kernel/interrupts/isr.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 

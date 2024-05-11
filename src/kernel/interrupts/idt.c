@@ -1,6 +1,6 @@
 // Interrupt Descriptor Table // ~ eylon
 
-#include <cpu/interrupts/idt.h>
+#include <kernel/interrupts/idt.h>
 #include <libc/stdint.h>
 
 static InterruptDescriptor idt[IDT_ENTRIES_COUNT];

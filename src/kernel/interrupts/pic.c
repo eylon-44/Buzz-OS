@@ -1,6 +1,6 @@
 // Programable Interrupt Controller Utils // ~ eylon
 
-#include <cpu/interrupts/pic.h>
+#include <kernel/interrupts/pic.h>
 #include <drivers/ports.h>
 #include <libc/stdint.h>
 

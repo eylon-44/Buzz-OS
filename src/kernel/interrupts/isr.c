@@ -1,8 +1,8 @@
 // Interrupt Service Routine :: Interrupt Handler // ~ eylon
 
-#include <cpu/interrupts/isr.h>
-#include <cpu/interrupts/pic.h>
-#include <cpu/interrupts/idt.h>
+#include <kernel/interrupts/isr.h>
+#include <kernel/interrupts/pic.h>
+#include <kernel/interrupts/idt.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 #include <kernel/syscall/syscall.h>

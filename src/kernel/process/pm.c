@@ -10,7 +10,7 @@
 #include <kernel/memory/heap.h>
 #include <kernel/memory/mmlayout.h>
 #include <kernel/memory/gdt.h>
-#include <cpu/interrupts/isr.h>
+#include <kernel/interrupts/isr.h>
 #include <drivers/pata.h>
 #include <libc/stdint.h>
 #include <libc/string.h>
