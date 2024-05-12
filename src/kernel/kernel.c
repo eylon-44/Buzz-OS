@@ -10,7 +10,7 @@
 #include <drivers/timer.h>
 
 // Kernel main function :: kernel start
-void kernel_main() 
+void kernel_main()
 {
     init_mm();
     init_interrupt();

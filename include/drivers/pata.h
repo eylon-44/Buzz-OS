@@ -4,37 +4,39 @@
 #define PATA_H
 
 #include <libc/stdint.h> 
-
-/* Constants */
+#include <stddef.h>
 
 // Sector size in bytes
 #define PATA_SECTOR_SIZE            0x200
-
-
-/* PATA Ports */
 
 // [W/R] Data port
 #define PATA_DATA_PORT              0x1F0
 
 // [W/R] Sector count port
-#define PATA_SECTOR_COUNT_PORT      0x1F2
+#define PATA_SECTOR_COUNT_PORT      (PATA_DATA_PORT + 2)
 
 // [W/R] LBA1 port
-#define PATA_LBA1_PORT              0x1F3
+#define PATA_LBA1_PORT              (PATA_DATA_PORT + 3)
 // [W/R] LBA2 port
-#define PATA_LBA2_PORT              0x1F4
+#define PATA_LBA2_PORT              (PATA_DATA_PORT + 4)
 // [W/R] LBA3 port
-#define PATA_LBA3_PORT              0x1F5
+#define PATA_LBA3_PORT              (PATA_DATA_PORT + 5)
 // [W/R] Drive port
-#define PATA_DRIVE_PORT             0x1F6
+#define PATA_DRIVE_PORT             (PATA_DATA_PORT + 6)
 
 // [R] Status port
-#define PATA_STATUS_PORT            0x1F7
+#define PATA_STATUS_PORT            (PATA_DATA_PORT + 7)
 // [W] Command port
-#define PATA_CMD_PORT               0x1F7
+#define PATA_CMD_PORT               (PATA_DATA_PORT + 7)
 
-#define PATA_READ_SECTOR            0x20
+#define PATA_READ_CMD               0x20
+#define PATA_WRITE_CMD              0x30
+#define PATA_FLUSH_CMD              0xE7
 
-void pata_read_disk(void* dest, uint32_t size, uint32_t disk_offset);
+// 1 lba = 512 bytes
+typedef size_t lba_t;
+
+void pata_read_disk(void* dest, lba_t size, lba_t disk_offset);
+void pata_write_disk(void* src, lba_t size, lba_t disk_offset);
 
 #endif

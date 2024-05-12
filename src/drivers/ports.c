@@ -34,13 +34,22 @@ inline void port_outw(uint16_t port, uint16_t data)
     __asm__ volatile ("out %0, %1" : : "a" (data), "d" (port));
 }
 
-// Input from port to string (4 bytes per call)
+// Input from port to [dest] (4 bytes per call)
 inline void insd(uint16_t port, void* dest, uint32_t count)
 {
     __asm__ volatile("cld; rep insl" :
         "=D" (dest), "=c" (count) :
         "d" (port), "0" (dest), "1" (count) :
         "memory", "cc");
+}
+
+// Output from [src] to port (4 bytes per call)
+inline void outsd(uint16_t port, const void* src, uint32_t count)
+{
+    __asm__ volatile("cld; rep outsl" :
+        "=S" (src), "=c" (count) :
+        "d" (port), "0" (src), "1" (count) :
+        "cc");
 }
 
 // Wait a very small amount of time (1 to 4 microseconds)

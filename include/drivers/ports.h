@@ -10,6 +10,7 @@ void port_outb(uint16_t port, uint8_t data);
 uint16_t port_inw(uint16_t port);
 void port_outw(uint16_t port, uint16_t data);
 void insd(uint16_t port, void* dest, uint32_t count);
+void outsd(uint16_t port, const void* src, uint32_t count);
 void io_wait(void);
 
 #endif
