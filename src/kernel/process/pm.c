@@ -322,7 +322,7 @@ static void init_init()
         using the dummy process created by the VMM in init_vmm and already stored in the queue for us.
         By using this dummy we gain access to all process related functions that will help us to create
         the actual first process - the init process. The dummy represents the process of the current
-        init context, that holds no user process, and therefore should be deleted after initiation. */
+        init context, that holds no user process, and therefore should be deleted after initialization. */
 
     thread_t* init_t;                                                       // init thread
     extern sched_queue_t queue;                                             // extern the scheduler's queue to manipulate it for the init process
@@ -332,6 +332,8 @@ static void init_init()
 
     // Remove the dummy as being the parnet
     init_t->parnet = NULL;
+
+    pm_load(init_t, 512, 10);   // DEBUG
 
     // [TODO] Do I need this?
     // Switch to the init process which should be located right after the dummy in the queue

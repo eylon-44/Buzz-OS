@@ -24,13 +24,13 @@ BIN_DIR := bin
 # included header files directory
 INC_DIR := inc
 
-# find C source files within the source directory
-SRCS := $(shell find $(SRC_DIR) -name '*.c')
+# find C & GAS Assembly source files within the source directory
+SRCS := $(shell find $(SRC_DIR) -name '*.c' -or -name '*.S')
 # create a list of expected object files
 OBJS := $(patsubst $(SRC_DIR)/%, $(BIN_DIR)/%.o, $(SRCS))
 
 # Buzz OS project path
-BUZZ :=	$(HOME)/Code/os
+BUZZ :=
 
 # name of the final executable
 EXEC := $(BIN_DIR)/a.out
@@ -41,7 +41,7 @@ LIBC := $(BUZZ)/bin/libc/lib_bzlibc.a
 # the C compiler
 CC      := gcc
 # compiler flags
-CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/include/libc -m32 -nostdlib -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb # -fno-pic
+CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/include/libc -m32 -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb # -fno-pic
 
 # make sure that BUZZ is defined
 ifndef BUZZ
@@ -54,9 +54,9 @@ endif
 
 all: $(EXEC)
 
-# Compile C source files into object files
+# Compile C & GAS Assembly source files into object files
 $(BIN_DIR)/%.o: $(SRC_DIR)/%
-	mkdir -p ${BIN_DIR}
+	@mkdir -p ${BIN_DIR}
 	${CC} -c ${CFLAGS} -o $@ $<
 
 # Compile the operating system (together with the libc)
@@ -65,7 +65,7 @@ OS:
 
 # Link all objects into a single ELF file
 $(EXEC): OS $(OBJS)
-	${CC} -m32 -L$(shell dirname $(LIBC)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC))) -o $@ $(filter-out $<, $^) 
+	${CC} ${CFLAGS} -L$(shell dirname $(LIBC)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC))) -o $@ $(filter-out $<, $^) 
 
 	@echo "\n. . . DONE . . .\n"
 

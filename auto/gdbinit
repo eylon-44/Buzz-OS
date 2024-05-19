@@ -5,9 +5,9 @@ add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 
-layout src
-#layout asm
-#layout reg
+#layout src
+layout asm
+layout reg
 
 target remote localhost:1234
 
@@ -24,6 +24,7 @@ target remote localhost:1234
 break kernel_main
 #break pm_load
 
+break interrupt_handler_92
 break common_interrupt_handler
 #break timer_callback
 #break pm_load

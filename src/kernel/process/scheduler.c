@@ -142,31 +142,33 @@ static void rem_thread(thread_t* t)
     // Set the status of the task to DONE and by that remove its priority from the queue's priority sum
     sched_set_status(t, TS_DONE);
 
-    // Get the node the comes before the node of the thread we would like to remove
+    // If it's the first node
+    if (&node->thread == t)
+    {
+        queue.thread_n = node->next;        // remove the node from the queue
+        vmm_del_ctx(node->thread.cr3);      // delete the address space of the process
+        kfree(node);                        // deallocate the node from the heap
+        queue.count--;                      // decrement the queue count
+
+        return;
+    }
+
+    // Iterate the list until finding the node the comes before of the node we would like to delete
     while (node->next != NULL) {
         if (&node->next->thread == t) {
-            goto remove;            // found the thread, go to the code that removes it 
+            tmp = node->next;                   // [tmp] keeps the address of the node that is about to be deleted
+            node->next = node->next->next;      // remove the node from the queue
+            vmm_del_ctx(tmp->thread.cr3);       // delete the address space of the process
+            kfree(tmp);                         // deallocate the node from the heap
+            queue.count--;                      // decrement the queue count
+
+            return;
         }
         node = node->next;          // step the queue
     }
-    // If reached this line, there is no such thread on the list, abort
+
+    // This line is executed only if there is no such thread on the list
     return;
-
-    // Remove the node from the queue
-    remove:
-        tmp = node;
-
-        // Remove the node from the queue
-        node->next = node->next->next;
-
-        // Delete the address space of the process
-        vmm_del_ctx(tmp->thread.cr3);
-
-        // Deallocate the node from the heap
-        kfree(tmp->next);
-
-    // Decrement the queue count
-    queue.count--;
 }
 
 // Update currently running task on scheduler tick
