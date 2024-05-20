@@ -3,7 +3,7 @@
 #include <kernel/memory/mm.h>
 #include <kernel/process/pm.h>
 #include <kernel/panic.h>
-#include <kernel/syscall/syscall.h>
+#include <kernel/syscall.h>
 #include <drivers/screen.h>
 #include <drivers/keyboard.h>
 #include <kernel/interrupts/isr.h>

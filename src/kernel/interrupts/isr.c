@@ -5,7 +5,7 @@
 #include <kernel/interrupts/idt.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
-#include <kernel/syscall/syscall.h>
+#include <kernel/syscall.h>
 #include <drivers/screen.h> // [DEBUG]
 
 // Macro to extern and set an interrupt handler in the IDT

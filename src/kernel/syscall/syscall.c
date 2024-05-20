@@ -1,9 +1,15 @@
 // Syscall Handler // ~ eylon
 
-#include <kernel/syscall/syscall.h>
+#include <kernel/syscall.h>
 #include <kernel/interrupts/isr.h>
 #include <libc/stddef.h>
 #include <libc/sys/syscall.h>
+
+/* Macro to extern and set a syscall handler in the handlers list.
+    Take [name] out of sys_[name] or SYS_[name]. */
+#define SYSCALL_HANDLER(name) \
+    extern void (sys_##name)(int_frame_t* param); \
+    syscall_handlers[SYS_##name] = sys_##name;
 
 // Array of syscall handlers arranged by their syscall number
 static syscall_t syscall_handlers[SYSCALL_NUM];
@@ -11,13 +17,13 @@ static syscall_t syscall_handlers[SYSCALL_NUM];
 // Common syscall handler; calls the required syscall handler
 static void common_syscall_handler(int_frame_t* param)
 {
-    // Check that the syscall number is valid; if not, exit
+    // Check that the syscall number is valid; if not, abort
     if (param->eax >= SYSCALL_NUM || syscall_handlers[param->eax] == NULL) {
         param->eax = 111;   // invalid; [TODO] do protocol and stuff
         return;
     }
 
-    // If is valid, call the handler
+    // If syscall number is valid, call the handler
     syscall_handlers[param->eax](param);
 }
 
@@ -27,8 +33,11 @@ void init_syscall()
     // Set the syscall interrupt handler
     set_interrupt_handler(SYS_int, common_syscall_handler);
 
-    // Initiate the syscall handlers array with NULL pointers
+    // Initiate the syscall handlers list NULL
     for (int i = 0; i < SYSCALL_NUM; i++) {
         syscall_handlers[i] = NULL;
     }
+
+    // Set the list with handlers
+    SYSCALL_HANDLER(exit);
 }
