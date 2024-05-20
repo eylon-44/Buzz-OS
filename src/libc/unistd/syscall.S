@@ -25,12 +25,12 @@ syscall:
     pushl %ebp
     movl %esp, %ebp
     
-    movl 4(%ebp), %eax     // move the syscall number into eax
-    movl 8(%ebp), %ebx     // move the first argument into ebx
-    movl 12(%ebp), %ecx    // move the second argument into ecx
-    movl 16(%ebp), %edx    // move the third argument into edx
-    movl 20(%ebp), %esi    // move the fourth argument into esi
-    movl 24(%ebp), %edi    // move the fifth argument into edi
+    movl 8(%ebp), %eax     // move the syscall number into eax
+    movl 12(%ebp), %ebx    // move the first argument into ebx
+    movl 16(%ebp), %ecx    // move the second argument into ecx
+    movl 20(%ebp), %edx    // move the third argument into edx
+    movl 24(%ebp), %esi    // move the fourth argument into esi
+    movl 28(%ebp), %edi    // move the fifth argument into edi
 
     int $SYS_int           // perform the syscall
 
