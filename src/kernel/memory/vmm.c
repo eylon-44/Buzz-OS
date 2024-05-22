@@ -11,9 +11,9 @@
 #include <libc/string.h>
 #include <libc/stdint.h>
 
-/* The physical address of the init page directory (the one that is created in the vmm_init function)
-    should be loaded into this variable at the end of the vmm_init function. */
-thread_node_t init_thread_node;
+/* The dummy process refers to the current startup context of execution which should
+    later be destoryed as it contains no user processes. */
+process_t _dummy_proc;
 
 // Start and end addresses of the kernel set by the linker
 extern char _vstart;
@@ -178,7 +178,7 @@ void vmm_del_ctx(paddr_t pd)
 
         // If PDE is present, seek for present PTEs inside it
         if (pd_v[i].present) {
-            pt = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT((pde_t*) pd+i));  // map the PDE's page table in order to access it
+            pt = (pte_t*) vmm_attach_page((paddr_t) MM_GET_PT((pde_t*) pd_v+i));  // map the PDE's page table in order to access it
 
             // Go over all the page directory entries
             for (size_t k = 0; k < MM_PT_ENTRIES; k++)
@@ -189,8 +189,8 @@ void vmm_del_ctx(paddr_t pd)
                 }
             }
 
-            vmm_detach_page((vaddr_t) pt);                      // free the temporarly attached page
-            pmm_free_page((paddr_t) MM_GET_PT((pde_t*) pd+i));  // free the physical page of the page table
+            vmm_detach_page((vaddr_t) pt);                          // free the temporarly attached page
+            pmm_free_page((paddr_t) MM_GET_PT((pde_t*) pd_v+i));    // free the physical page of the page table
         }
     }
 
@@ -321,16 +321,15 @@ void init_vmm()
     vmm_map_page(pd, pmm_get_page(), MM_TSS_START, 1, 0, 0, 1);
 
 
-    /* Create a dummy process to represent this context and place it in the scheduler's queue */
+    // Setup the dummy process
     {
         extern sched_queue_t queue;
 
-        init_thread_node.next          = NULL;          // the dummy is set as the first and last thread in the queue
-        init_thread_node.thread.ticks  = -1;            // will cause the shceduler to switch from the dummy on a timer interrupt
-        init_thread_node.thread.status = TS_DONE;       // will cause the scheduler to delete the dummy completely
-        init_thread_node.thread.cr3    = (size_t) pd;   // used by the scheduler to delete the current address space and by the vmm to access this page directory
+        _dummy_proc.pid    = -1;
+        _dummy_proc.cr3    = (size_t) pd;
+        _dummy_proc.parnet = NULL;
+        _dummy_proc.ticks  = 0;
 
-        queue.thread_n = &init_thread_node;
-        queue.active   = &init_thread_node;
+        queue.active = &_dummy_proc;
     }
 }

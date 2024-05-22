@@ -7,7 +7,7 @@
 # Set main directories
 SRC_DIR := src
 BIN_DIR := bin
-INCLUDE_DIR := include
+INCLUDE_DIR := inc
 SYMBOLS_DIR := $(BIN_DIR)/symbols
 
 # All kernel related code directories

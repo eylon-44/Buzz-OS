@@ -26,24 +26,13 @@ static inline int gen_pid()
     return pid;
 }
 
-/* Generate a unique thread ID.
-    The function simply assumes that we will never create more than 4 billion (2^32) threads.
-    So instead of iterating over the list of threads in order to make sure that there are no
-    duplicates (which can take a lot of time), we simply increament a value by 1 and return it. */
-static inline int gen_tid()
-{
-    static int tid = -1;
-    tid++;
-    return tid;
-}
-
 // Get the PID of the currently active process
 inline int pm_get_pid() {
     return sched_get_active()->pid;
 }
 
 // Create a new process
-thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
+process_t* pm_load(process_t* parent, uint32_t disk_offset, int priority)
 {
     /* Create a new page directory for the process */
     pde_t *new_pd_p, *new_pd_v;
@@ -213,11 +202,10 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 
     /* Queue the process in the scheduler */
 
-    // Create the thread data structure
-    thread_t thread = { 
+    // Create the process data structure
+    process_t process = { 
         .pid        = gen_pid(),                        // find an available PID for the process and set it
-        .tid        = gen_tid(),                        // find an available TID for and set it
-        .parnet     = parent,                           // parent of this process; NULL for init process
+        .parnet     = parent,                           // parent of this process
         .child_count= 0,                                // 0 children by defualt
         .kesp       = 0,                                // kernel stack pointer to set when entering ring 0
         .cr3        = (uint32_t) new_pd_p,              // physical address of the process' page directory
@@ -229,7 +217,9 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
     };
 
     // Increment the child count of the parent
-    parent->child_count++;
+    if (parent != NULL) {
+        parent->child_count++;
+    }
 
     /* Allocate and set up kernel and user stacks for the new process.
     The interrupt frame will affect the initial values of the common register
@@ -251,7 +241,7 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         };
         iret_frame_t iret_frame = {
             .cs=GDT_UCODE_SEG,
-            .eip=(size_t) thread.entry,
+            .eip=(size_t) process.entry,
             .ss=GDT_UDATA_SEG,
             .esp=MM_USTACK_TOP,
             .eflags=1<<9 /*IF*/ };
@@ -271,7 +261,7 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
         *(int_frame_t*) kesp = int_frame;
 
         // Preserve the stack pointer as the initial kernel stack pointer of the process
-        thread.kesp = MM_KSTACK_TOP - sizeof(int_frame_t) - sizeof(iret_frame_t);
+        process.kesp = MM_KSTACK_TOP - sizeof(int_frame_t) - sizeof(iret_frame_t);
 
         // Allocate a user stack
         vmm_map_page(new_pd_p,
@@ -296,12 +286,12 @@ thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
     vmm_detach_page((vaddr_t) new_pd_v);
 
     // Queue the task in the scheduler's queue and return it
-    return sched_add_thread(thread);
+    return sched_add_process(process);
 }
 
 /* Kill a process.
     Set its status to DONE and let the scheduler handle the rest. */
-void pm_kill(thread_t* t)
+void pm_kill(process_t* t)
 {
     sched_set_status(t, TS_DONE);
     if (t == sched_get_active()) {
@@ -312,27 +302,19 @@ void pm_kill(thread_t* t)
 // Initiate the initiation process
 static void init_init()
 {
-    /* As all of the function are implemented with the assumption that there is already at least one
-        process in the queue (which should be the init process), we will have to manipulate them by
-        using the dummy process created by the VMM in init_vmm and already stored in the queue for us.
-        By using this dummy we gain access to all process related functions that will help us to create
-        the actual first process - the init process. The dummy represents the process of the current
-        init context, that holds no user process, and therefore should be deleted after initialization. */
+    process_t* init_p;              // init process
+    extern process_t _dummy_proc;   // extern dummy process created by the virtual memory manager
+    extern sched_queue_t queue;     // extern scheduler queue to manipulate it
 
-    thread_t* init_t;                                                       // init thread
-    extern sched_queue_t queue;                                             // extern the scheduler's queue to manipulate it for the init process
-    
+    /* Add the dummy process to the queue and set its status to DONE.
+        The dummy process represents the process of the current startup context,
+        that holds no user process, and therefore should be deleted after initialization. */
+    sched_set_status( sched_add_process(_dummy_proc), TS_DONE );
+    queue.active = queue.proc_list;
+
     // Load the init process
-    init_t = pm_load(&queue.active->thread, 512, 20); // DEBUG SECTOR NUMBER
-
-    // Remove the dummy as being the parnet
-    init_t->parnet = NULL;
-
-    pm_load(init_t, 512, 10);   // DEBUG
-
-    // [TODO] Do I need this?
-    // Switch to the init process which should be located right after the dummy in the queue
-    //sched_switch_next();
+    init_p = pm_load(NULL, 512, 20); // DEBUG SECTOR NUMBER
+    pm_load(init_p, 512, 10);   // DEBUG
 }
 
 void init_pm()
