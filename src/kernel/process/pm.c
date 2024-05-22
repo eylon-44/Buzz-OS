@@ -45,11 +45,6 @@ inline int pm_get_pid() {
 // Create a new process
 thread_t* pm_load(thread_t* parent, uint32_t disk_offset, int priority)
 {
-
-    /* Merge the kernel thread with the calling thread */
-    //__asm__ volatile ("sti");                                   // enable interrupts
-
-
     /* Create a new page directory for the process */
     pde_t *new_pd_p, *new_pd_v;
     {

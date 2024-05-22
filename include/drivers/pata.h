@@ -33,10 +33,10 @@
 #define PATA_WRITE_CMD              0x30
 #define PATA_FLUSH_CMD              0xE7
 
-// 1 lba = 512 bytes
-typedef size_t lba_t;
+// 1 sector = 512 bytes
+typedef size_t sector_t;
 
-void pata_read_disk(void* dest, lba_t size, lba_t disk_offset);
-void pata_write_disk(void* src, lba_t size, lba_t disk_offset);
+void pata_read_disk(void* dest, sector_t size, sector_t disk_offset);
+void pata_write_disk(void* src, sector_t size, sector_t disk_offset);
 
 #endif

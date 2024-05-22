@@ -3,6 +3,7 @@
 #if !defined(PM_H)
 #define PM_H
 
+#include <kernel/fs.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 
@@ -36,6 +37,8 @@ struct thread {
     tstatus_t status;       // thread status
     int ticks;              // cpu ticks while the thread is active
     int priority;           // thread's scheduler priority
+
+    fd_t* fds;              // process's file descriptors list
 
     void (*entry)();        // thread entry function
     uint8_t exit_status;    // exit status

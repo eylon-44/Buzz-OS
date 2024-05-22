@@ -7,3 +7,5 @@ The calls are usually being invoked by the user by raising an interrupt. The int
 ### Syscall Handler
 
 `INT 0x5C` (**S**ys**C**all) will invoke the kernel's syscall handler.
+
+https://syscalls32.paolostivanin.com/

@@ -13,7 +13,7 @@ static void wait_disk() {
 }
 
 // Read a sector [lba] from the disk into [dest]
-static void read_sector(void* dest, lba_t lba)
+static void read_sector(void* dest, sector_t lba)
 {
     wait_disk();                                                        // wait for disk to be ready
 
@@ -32,7 +32,7 @@ static void read_sector(void* dest, lba_t lba)
     [disk_offset] is the sector offset in the disk; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     [size] is the amount of sectors to load; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     [dest] should be 4 byte aligned */
-void pata_read_disk(void* dest, lba_t size, lba_t disk_offset)
+void pata_read_disk(void* dest, sector_t size, sector_t disk_offset)
 {
     uint8_t* start = (uint8_t*) dest; 
     uint8_t* end   = start + size;
@@ -43,7 +43,7 @@ void pata_read_disk(void* dest, lba_t size, lba_t disk_offset)
 }
 
 // Read a sector [lba] from the disk into [src]
-static void write_sector(void* src, lba_t lba)
+static void write_sector(void* src, sector_t lba)
 {
     wait_disk();                                                        // wait for disk to be ready
 
@@ -69,7 +69,7 @@ static void write_sector(void* src, lba_t lba)
     [disk_offset] is the sector offset in the disk; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     [size] is the amount of sectors to load; 1 sector is [PATA_SECTOR_SIZE] (512) bytes
     [src] should be 4 byte aligned */
-void pata_write_disk(void* src, lba_t size, lba_t disk_offset)
+void pata_write_disk(void* src, sector_t size, sector_t disk_offset)
 {
     uint8_t* start = (uint8_t*) src; 
     uint8_t* end   = start + size;

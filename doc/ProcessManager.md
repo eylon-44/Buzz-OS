@@ -268,7 +268,7 @@ asm("sti");
 for(;;) asm("hlt");
 ```
 
-From that moment on, interrupts are enabled, the timer ticks and the scheduler kicks - starts switching between all of the threads in its queue. The problem is that at that point, the scheduler still has no threads in its queue, meaning that the user has no interface for even creating a thread on its own. To solve that, the kernel is going to start the first user process itself. This process is called the **init process** and it is a user space daemon which bootstraps the user space and supply the user its first interface. The exact responsibility of the init process is described in [another docs](INITD.md), but as for the process manager, its job is to load the init process at startup as the first process.
+From that moment on, interrupts are enabled, the timer ticks and the scheduler kicks in and starts switching between all of the threads in its queue. The problem is that at this point, the scheduler still has no threads in its queue, meaning that the user has no interface creating a thread on its own. To solve that, the kernel is going to start the first user process itself. This process is called the **init process** and it is a user space daemon which bootstraps the user space and supply the user its first interface. The exact responsibility of the init process is described in [another docs](INITD.md), but as for the process manager, its job is to load the init process at startup as the first process.
 
 
 ### Process Destruction <span style="color: gray; font-weight: lighter; font-size: 10px;">(imagine a lot of explosions)</span>
