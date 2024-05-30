@@ -11,3 +11,6 @@
 *.elf
 *.exe
 *.bin
+
+__pycache__/
+*$py.class

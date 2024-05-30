@@ -1,0 +1,15 @@
+{
+    "superblock": {
+        "block_count"           : 512,
+        "block_size"            : 4096,
+        "inode_blocks_count"    : 128,
+        "inodes_per_block"      : 16,
+        "super_index"           : 4,
+        "fs_magic"              : 2958751166
+    },
+    "disk": {
+        "sector_size"           : 512,
+        "bits"                  : 32,
+        "endian"                : "<"
+    }
+}

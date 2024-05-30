@@ -14,9 +14,8 @@ typedef struct
 {
     uint32_t block_count;           // total number of blocks in the file system
     uint32_t block_size;            // block size; must be a power of 2 and greater than 512
-    uint32_t inodes_per_block;      // number of inodes in a single block; must be a power of 2 and greater than 0
     uint32_t inode_blocks_count;    // total number of inode blocks; total_inodes = indoes_per_block * inode_block_count
-    uint32_t free_count;            // total number of unallocated blocks
+    uint32_t inodes_per_block;      // number of inodes in a single block; must be a power of 2 and greater than 0
     uint32_t super_index;           // superblock block number - starting block index 
     uint32_t fs_magic;              // file system unique magic number
 } __attribute__((packed)) superblock_t;
