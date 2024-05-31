@@ -7,6 +7,7 @@
 #include <drivers/screen.h>
 #include <drivers/keyboard.h>
 #include <kernel/interrupts/isr.h>
+#include <kernel/fs.h>
 #include <drivers/timer.h>
 
 // Kernel main function :: kernel start
@@ -15,8 +16,9 @@ void kernel_main()
     init_mm();
     init_interrupt();
     init_syscall();
-    init_keyboard();
     init_pm();
+    init_fs();
+    init_keyboard();
     init_timer();
 
     // Print a welcome message
@@ -25,12 +27,12 @@ void kernel_main()
     kprint("\n. . . Loading the system for you; please wait . . .", VGA_ATR_DEFAULT);
 
 
-    // Set the interrupt flag; enable interrupts
+    // Set the interrupt flag; enable interrupts; scheduler kicks in
     __asm__ volatile ("sti");
 
 	// Halt forever; wait for an interrupt, handle it, continue halting
 	for (;;) { __asm__ __volatile__ ("hlt"); }
 
 	// This code should never run
-	KPANIC("KERNEL: REACHED END OF KERNEL");
+	KPANIC("Kernel main: reached unreachable code.");
 }

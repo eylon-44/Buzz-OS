@@ -5,7 +5,7 @@
         "inode_blocks_count"    : 128,
         "inodes_per_block"      : 16,
         "super_index"           : 4,
-        "fs_magic"              : 2958751166
+        "fs_magic"              : 4127508412
     },
     "disk": {
         "sector_size"           : 512,

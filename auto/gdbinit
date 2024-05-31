@@ -21,14 +21,13 @@ target remote localhost:1234
 #break _start
 
 # Kernel main start
-break kernel_main
-#break pm_load
+#break kernel_main
 
-#break interrupt_handler_92
-#break sched_switch_next
-break vmm_del_ctx
-#break common_interrupt_handler
-#break timer_callback
-#break pm_load
+break init_fs
+
+define test
+n
+p s
+end
 
 continue

@@ -13,7 +13,9 @@ void KPANIC(char* msg)
 
     // clear the screen and print error message
     clear_screen();
-    kprint(msg, VGA_ATR_ERROR);
+    kprint("KERNEL PANIC", VGA_ATR_ERROR);
+    kprint(" ---> ", VGA_ATR_DEFAULT);
+    kprint(msg, VGA_ATR_WARNING);
 
     // halt forever
     for (;;) { __asm__ volatile ("hlt"); }

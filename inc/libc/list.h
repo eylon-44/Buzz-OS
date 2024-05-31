@@ -28,7 +28,7 @@
             (list)->prev = (item); \
             (list)       = (item); \
         } \
-    } while(0)
+    } while (0)
 
 
 // Add an item to the end of a list so it will be the last
@@ -45,7 +45,7 @@
             (list)->prev->next = (item); \
             (list)->prev       = (list)->prev->next; \
         } \
-    } while(0)
+    } while (0)
 
 
 
@@ -68,7 +68,7 @@
             } \
             (pos)->next  = (item); \
         } \
-    } while(0)
+    } while (0)
 
 
 // Add an item before another item to the list
@@ -88,7 +88,7 @@
                 (item)->next      = (pos); \
             } \
         } \
-    } while(0)
+    } while (0)
 
 
 // Remove the first item in the list
@@ -100,7 +100,7 @@
             } \
             (list) = (list)->next; \
         } \
-    } while(0)
+    } while (0)
 
 
 // Remove the last item in the list
@@ -115,7 +115,7 @@
                 (list) = NULL; \
             } \
         } \
-    } while(0)
+    } while (0)
 
 
 // Remove a specific item from the list
@@ -133,6 +133,6 @@
                 (item)->prev->next = (item)->next; \
             } \
         } \
-    } while(0)
+    } while (0)
 
 #endif

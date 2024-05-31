@@ -8,23 +8,26 @@
 
 // Disk sector index from which the file system begins
 #define FS_START_SECTOR 64
-// Block size in bytes
-#define FS_BLOCK_SIZE   (PATA_SECTOR_SIZE * 8)
 // Max name length of an Inode
 #define FS_MAX_NAME_LEN 128
 // Number of direct refrences in an Inode
 #define FS_DIRECT_NUM   12
 // Number of indirect refrences in an Inode
 #define FS_INDIRECT_NUM 4
+// File system's magic number
+#define FS_MAGIC        0xf604c7bc
+// File system's path spiltting character
+#define FS_SPLIT_CHAR   "/"
+// Index of the inode of the root directory
+#define FS_ROOT_INDEX   0
 
 // Superblock structure
 typedef struct
 {
     uint32_t block_count;           // total number of blocks in the file system
     uint32_t block_size;            // block size; must be a power of 2 and greater than 512
-    uint32_t inodes_per_block;      // number of inodes in a single block; must be a power of 2 and greater than 0
     uint32_t inode_blocks_count;    // total number of inode blocks; total_inodes = indoes_per_block * inode_block_count
-    uint32_t free_count;            // total number of unallocated blocks
+    uint32_t inodes_per_block;      // number of inodes in a single block; must be a power of 2 and greater than 0
     uint32_t super_index;           // superblock block number - starting block index 
     uint32_t fs_magic;              // file system unique magic number
 } __attribute__((packed)) superblock_t;
@@ -37,12 +40,10 @@ typedef struct
 } fs_t;
 
 // Inode types
-typedef enum
-{
-    NT_FILE = 0xF,      // file
-    NT_DIR  = 0xD,      // directory
-    NT_LINK = 0xE       // link
-} inode_type_t;
+typedef uint32_t inode_type_t;
+#define FS_NT_FILE  0xF     // file
+#define FS_NT_DIR   0xD     // directory
+#define FS_NT_LINK  0xE     // link
 
 // Inode structure
 typedef struct {
@@ -63,5 +64,7 @@ typedef struct {
     struct fd_t* next;
     struct fd_t* prev;
 } fd_t;
+
+void init_fs();
 
 #endif
