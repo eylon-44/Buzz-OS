@@ -69,7 +69,7 @@ typedef struct {
 ```
 
 
-## Disk Layout
+## File System Disk Layout
 Following is a general layout of the disk including all of the components described above:
 ```
    ┌── ┌── ┌────...N...────┐
@@ -266,7 +266,9 @@ How can we create this new file?
 * Add the index of the file's Inode into the refrence list of the parent directory.
 
 ### File Reading & Writing
-The file's data is referenced in the direct and indirect lists of its inode. Finding the file's inode allows us to access its data blocks, where we can read and write file's data.
+The file's data is referenced in the direct list of its inode. Finding the file's inode allows us to access its data blocks, where we can read and write file's data.
+
+As opposed to directory inodes, the direct blocks list in file inodes must be continuous. There may be no gaps of 0 values between block indexes.
 
 ### File Renaming
 We now want to move our compiled mario game into the `games` directory while changing its name to `super-mario.elf`.
@@ -313,13 +315,14 @@ The number of file descriptors available to each process is limited by the `OPEN
 In the kernel, file descriptors are saved in their corresponding process structure as a linked list. The file descriptor structure is defined as follows:
 
 ```c
-typedef struct {
+// File descriptor structure
+typedef struct fd {
     int fileno;             // file descriptor number
-    uint32_t offset         // the current position within the file
-    uint32_t flags;         // flags which have been used to open the file
-    inode_t inode;          // the inode of the file
+    int flags;              // file descriptor flags
+    uint32_t offset;        // the current position within the file
+    size_t inode;           // the inode index of the file
 
-    struct fd_t* next;
-    struct fd_t* prev;
+    struct fd* next;
+    struct fd* prev;
 } fd_t;
 ```

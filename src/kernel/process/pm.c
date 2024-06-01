@@ -30,6 +30,10 @@ static inline int gen_pid()
 inline int pm_get_pid() {
     return sched_get_active()->pid;
 }
+// Get a pointer to the active process
+inline process_t* pm_get_active() {
+    return sched_get_active();
+}
 
 // Create a new process
 process_t* pm_load(process_t* parent, uint32_t disk_offset, int priority)
@@ -204,16 +208,17 @@ process_t* pm_load(process_t* parent, uint32_t disk_offset, int priority)
 
     // Create the process data structure
     process_t process = { 
-        .pid        = gen_pid(),                        // find an available PID for the process and set it
-        .parnet     = parent,                           // parent of this process
-        .child_count= 0,                                // 0 children by defualt
-        .kesp       = 0,                                // kernel stack pointer to set when entering ring 0
-        .cr3        = (uint32_t) new_pd_p,              // physical address of the process' page directory
-        .status     = TS_NEW,                           // status of the task; will be set to READY once placed into the scheduler's queue
-        .ticks      = 0,                                // ACTIVE time left; set by the scheduler
-        .priority   = priority,                         // task's priority
-        .entry      = (void (*)()) elfhdr.entry,        // process' entry function
-        .exit_status= 0,                                // task's exit status
+        .pid        = gen_pid(),                    // find an available PID for the process and set it
+        .parnet     = parent,                       // parent of this process
+        .child_count= 0,                            // 0 children by defualt
+        .kesp       = 0,                            // kernel stack pointer to set when entering ring 0
+        .cr3        = (uint32_t) new_pd_p,          // physical address of the process' page directory
+        .status     = TS_NEW,                       // status of the task; will be set to READY once placed into the scheduler's queue
+        .ticks      = 0,                            // ACTIVE time left; set by the scheduler
+        .priority   = priority,                     // task's priority
+        .fds        = NULL,                         // process's open file descriptors list
+        .entry      = (void (*)()) elfhdr.entry,    // process' entry function
+        .exit_status= 0,                            // task's exit status
     };
 
     // Increment the child count of the parent

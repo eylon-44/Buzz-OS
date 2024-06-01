@@ -6,8 +6,11 @@
 #include <kernel/memory/pmm.h>
 #include <kernel/memory/heap.h>
 #include <kernel/panic.h>
+#include <kernel/process/pm.h>
 #include <libc/stddef.h>
 #include <libc/stdint.h>
+#include <libc/list.h>
+#include <libc/fcntl.h>
 #include <libc/stdbool.h>
 #include <libc/bitfield.h>
 #include <libc/string.h>
@@ -99,9 +102,9 @@ static void inode_write(inode_t inode, size_t index)
 }
 
 /* Link an index into an available location in an inode's direct list.
+    On success returns 0, on failure returns non zero.
     IMPORTANT: function does not affect the disk directly; caller is
-        responsible for updating the inode in the disk.
-    On success returns 0, on failure returns non zero. */
+        responsible for updating the inode in the disk. */
 static int inode_link(inode_t* inode, size_t link)
 {
     for (size_t i = 0; i < sizeof(inode->direct) * sizeof(inode->direct[0]); i++)
@@ -115,9 +118,9 @@ static int inode_link(inode_t* inode, size_t link)
 }
 
 /* Unlink an index from an inode's direct list.
-    IMPORTANT: function does not affect the disk directly; caller is
-        responsible for updating the inode in the disk.
-    On success returns 0, on failure returns non zero. */
+    On success returns 0, on failure returns non zero.
+    WARNING: function does not affect the disk directly; caller is
+        responsible for updating the inode in the disk. */
 static int inode_unlink(inode_t* inode, size_t link)
 {
     for (size_t i = 0; i < sizeof(inode->direct) * sizeof(inode->direct[0]); i++)
@@ -209,6 +212,23 @@ static size_t inodemap_get()
     return seek;
 }
 
+/* Get a file descriptor pointer of the currently running process by its number.
+    Returns a pointer to the file descriptor structure or NULL if not found. */
+static fd_t* fd_seek(int fd)
+{
+    fd_t* fd_p = pm_get_active()->fds;
+
+    while (fd_p != NULL)
+    {
+        if (fd_p->fileno == fd) {
+            break;
+        }
+        fd_p = fd_p->next;
+    }
+
+    return fd_p;
+}
+
 /* Seek a file.
     Get file's inode index by its path. Returns a negative value if
     the file could not be found. */
@@ -266,7 +286,7 @@ int fs_seek(const char* path)
 }
 
 /* Create a new file.
-    On success, return the new file's inode index; on failure, return a negative number. */
+    On success, returns the new file's inode index; on failure, returns a negative number. */
 int fs_create(const char* path, inode_type_t type)
 {
     int indx_p, indx_c;
@@ -284,8 +304,8 @@ int fs_create(const char* path, inode_type_t type)
 
     // Set the child's inode
     strcpy(child.name, basename(path));
-    child.count = 0;
     child.type  = type;
+    child.count = 0;
     memset(child.direct, 0, sizeof(child.direct) * sizeof(child.direct[0]));
     
     // Get a free inode index and load the child's inode into it
@@ -304,9 +324,9 @@ int fs_create(const char* path, inode_type_t type)
 }
 
 /* Delete a file.
+    On success, returns 0; on failure, returns non-zero.
     WARNING: be careful about deleting directories unrecursively or deleting files
-        without freeing their data blocks first.
-    On success, return 0; on failure, return non-zero. */
+        without freeing their data blocks first. */
 int fs_remove(const char* path)
 {
     int indx_p, indx_c;
@@ -335,6 +355,130 @@ int fs_remove(const char* path)
     return 0;
 }
 
+/* Create a file descriptor for the given path and associate it with the
+    currently running process.
+    On success returns the new file descriptor; on failure returns a negative value. */
+int fs_open(const char* path, int flags)
+{
+    static size_t fileno = 3;   // file descriptor number counter
+
+    fd_t* fd;
+    process_t* p;
+    int index;
+
+    // Seek the file's inode; if the file could not be found, return -1
+    index = fs_seek(path);
+    if (index < 0) {
+        return -1;
+    }
+
+    // Allocate and set the file descriptor
+    fd = (fd_t*) kmalloc(sizeof(fd_t));
+    fd->fileno = fileno;
+    fd->flags  = flags;
+    fd->inode  = index;
+    fd->offset = 0;
+
+    // Get the active process and add the new file descriptors to its list
+    p = pm_get_active();
+    LIST_ADD_END(p->fds, fd);
+
+    fileno++;
+    return fileno-1;
+}
+
+/* Close an open file descriptor of the currently running process.
+    On success returns 0, on failure returns a negative number.
+    WARNING: the three standard file descriptors (stdin=0, stdout=1,
+        and stderr=2) cannot be closed. */
+int fs_close(int fd)
+{
+    process_t* p;
+    fd_t* fd_p;
+
+    // If the file descriptor is a standard stream descriptor abort
+    if (fd < 3) {
+        return -1;
+    }
+
+    // Get the active process and seek its file descriptors list
+    p = pm_get_active();
+    fd_p = p->fds;
+    while (fd_p != NULL) {
+        // If found the file descriptor, remove it from the list and return
+        if (fd_p->fileno == fd) {
+            LIST_REMOVE(p->fds, fd_p);
+            return 0;
+        }
+        fd_p = fd_p->next;  // step the list
+    }
+
+    // No such file descriptor
+    return -1;
+}
+
+/* Attempt to read [count] bytes from file descriptor [fd] into [buff].
+    The reading starts from the seek offset in the file and stops after
+        reading [count] bytes, or at the end of the file.
+    On success, the number of bytes read is returned (zero indicates
+        end of file), and the file position is advanced by this number,
+        on failure, -1 is returned.
+    NOTE: read function only works on files, not directories. */
+ssize_t fs_read(int fd, void* buff, size_t count)
+{
+    /* Handle standard streams */
+    switch (fd)
+    {
+    case 0:     // STDIN
+        return 0;
+    case 1:     // STDOUT
+        return 0;
+    case 2:     // STDERR
+        return 0;
+    }
+
+    /* Handle file streams */
+    fd_t* fd_p;
+    vaddr_t scratch;
+    inode_t inode;
+    size_t bytes_read = 0;
+
+    // Check if the file is open
+    fd_p = fd_seek(fd);
+    if (fd_p == NULL) {
+        return -1;
+    }
+
+    inode = inode_read(fd_p->inode);            // get the file's inode
+    scratch = vmm_attach_page(fs_phys_scratch); // attach temporary scratch space
+
+    // Go over the inode's direct list
+    for (size_t i = fd_p->offset / super.block_size; i <= inode.count / super.block_size; i++)
+    {
+        size_t offset, size;
+
+        // Calculate the offset within the block and the size to copy
+        offset = scratch + (fd_p->offset % super.block_size);
+        size   = offset - scratch;
+        if (size == 0) {
+            size = (count - bytes_read);
+            if (size > super.block_size) {
+                size = super.block_size;
+            }
+        }
+
+        // Read the block and copy it into the buffer
+        block_read((void*) scratch, inode.direct[i]);
+        memcpy(buff, (void*) offset, size);
+
+        fd_p->offset += size;
+        bytes_read   += size;
+    }
+
+    vmm_detach_page(scratch);                   // detach temporary scratch space
+    return bytes_read;
+}
+
 void fs_write(int fd)
 {
     /* Handle standard streams */
@@ -359,5 +503,5 @@ void init_fs()
     fs_phys_scratch = pmm_get_page();   // allocate a physical scratch space for the file system
     super_read();                       // read the superblock
 
-    blockmap_get();
+    blockmap_get();     // DEBUG
 }

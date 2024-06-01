@@ -1,4 +1,4 @@
-// syscall.h // ~ eylon
+// sys/syscall.h // ~ eylon
 
 #if !defined(__LIBC_SYSCALL_H)
 #define __LIBC_SYSCALL_H

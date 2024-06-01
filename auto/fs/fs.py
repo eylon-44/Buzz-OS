@@ -52,9 +52,9 @@ class FileSystem:
             raise ValueError("Can't write a directory into the disk.")
         
         blocks = []
-        fsize   = 0
-        with open(path, "rb") as f:
-            data = f.read(self._super.block_size)
+        fsize   = os.path.getsize(path)
+        with open(path, "rb") as f: 
+            data  = f.read(self._super.block_size)
             while data != b'':
                 index  = self._blockmap.get()
                 offset = self._get_block_offset(index)

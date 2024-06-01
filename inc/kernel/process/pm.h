@@ -43,6 +43,7 @@ typedef struct process {
     struct process* prev;
 } process_t;
 
+process_t* pm_get_active();
 int pm_get_pid();
 void init_pm();
 

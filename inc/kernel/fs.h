@@ -55,14 +55,14 @@ typedef struct {
 } __attribute__((packed)) inode_t;
 
 // File descriptor structure
-typedef struct {
+typedef struct fd {
     int fileno;             // file descriptor number
+    int flags;              // file descriptor flags
     uint32_t offset;        // the current position within the file
-    uint32_t flags;         // flags which have been used to open the file
-    inode_t inode;          // the inode of the file
+    size_t inode;           // the inode index of the file
 
-    struct fd_t* next;
-    struct fd_t* prev;
+    struct fd* next;
+    struct fd* prev;
 } fd_t;
 
 void init_fs();
