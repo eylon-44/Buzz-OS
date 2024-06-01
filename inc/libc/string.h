@@ -16,7 +16,7 @@ char* strncpy(char* dest, const char* src, size_t n);
 char* strtok(char* str, const char* delim);
 char* strchr(const char *str, int c);
 char* strrchr(const char *str, int c);
-char* basename(char* path);
-char* dirname(char* path);
+char* basename(const char* path);
+char* dirname(const char* path);
 
 #endif

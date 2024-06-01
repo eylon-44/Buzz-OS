@@ -18,7 +18,7 @@
     #include <string.h>
     char* basename(char* path);
 */
-char* basename(char* path) {
+char* basename(const char* path) {
     static char buff[256];
     char* last_slash;
 

@@ -16,9 +16,9 @@
     statically allocated buffer. This buffer may be overwritten by subsequent calls.
        
     #include <string.h>
-    char* dirname(char* path);
+    char* dirname(const char* path);
 */
-char* dirname(char* path)
+char* dirname(const char* path)
 {
     static char buff[256];
     char* last_slash;

@@ -7,9 +7,9 @@
 #include <libc/stdint.h>
 
 // Disk sector index from which the file system begins
-#define FS_START_SECTOR 64
+#define FS_START_SECTOR 768 // [DEBUG] CHANGE TO 2!!
 // Max name length of an Inode
-#define FS_MAX_NAME_LEN 128
+#define FS_MAX_NAME_LEN 64
 // Number of direct refrences in an Inode
 #define FS_DIRECT_NUM   12
 // Number of indirect refrences in an Inode

@@ -37,7 +37,7 @@ static paddr_t fs_phys_scratch;
 
 
 // Read the superblock
-static void read_super()
+static void super_read()
 {
     // Allocate a temporary scratch space to load the superblock into
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
@@ -57,7 +57,7 @@ static void read_super()
 
 
 // Read the block at index [index] into [dest]
-static inline void read_block(void* dest, size_t index)
+static inline void block_read(void* dest, size_t index)
 {
     pata_read_disk(dest,
         super.block_size/PATA_SECTOR_SIZE,
@@ -65,7 +65,7 @@ static inline void read_block(void* dest, size_t index)
 }
 
 // Write to the block at index [index] from [src]
-static inline void write_block(void* src, size_t index)
+static inline void block_write(void* src, size_t index)
 {
     pata_write_disk(src,
         super.block_size/PATA_SECTOR_SIZE,
@@ -74,12 +74,12 @@ static inline void write_block(void* src, size_t index)
 
 
 // Read an inode by its index
-static inode_t read_inode(size_t index)
+static inode_t inode_read(size_t index)
 {
     inode_t inode;
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
 
-    read_block((void*) scratch, INODE_BLOCK(index));
+    block_read((void*) scratch, INODE_BLOCK(index));
     inode = *(inode_t*) (scratch + INODE_OFFSET(index));
 
     vmm_detach_page(scratch);
@@ -87,26 +87,57 @@ static inode_t read_inode(size_t index)
 }
 
 // Write an inode into an inode index
-static void write_inode(inode_t inode, size_t index)
+static void inode_write(inode_t inode, size_t index)
 {
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
 
-    read_block((void*) scratch, INODE_BLOCK(index));
+    block_read((void*) scratch, INODE_BLOCK(index));
     *(inode_t*) (scratch + INODE_OFFSET(index)) = inode;
-    write_block((void*) scratch, INODE_BLOCK(index));
+    block_write((void*) scratch, INODE_BLOCK(index));
 
     vmm_detach_page(scratch);
 }
 
+/* Link an index into an available location in an inode's direct list.
+    IMPORTANT: function does not affect the disk directly; caller is
+        responsible for updating the inode in the disk.
+    On success returns 0, on failure returns non zero. */
+static int inode_link(inode_t* inode, size_t link)
+{
+    for (size_t i = 0; i < sizeof(inode->direct) * sizeof(inode->direct[0]); i++)
+    {
+        if (inode->direct[i] == 0) {
+            inode->direct[i] = link;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+/* Unlink an index from an inode's direct list.
+    IMPORTANT: function does not affect the disk directly; caller is
+        responsible for updating the inode in the disk.
+    On success returns 0, on failure returns non zero. */
+static int inode_unlink(inode_t* inode, size_t link)
+{
+    for (size_t i = 0; i < sizeof(inode->direct) * sizeof(inode->direct[0]); i++)
+    {
+        if (inode->direct[i] == link) {
+            inode->direct[i] = 0;
+            return 0;
+        }
+    }
+    return -1;
+}
 
 // Set the block at index [index] to [value] in the blockmap
 static void blockmap_set(size_t index, bool value)
 {
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
 
-    read_block((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
+    block_read((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
     BITFIELD_SET_BIT(*(uint8_t*) (scratch + ((index/8) % super.block_size)), index%8, value);
-    write_block((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
+    block_write((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
 
     vmm_detach_page(scratch);
 }
@@ -117,9 +148,9 @@ static bool blockmap_check(size_t index)
     bool value;
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
 
-    read_block((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
+    block_read((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
     value = BITFIELD_GET_BIT(*(uint8_t*) (scratch + ((index/8) % super.block_size)), index%8);
-    write_block((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
+    block_write((void*) scratch, BLOCKMAP_START + (index/(super.block_size*8)));
 
     vmm_detach_page(scratch);
     return value;
@@ -144,9 +175,9 @@ static void inodemap_set(size_t index, bool value)
 {
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
 
-    read_block((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
+    block_read((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
     BITFIELD_SET_BIT(*(uint8_t*) (scratch + ((index/8) % super.block_size)), index%8, value);
-    write_block((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
+    block_write((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
 
     vmm_detach_page(scratch);
 }
@@ -157,9 +188,9 @@ static bool inodemap_check(size_t index)
     bool value;
     vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
 
-    read_block((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
+    block_read((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
     value = BITFIELD_GET_BIT(*(uint8_t*) (scratch + ((index/8) % super.block_size)), index%8);
-    write_block((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
+    block_write((void*) scratch, INODEMAP_START + (index/(super.block_size*8)));
 
     vmm_detach_page(scratch);
     return value;
@@ -178,7 +209,6 @@ static size_t inodemap_get()
     return seek;
 }
 
-
 /* Seek a file.
     Get file's inode index by its path. Returns a negative value if
     the file could not be found. */
@@ -192,8 +222,13 @@ int fs_seek(const char* path)
     path_cp = (char*) kmalloc(strlen(path)+1);
     strcpy(path_cp, path);
 
-    parent = read_inode(FS_ROOT_INDEX);         // get the root directory's inode
+    parent = inode_read(FS_ROOT_INDEX);         // get the root directory's inode
     token = strtok(path_cp, FS_SPLIT_CHAR);     // get the first token
+
+    // If the path is the root directoy return 0
+    if (strcmp(path, parent.name) == 0) {
+        return 0;
+    }
 
     // Seek the splitted path
     while (token != NULL)
@@ -210,7 +245,7 @@ int fs_seek(const char* path)
             inode_t child;
 
             index = parent.direct[i];
-            child = read_inode(index);
+            child = inode_read(index);
 
             // If the [child] exists in the [parent], set it as the new [parent] and set [present] to true
             if (strcmp(child.name, token) == 0) {
@@ -231,16 +266,72 @@ int fs_seek(const char* path)
 }
 
 /* Create a new file.
-    On success, return 0; any other value indicates an error. */
-int fs_create(const char* path)
+    On success, return the new file's inode index; on failure, return a negative number. */
+int fs_create(const char* path, inode_type_t type)
 {
-    return 0;
+    int indx_p, indx_c;
+    inode_t parent, child;
+
+    // Get the parent directory of the new file; if it does not exist return -1
+    indx_p = fs_seek(dirname(path));
+    if (indx_p < 0) {
+        return -1;
+    }
+    parent = inode_read(indx_p);
+    if (parent.type != FS_NT_DIR) {
+        return -1;
+    }
+
+    // Set the child's inode
+    strcpy(child.name, basename(path));
+    child.count = 0;
+    child.type  = type;
+    memset(child.direct, 0, sizeof(child.direct) * sizeof(child.direct[0]));
+    
+    // Get a free inode index and load the child's inode into it
+    indx_c = inodemap_get();
+    inode_write(child, indx_c);
+
+    // Link the child to its parent; if linkage fails return -1
+    if (inode_link(&parent, indx_c) != 0) {
+        return -1;
+    }
+    // Increase the parent's count and update its inode in the disk
+    parent.count++;
+    inode_write(parent, indx_p);
+
+    return indx_c;
 }
 
-/* Create a new firectory.
-    On success, return 0; any other value indicates an error. */
-int fs_mkdir(const char* path)
+/* Delete a file.
+    WARNING: be careful about deleting directories unrecursively or deleting files
+        without freeing their data blocks first.
+    On success, return 0; on failure, return non-zero. */
+int fs_remove(const char* path)
 {
+    int indx_p, indx_c;
+    inode_t parent;
+
+    // Get the child's inode index; if it does not exist return -1
+    indx_c = fs_seek(path);
+    if (indx_c < 0) {
+        return -1;
+    }
+
+    // Get the parent directory of the file
+    indx_p = fs_seek(dirname(path));
+    parent = inode_read(indx_p);
+
+    // Unlink the child from its parent; if unlink succeed,
+    inode_unlink(&parent, indx_c);
+
+    // Decrease the parent's count and update its inode in the disk
+    parent.count--;
+    inode_write(parent, indx_p);
+
+    // Free the child's inode
+    inodemap_set(indx_c, 0);
+
     return 0;
 }
 
@@ -266,5 +357,7 @@ void fs_write(int fd)
 void init_fs()
 {
     fs_phys_scratch = pmm_get_page();   // allocate a physical scratch space for the file system
-    read_super();                       // read the superblock
+    super_read();                       // read the superblock
+
+    blockmap_get();
 }

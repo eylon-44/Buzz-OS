@@ -11,7 +11,6 @@ class Consts:
     FS_MAX_NAME_LEN = 64
     FS_DIRECT_NUM   = 12
     FS_INDIRECT_NUM = 4
-    IMAGE_PATH      = "fs.img"
 
 
 class InodeType:
@@ -70,6 +69,9 @@ class Inode(Struct):
         self.count    = 0
         self.direct   = [0] * Consts.FS_DIRECT_NUM
         self.indirect = [0] * Consts.FS_INDIRECT_NUM
+
+    def __str__(self) -> str:
+        return f"Inode {self.name}: type <{self.type}> count <{self.count}> direct <{self.direct}"
 
     @property
     def binary(self) -> bytes:

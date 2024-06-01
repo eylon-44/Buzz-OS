@@ -1,10 +1,11 @@
 # Get File System Configuration
 
 import json
+import os
 
 class Config:
 
-    _config_file = "fs_config.json"
+    _config_file = f"{os.path.dirname(os.path.abspath(__file__))}/fs_config.json"
 
     def get() -> any:
         ''' Get the file system's configurations from the json file. '''
