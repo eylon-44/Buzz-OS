@@ -20,27 +20,6 @@
 static superblock_t super;
 static paddr_t fs_phys_scratch;
 
-// Divide an inteager while rounding it up
-#define DIV_INT_UP(dividend, divisor) ((dividend + (divisor-1))/divisor)
-// Number of inodes in the file system
-#define INODE_COUNT     (super.inode_blocks_count * super.inodes_per_block)
-// Number of blockmap blocks in the file system
-#define BLOCKMAP_COUNT  (DIV_INT_UP(DIV_INT_UP(super.block_count, super.block_size), 8))
-// Block index at which the blockmap starts
-#define BLOCKMAP_START  (1)
-// Number of inodemap blocks in the file system
-#define INODEMAP_COUNT  (DIV_INT_UP(DIV_INT_UP(INODE_COUNT, super.block_size), 8))
-// Block index at which the inodemap starts
-#define INODEMAP_START  (1 + BLOCKMAP_COUNT)
-// Block index at which the inode list starts
-#define INODE_START     (1 + BLOCKMAP_COUNT + INODEMAP_COUNT)
-
-// Get the block index at which a certain inode is in by its index
-#define INODE_BLOCK(index)  (INODE_START + (index/super.inodes_per_block))
-// Get the inode offset inside the block by its index
-#define INODE_OFFSET(index) ((index%super.inodes_per_block) * (super.block_size/super.inodes_per_block))
-
-
 // Read the superblock
 static void super_read()
 {
@@ -461,17 +440,14 @@ ssize_t fs_read(int fd, void* buff, size_t count)
 
         // Calculate the offset within the block and the size to copy
         offset = scratch + (fd_p->offset % super.block_size);
-        size   = offset - scratch;
-        if (size == 0) {
-            size = (count - bytes_read);
-            if (size > super.block_size) {
-                size = super.block_size;
-            }
+        size   = count - bytes_read;
+        if (offset + size > scratch + super.block_size) {
+            size = (scratch+super.block_size) - offset;
         }
 
         // Read the block and copy it into the buffer
         block_read((void*) scratch, inode.direct[i]);
-        memcpy(buff, (void*) offset, size);
+        memcpy((void*) ((size_t) buff + bytes_read), (void*) offset, size);
 
         fd_p->offset += size;
         bytes_read   += size;

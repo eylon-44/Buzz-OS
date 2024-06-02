@@ -158,6 +158,9 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
         .exit_status= 0,                            // task's exit status
     };
 
+    // Close the ELF file
+    fs_close(fd);
+
     // Increment the child count of the parent
     if (parent != NULL) {
         parent->child_count++;
@@ -253,6 +256,9 @@ static void init_init()
     queue.active = queue.proc_list;
 
     // Load the init process
+    pm_load(NULL, "sys/init.elf", 20);
+    pm_load(NULL, "sys/init.elf", 20);
+    pm_load(NULL, "sys/init.elf", 20);
     pm_load(NULL, "sys/init.elf", 20);
 }
 

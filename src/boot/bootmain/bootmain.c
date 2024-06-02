@@ -1,58 +1,60 @@
 // Bootmain // ~ eylon
 
 #include <kernel/process/elf.h>
-#include <drivers/pata.h>
 #include <libc/stddef.h>
+#include "baby_fs.h"
+#include <drivers/pata.h>
+#include <libc/string.h>
 
-// Kernel start sector in disk
-#define KERNEL_DISK_OFFSET 21
-// Scratch space to place the kernel ELF data while loading it
-#define SCRATCH_SPACE 0x10000
-// Page size
-#define PAGE_SIZE 0x1000
+#define KERNEL_PATH "sys/kernel.elf"
 
-// Bootmain entry
+// Bootmain entry; load the kernel
 void bootmain()
 {
-    uint32_t filesz UNUSED;
-    prgheader_t* prgheader = NULL;
-    // Scratch space pointer to load the ELF data into
-    elfheader_t* elfheader = (elfheader_t*) SCRATCH_SPACE;
+    elfheader_t elfhdr;
+    int kinode;
 
-    // Load a page from the kernel's ELF into memory
-    pata_read_disk((void*) elfheader, PAGE_SIZE, KERNEL_DISK_OFFSET);
+    // Initiate the baby file system and get the kernel's inode index
+    baby_fs_init();
+    kinode = baby_fs_seek(KERNEL_PATH);
 
-    // Check for the ELF magic; return to the bootsector if there is no match
-    if (elfheader->identify.magic != ELF_MAGIC)
-        return;
-
-    // ELF file size; [start of section headers] + ([section header size] * [number of section headers])
-    filesz = elfheader->shoff + (elfheader->shsize * elfheader->shnum);
-
-    // Go over all the program headers and load their segments
-    prgheader = (prgheader_t*) ((uint8_t*) elfheader + elfheader->phoff);
-    for (size_t i = 0; i < elfheader->phnum; prgheader++, i++)
+    if (kinode < 0) {
+        for (;;) __asm__ volatile("hlt");
+    }
+    
+    // Read the kernel's ELF header and check its validity
+    baby_fs_read(kinode, &elfhdr, sizeof(elfheader_t), 0);
+    if (elfhdr.identify.magic != ELF_MAGIC      // ELF magic
+        || elfhdr.identify.bitness != 1         // 32 bit executable
+        || elfhdr.identify.abi != 0             // System-V
+        || elfhdr.machine != 3)                 // x86
     {
+        for (;;) __asm__ volatile("hlt");
+    }
+
+    /* Load the ELF's segments.
+        Read all program headers and load their segments. */
+    for (size_t i = 0; i < elfhdr.phnum;i++)
+    {
+        prgheader_t prghdr;
+
+        // Read the program header
+        baby_fs_read(kinode, &prghdr, sizeof(prgheader_t), elfhdr.phoff + elfhdr.phsize*i);
+
         // read segment from disk to memory
-        pata_read_disk((void*) prgheader->paddr, prgheader->filesz, KERNEL_DISK_OFFSET + prgheader->offset / PATA_SECTOR_SIZE);
+        baby_fs_read(kinode, (void*) prghdr.paddr, prghdr.filesz, prghdr.offset);
 
         // if the segment file size is less than the segment memory size fill the undefined area with zeros
-        if (prgheader->filesz < prgheader->memsz) {
-            // set undefined area with zero
-            for (size_t k = prgheader->paddr + prgheader->filesz;
-                    k < prgheader->paddr + prgheader->memsz;
-                    k++)
-            {
-                *((uint8_t*) k) = 0;
-            }
+        if (prghdr.filesz < prghdr.memsz) {
+            // zero out undefined area
+            memset((void*) (prghdr.paddr + prghdr.filesz), 0, prghdr.memsz - prghdr.filesz);
         }
     }
 
     // Jump to the kernel's entry
-    void (*entry)() = (void*) elfheader->entry;
+    void (*entry)() = (void*) elfhdr.entry;
     entry();
     
     // This code should never run
-    for (;;)
-        __asm__ volatile("hlt");
+    for (;;) __asm__ volatile("hlt");
 }

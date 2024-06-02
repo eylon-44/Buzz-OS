@@ -19,8 +19,19 @@ BM_DIR   := bootmain
 BM_SRCS  := $(shell find $(BM_DIR) -name '*.c')
 BM_OBJS  := $(patsubst %.c, $(BOOT_BIN_DIR)/%.o, $(BM_SRCS))
 BM_BIN   := $(BOOT_BIN_DIR)/$(BM_DIR)/bootmain.bin
-BM_UTILS := $(BIN_DIR)/drivers/ports.c.o $(BIN_DIR)/drivers/pata.c.o
 BM_ENTRY := $(BOOT_BIN_DIR)/$(BM_DIR)/bootmain.o
+# The bootloader uses functions that are already used by the kernel, so
+# instead of rewriting them we link them with the bootloader.
+BM_UTILS := drivers/ports.c.o \
+	drivers/pata.c.o \
+	libc/string/strcpy.c.o \
+	libc/string/strtok.c.o \
+	libc/string/strcmp.c.o \
+	libc/string/memcpy.c.o \
+	libc/string/memset.c.o \
+	libc/string/strchr.c.o
+
+BM_UTILS := $(patsubst %, $(BIN_DIR)/%, $(BM_UTILS))
 
 # Compile
 all: $(BOOT_BIN)

@@ -1,7 +1,7 @@
 set architecture i386:intel
 set print pretty
 
-#add-symbol-file bin/symbols/BM.elf 0x1000
+add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 
@@ -10,9 +10,6 @@ layout src
 #layout reg
 
 target remote localhost:1234
-
-layout asm
-layout reg
 
 # MBR start
 #break *0x7c00
@@ -25,10 +22,11 @@ layout reg
 
 # Kernel main start
 break kernel_main
+#break _entry
 
 #break init_fs
 
-break pm_load
+#break pm_load
 break common_interrupt_handler
 
 

@@ -8,7 +8,7 @@
 #include <libc/sys/stat.h>
 
 // Disk sector index from which the file system begins
-#define FS_START_SECTOR 768 // [DEBUG] CHANGE TO 2!!
+#define FS_START_SECTOR 768
 // Max name length of an Inode
 #define FS_MAX_NAME_LEN 64
 // Number of direct refrences in an Inode
@@ -21,6 +21,27 @@
 #define FS_SPLIT_CHAR   "/"
 // Index of the inode of the root directory
 #define FS_ROOT_INDEX   0
+
+// Divide an inteager while rounding it up
+#define DIV_INT_UP(dividend, divisor) ((dividend + (divisor-1))/divisor)
+// Number of inodes in the file system
+#define INODE_COUNT     (super.inode_blocks_count * super.inodes_per_block)
+// Number of blockmap blocks in the file system
+#define BLOCKMAP_COUNT  (DIV_INT_UP(DIV_INT_UP(super.block_count, super.block_size), 8))
+// Block index at which the blockmap starts
+#define BLOCKMAP_START  (1)
+// Number of inodemap blocks in the file system
+#define INODEMAP_COUNT  (DIV_INT_UP(DIV_INT_UP(INODE_COUNT, super.block_size), 8))
+// Block index at which the inodemap starts
+#define INODEMAP_START  (1 + BLOCKMAP_COUNT)
+// Block index at which the inode list starts
+#define INODE_START     (1 + BLOCKMAP_COUNT + INODEMAP_COUNT)
+
+// Get the block index at which a certain inode is in by its index
+#define INODE_BLOCK(index)  (INODE_START + (index/super.inodes_per_block))
+// Get the inode offset inside the block by its index
+#define INODE_OFFSET(index) ((index%super.inodes_per_block) * (super.block_size/super.inodes_per_block))
+
 
 // Superblock structure
 typedef struct
