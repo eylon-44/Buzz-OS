@@ -11,6 +11,9 @@ layout src
 
 target remote localhost:1234
 
+layout asm
+layout reg
+
 # MBR start
 #break *0x7c00
 
@@ -21,13 +24,12 @@ target remote localhost:1234
 #break _start
 
 # Kernel main start
-#break kernel_main
+break kernel_main
 
-break init_fs
+#break init_fs
 
-define test
-n
-p s
-end
+break pm_load
+break common_interrupt_handler
+
 
 continue

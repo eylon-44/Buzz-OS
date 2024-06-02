@@ -16,8 +16,8 @@ void kernel_main()
     init_mm();
     init_interrupt();
     init_syscall();
-    init_pm();
     init_fs();
+    init_pm();
     init_keyboard();
     init_timer();
 

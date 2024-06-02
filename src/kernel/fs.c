@@ -14,6 +14,8 @@
 #include <libc/stdbool.h>
 #include <libc/bitfield.h>
 #include <libc/string.h>
+#include <libc/sys/stat.h>
+#include <libc/unistd.h>
 
 static superblock_t super;
 static paddr_t fs_phys_scratch;
@@ -473,6 +475,11 @@ ssize_t fs_read(int fd, void* buff, size_t count)
 
         fd_p->offset += size;
         bytes_read   += size;
+
+        // If read [count] bytes exit
+        if (bytes_read >= count) {
+            break;
+        }
     }
 
     vmm_detach_page(scratch);                   // detach temporary scratch space
@@ -496,6 +503,81 @@ void fs_write(int fd)
     // get fd linked list from the active process
 }
 
+/* Retrieve information about the file pointed to by [path].
+    Inormation is stored in the stat struct buffer [buf].
+    On success, zero is returned, on failure, a non-zero number is returned. */
+int fs_stat(const char *path, struct stat *buf)
+{
+    inode_t inode;
+    int index;
+
+    index = fs_seek(path);
+    if (index < 0) {
+        return -1;
+    }
+    inode = inode_read(index);
+
+    buf->st_size = inode.count;
+
+    return 0;
+}
+
+/* Retrieve information about the the open file descriptor [fd].
+    Inormation is stored in the stat struct buffer [buf].
+    On success, zero is returned, on failure, a non-zero number is returned. */
+int fs_fstat(int fd, struct stat *buf)
+{
+    fd_t* fd_p;
+    inode_t inode;
+    
+    fd_p = fd_seek(fd);
+    if (fd_p == NULL) {
+        return -1;
+    }
+    inode = inode_read(fd_p->inode);
+
+    buf->st_size = inode.count;
+
+    return 0;
+}
+
+/* Reposition the file offset of an open file by [offset] and according
+    to the value of [whence] as follows:
+    SEEK_SET: The file offset is set to offset bytes.
+    SEEK_CUR: The file offset is set to its current location plus offset bytes.
+    SEEK_END: The file offset is set to the size of the file plus offset bytes.
+    On success, returns the resulting offset location as measured in bytes from
+    the beginning of the file, on failure, -1 is returned. */
+int fs_lseek(int fd, int offset, int whence)
+{
+    // Get file descriptor and check if it is valid
+    fd_t* fd_p = fd_seek(fd);
+    if (fd_p == NULL) {
+        return -1;
+    }
+
+    // Set offset according to [whence]
+    switch (whence)
+    {
+        case SEEK_SET:
+            if (offset < 0) { break; }
+            fd_p->offset = offset;
+            return fd_p->offset;
+
+        case SEEK_CUR:
+            if ((int) fd_p->offset + offset < 0) { break; }
+            fd_p->offset = fd_p->offset + offset;
+            return fd_p->offset;
+
+        case SEEK_END:
+            size_t fsize = inode_read(fd_p->inode).count;
+            if ((int) fsize + offset < 0) { break; }
+            fd_p->offset = fsize + offset;
+            return fd_p->offset;
+    }
+
+    return 1;
+}
 
 // Initiate the file system
 void init_fs()

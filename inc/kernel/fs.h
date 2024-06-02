@@ -5,6 +5,7 @@
 
 #include <drivers/pata.h>
 #include <libc/stdint.h>
+#include <libc/sys/stat.h>
 
 // Disk sector index from which the file system begins
 #define FS_START_SECTOR 768 // [DEBUG] CHANGE TO 2!!
@@ -65,6 +66,18 @@ typedef struct fd {
     struct fd* prev;
 } fd_t;
 
+
+/* Function Declarations */
+int fs_seek(const char* path);
+int fs_create(const char* path, inode_type_t type);
+int fs_remove(const char* path);
+int fs_open(const char* path, int flags);
+int fs_close(int fd);
+ssize_t fs_read(int fd, void* buff, size_t count);
+void fs_write(int fd);
+int fs_stat(const char *path, struct stat *buf);
+int fs_fstat(int fd, struct stat *buf);
+int fs_lseek(int fd, int offset, int whence);
 void init_fs();
 
 #endif

@@ -35,7 +35,7 @@ static void read_sector(void* dest, sector_t lba)
 void pata_read_disk(void* dest, sector_t size, sector_t disk_offset)
 {
     uint8_t* start = (uint8_t*) dest; 
-    uint8_t* end   = start + size;
+    uint8_t* end   = start + size * PATA_SECTOR_SIZE;
 
     for (; start < end; start += PATA_SECTOR_SIZE, disk_offset++) {
         read_sector(start, disk_offset);

@@ -94,9 +94,6 @@ $(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN) $(FS_IMG)
 	# Load the file system into its predefined sector
 	dd if=${FS_IMG} of=${DISK_IMG} bs=${SECTOR_SIZE} seek=${FS_START} conv=notrunc
 
-	# debug
-	dd if=test/test of=${DISK_IMG} bs=${SECTOR_SIZE} seek=512 conv=notrunc count=10
-
 	@echo "\n. . . DONE . . .\n"
 
 #---------------#

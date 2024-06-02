@@ -44,6 +44,7 @@ typedef struct process {
 } process_t;
 
 process_t* pm_get_active();
+process_t* pm_load(process_t* parent, const char* path, int priority);
 int pm_get_pid();
 void init_pm();
 
