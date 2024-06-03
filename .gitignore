@@ -2,6 +2,7 @@
 /bin
 /build
 /tmp
+/usr/fs_layout/
 
 .vscode
 *.ignore
