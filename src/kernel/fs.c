@@ -413,9 +413,9 @@ ssize_t fs_read(int fd, void* buff, size_t count)
     case 0:     // STDIN
         return 0;
     case 1:     // STDOUT
-        return 0;
+        return -1;
     case 2:     // STDERR
-        return 0;
+        return -1;
     }
 
     /* Handle file streams */
@@ -462,21 +462,23 @@ ssize_t fs_read(int fd, void* buff, size_t count)
     return bytes_read;
 }
 
-void fs_write(int fd)
+ssize_t fs_write(int fd, const void* buff, size_t count)
 {
     /* Handle standard streams */
     switch (fd)
     {
     case 0:     // STDIN
-        return;
+        return -1;
     case 1:     // STDOUT
-        return;
+        ui_stdout_write((const char*) buff, count);
+        return 0;
     case 2:     // STDERR
-        return;
+        return 0;
     }
 
     /* Handle file streams */
     // get fd linked list from the active process
+    return 0;
 }
 
 /* Retrieve information about the file pointed to by [path].

@@ -3,13 +3,14 @@
 #if !defined(SCREEN__DRIVER_H)
 #define SCREEN_DRIVER_H
 
-#include <libc/stdint.h>
 #include <kernel/memory/mmlayout.h>
+#include <libc/stdint.h>
+#include <libc/stddef.h>
 
 // Screen measurements
-#define VGA_MAX_ROWS 25
-#define VGA_MAX_COLS 80
-#define VGA_SIZE (VGA_MAX_ROWS * VGA_MAX_COLS)
+#define VGA_ROW_COUNT 25
+#define VGA_COL_COUNT 80
+#define VGA_SIZE (VGA_ROW_COUNT * VGA_COL_COUNT)
 
 // Video memory
 #define VGA_VIRT_MEM MM_MMIO_START
@@ -17,15 +18,19 @@
 #define VGA_MEM_SIZE VGA_SIZE * 2
 
 // Utils
-#define SCREEN_OFFSET(row, column) ((column) + (row) * VGA_MAX_COLS)
+#define SCREEN_OFFSET(row, column) ((column) + (row) * VGA_COL_COUNT)
 
-void kprint(char* string, uint8_t attribute);
-void kprint_at(char* string, uint8_t attribute, uint16_t offset);
-void set_cursor_offset(uint16_t offset);
-uint16_t get_cursor_offset();
-void clear_screen();
+void vga_print_n(const char* string, uint8_t attribute, size_t n);
+size_t vga_print_at_n(const char* string, uint8_t attribute, size_t offset, size_t n);
+void vga_put_char(char character, uint8_t attribute);
+size_t vga_put_char_at(char character, uint8_t attribute, size_t offset);
+void vga_print(const char* string, uint8_t attribute);
+size_t vga_print_at(const char* string, uint8_t attribute, size_t offset);
+void vga_set_cursor(size_t offset);
+size_t vga_get_cursor();
+void vga_clear();
 
-// VGA attribute table //
+/* VGA attribute table */
 
 // (0-2)                      |||
 #define VGA_TXT_BLACK  0b00000000
@@ -50,13 +55,8 @@ void clear_screen();
 // (7)                   |
 #define VGA_BG_LIGHT   0b10000000   // make background color lighter
 
-
-// VGA text attribute presets //
-
-// [NOTE] it is prefered to use the presets over the custom combinations for a painless future :)
-#define VGA_ATR_DEFAULT (VGA_TXT_WHITE | VGA_BG_BLACK)
-#define VGA_ATR_ERROR   (VGA_TXT_BLACK | VGA_BG_RED)
-#define VGA_ATR_WARNING (VGA_TXT_BLACK | VGA_BG_ORANGE | VGA_BG_LIGHT)
-#define VGA_ATR_NOTE    (VGA_TXT_WHITE | VGA_BG_BLUE)
+/* Keys */
+#define KEY_BACKSPACE   0x08
+#define KEY_RETURN      0x0A
 
 #endif

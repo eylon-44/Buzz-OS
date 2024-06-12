@@ -4,6 +4,7 @@
 #define PM_H
 
 #include <kernel/fs.h>
+#include <kernel/ui.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 
@@ -35,6 +36,7 @@ typedef struct process {
     int priority;           // process's scheduler priority
 
     fd_t* fds;              // process's file descriptors list
+    struct tab* tab;        // process's tab
 
     void (*entry)();        // process entry point
     uint8_t exit_status;    // exit status

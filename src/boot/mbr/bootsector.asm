@@ -21,7 +21,7 @@ BOOT_START:
 
     call mm_detect          ; {mm_detect.asm} detect physical available memory
 
-    call load_bootloader    ; {disk.asm} load the second stage bootloader into memory
+    call load_bootmain      ; {disk.asm} load the second stage bootloader into memory
 
     call switch_to_pm       ; {protected_mode.asm} switch to protected mode. does not return, instead jumps to [PM_START]
 

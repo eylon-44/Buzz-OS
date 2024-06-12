@@ -188,7 +188,7 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
             .cs=GDT_UCODE_SEG,
             .eip=(size_t) process.entry,
             .ss=GDT_UDATA_SEG,
-            .esp=MM_USTACK_TOP,
+            .esp=MM_USTACK_TOP - 8,
             .eflags=1<<9 /*IF*/ };
 
         // Allocate and map a page for the kernel stack of the new process
@@ -256,9 +256,6 @@ static void init_init()
     queue.active = queue.proc_list;
 
     // Load the init process
-    pm_load(NULL, "sys/init.elf", 20);
-    pm_load(NULL, "sys/init.elf", 20);
-    pm_load(NULL, "sys/init.elf", 20);
     pm_load(NULL, "sys/init.elf", 20);
 }
 

@@ -2,6 +2,7 @@
 
 #include <drivers/screen.h>
 #include <drivers/ports.h>
+#include <kernel/ui.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 #include <libc/string.h>
@@ -12,71 +13,71 @@
 
 static uint8_t* vidmem = (uint8_t*) VGA_VIRT_MEM;
 
-
-// Process an escape sequence character :: escape sequence characters are not printed and only affect the cursor
-static uint16_t handle_escape_sequence(UNUSED char character, uint16_t offset)
+// Put a single character on the screen at the current cursor location
+void vga_put_char(char character, uint8_t attribute)
 {
-    // [TODO]
-    return offset;
+    // Print the character at the current cursor location
+    size_t offset = vga_put_char_at(character, attribute, vga_get_cursor());
+    // Update cursor location
+    vga_set_cursor(offset);
 }
 
-// Put a single character on the screen at the given offset
-static void put_char(char character, uint8_t attribute, uint16_t offset)
+/* Put a single character on the screen at a given offset.
+    Returns the screen offset at which the string terminates. */
+size_t vga_put_char_at(char character, uint8_t attribute, size_t offset)
 {
-    // put the character on screen
+    if (attribute == 0) { attribute = UI_ATR_DEFAULT; }
+
+    // Put the character on screen
     vidmem[(offset*2)]   = character;
     vidmem[(offset*2)+1] = attribute;
+
+    return offset+1;
 }
 
-// Scroll the screen down (move the text up) :: return the new offset :: also scrolls the cursor
-static uint16_t handle_scrolling(uint16_t offset)
+// Print a null terminated string at the current cursor location and move the cursor to the end of it
+void vga_print(const char* string, uint8_t attribute)
 {
-    // if going out of screen bounds scroll the screen
-    if (offset > VGA_SIZE) {
-        memcpy(vidmem, vidmem + VGA_MAX_COLS * 2, (VGA_SIZE - VGA_MAX_COLS)*2);
-        // blank the last line
-        for (uint8_t i = 0; i < VGA_MAX_COLS; i++) {
-            put_char(' ', VGA_ATR_DEFAULT, (VGA_SIZE - VGA_MAX_COLS + i));
-        }
-        offset -= (VGA_MAX_COLS + 1);
+    // Print the string at the current cursor location
+    size_t offset = vga_print_at(string, attribute, vga_get_cursor());
+    // Update cursor location
+    vga_set_cursor(offset);
+}
+
+/* Print a null terminated string to the screen at a given offset.
+    Returns the screen offset at which the string terminates. */
+size_t vga_print_at(const char* string, uint8_t attribute, size_t offset)
+{
+    // Iterate over the string and print each character
+    for (size_t i = 0; string[i] != '\0'; i++) {
+        offset = vga_put_char_at(string[i], attribute, offset);
     }
+
     return offset;
 }
 
-
-// Print a null terminated string at the current cursor locaion :: attribute 0 for default
-void kprint(char* string, uint8_t attribute)
+// Print a null terminated string at the current cursor location and move the cursor to the end of it
+void vga_print_n(const char* string, uint8_t attribute, size_t n)
 {
-    if (attribute == 0) { attribute = VGA_ATR_DEFAULT; }
-
-    // get cursor offset :: starting the print from the cursor location
-    uint16_t offset = get_cursor_offset();
-
-    uint16_t i = 0;
-    // keep printing until the null character
-    while (string[i] != '\0') {
-
-            offset = handle_escape_sequence(string[i], offset);
-            offset = handle_scrolling(offset);
-            put_char(string[i], attribute, offset); // print the character
-    
-            i++;
-            offset++;
-    }
-
-    // update cursor location
-    set_cursor_offset(offset);
+    size_t offset = vga_print_at_n(string, attribute, vga_get_cursor(), n);
+    // Update cursor location
+    vga_set_cursor(offset);
 }
 
-// Print a null terminated string to the screen at a specific offset
-void kprint_at(char* string, uint8_t attribute, uint16_t offset)
+/* Print [n] bytes from [string] to the screen at a given offset.
+    Returns the screen offset at which the string terminates. */
+size_t vga_print_at_n(const char* string, uint8_t attribute, size_t offset, size_t n)
 {
-    set_cursor_offset(offset);
-    kprint(string, attribute);
+    // Iterate over the string and print each character
+    for (size_t i = 0; i < n; i++) {
+        offset = vga_put_char_at(string[i], attribute, offset);
+    }
+
+    return offset;
 }
 
 // Use VGA ports to set cursor offset inside video memory
-void set_cursor_offset(uint16_t offset)
+void vga_set_cursor(size_t offset)
 {
     // control port = 0x0E -> data port = high byte
     port_outb(SCREEN_CTRL_PORT, 0x0E);
@@ -88,11 +89,11 @@ void set_cursor_offset(uint16_t offset)
 }
 
 // Use VGA ports to get cursor offset inside video memory
-uint16_t get_cursor_offset()
+size_t vga_get_cursor()
 {
     // control port = 0x0E -> data port = high byte
     port_outb(SCREEN_CTRL_PORT, 0x0E);
-    uint16_t offset = port_inb(SCREEN_DATA_PORT) << 8; // high byte << 8
+    size_t offset = port_inb(SCREEN_DATA_PORT) << 8; // high byte << 8
     
     // control port = 0x0F -> data port = low byte
     port_outb(SCREEN_CTRL_PORT, 0x0F);
@@ -103,15 +104,15 @@ uint16_t get_cursor_offset()
 }
 
 // Clear the screen and reset the cursor
-void clear_screen()
+void vga_clear()
 {
-    // fill the screen with a blank character (space)
+    // Fill the screen with spaces
     for (int i = 0; i < VGA_SIZE; i++)
     {
         vidmem[i*2]     = ' ';
-        vidmem[(i*2)+1] = VGA_ATR_DEFAULT;
+        vidmem[(i*2)+1] = UI_ATR_DEFAULT;
     }
 
-    // reset cursor offset to 0
-    set_cursor_offset(0);
+    // Reset cursor
+    vga_set_cursor(0);
 }

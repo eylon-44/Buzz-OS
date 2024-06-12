@@ -15,7 +15,7 @@ void bootmain()
     int kinode;
 
     // Initiate the baby file system and get the kernel's inode index
-    baby_fs_init();
+    init_baby_fs();
     kinode = baby_fs_seek(KERNEL_PATH);
 
     if (kinode < 0) {

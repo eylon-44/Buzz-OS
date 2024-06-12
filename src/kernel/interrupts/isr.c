@@ -39,7 +39,7 @@ void interrupt_handler(int_frame_t interrupt_data)
     if (interrupt_data.interrupt_number >= IRQ0 && interrupt_data.interrupt_number <= IRQ15) {
         pic_eoi(interrupt_data.interrupt_number);
     }
-    else kprint("NON PIC INTERRUPT", VGA_ATR_WARNING); // [TMP][DEBUG]
+    //else vga_print("NON PIC INTERRUPT", VGA_BG_GREEN); // [TMP][DEBUG]
     return;
 }
 

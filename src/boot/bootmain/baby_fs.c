@@ -134,7 +134,7 @@ ssize_t baby_fs_read(int inode_index, void* buff, size_t count, size_t offset)
     return bytes_read;
 }
 
-void baby_fs_init()
+void init_baby_fs()
 {
     super_read();
 }

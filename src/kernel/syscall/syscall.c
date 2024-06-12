@@ -19,7 +19,7 @@ static void common_syscall_handler(int_frame_t* param)
 {
     // Check that the syscall number is valid; if not, abort
     if (param->eax >= SYSCALL_NUM || syscall_handlers[param->eax] == NULL) {
-        param->eax = 111;   // invalid; [TODO] do protocol and stuff
+        param->eax = -1;   // invalid; [TODO] do protocol and stuff
         return;
     }
 
@@ -40,4 +40,6 @@ void init_syscall()
 
     // Set the list with handlers
     SYSCALL_HANDLER(exit);
+    SYSCALL_HANDLER(write)
+    SYSCALL_HANDLER(sched_yield)
 }

@@ -1,7 +1,7 @@
 ;; BIOS real mode disk utils ;; ~ eylon
 
 ;; Read [BOOTLOADER_SIZE] sectors from disk and load them into memory at [BOOTLOADER_OFFSET]
-load_bootloader:
+load_bootmain:
     mov ah, 0x02                ; bios read sectors into memory function
     mov ch, 0x00                ; track number
     mov cl, 0x02                ; sector number :: where the start of the bootloader is placed

@@ -14,7 +14,7 @@
     extern __libc_start_main;
     [no-return] void __libc_start_main(int argc, char* argv[], int (*main)(int argc, char* argv[]));
 */
-void __libc_start_main(int argc, char* argv[], int (*main)(int argc, char* argv[]))
+void __libc_start_main(int argc, char* argv[], int (*main)(int, char*[]))
 {
     int status;
 

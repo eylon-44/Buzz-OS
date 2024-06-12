@@ -12,6 +12,6 @@
 
 ssize_t baby_fs_read(int inode_index, void* buff, size_t count, size_t offset);
 int baby_fs_seek(char* path);
-void baby_fs_init();
+void init_baby_fs();
 
 #endif

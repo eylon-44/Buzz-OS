@@ -8,7 +8,7 @@
 #include <libc/sys/stat.h>
 
 // Disk sector index from which the file system begins
-#define FS_START_SECTOR 768
+#define FS_START_SECTOR 64
 // Max name length of an Inode
 #define FS_MAX_NAME_LEN 64
 // Number of direct refrences in an Inode
@@ -73,7 +73,7 @@ typedef struct {
     inode_type_t type;                  // file type
     size_t count;                       // count of <NT_FILE> bytes of data/<NT_DIR> number of files in direcotry
     size_t direct[FS_DIRECT_NUM];       // direct refrence to <NT_FILE> blocks of data/<NT_DIR> inodes
-    size_t indirect[FS_INDIRECT_NUM];   // block indexs containing a list to <NT_FILE> blocks of data/<NT_DIR> inodes
+    size_t indirect[FS_INDIRECT_NUM];   // [TODO] REMOVE (don't forget python script!)
 } __attribute__((packed)) inode_t;
 
 // File descriptor structure
@@ -95,7 +95,7 @@ int fs_remove(const char* path);
 int fs_open(const char* path, int flags);
 int fs_close(int fd);
 ssize_t fs_read(int fd, void* buff, size_t count);
-void fs_write(int fd);
+ssize_t fs_write(int fd, const void* buff, size_t count);
 int fs_stat(const char *path, struct stat *buf);
 int fs_fstat(int fd, struct stat *buf);
 int fs_lseek(int fd, int offset, int whence);

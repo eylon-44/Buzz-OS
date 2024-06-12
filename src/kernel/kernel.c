@@ -4,6 +4,7 @@
 #include <kernel/process/pm.h>
 #include <kernel/panic.h>
 #include <kernel/syscall.h>
+#include <kernel/ui.h>
 #include <drivers/screen.h>
 #include <drivers/keyboard.h>
 #include <kernel/interrupts/isr.h>
@@ -20,12 +21,7 @@ void kernel_main()
     init_pm();
     init_keyboard();
     init_timer();
-
-    // Print a welcome message
-    clear_screen();
-    kprint(". . . Welcome to Buzz OS . . .", VGA_BG_ORANGE | VGA_TXT_BLACK);
-    kprint("\n. . . Loading the system for you; please wait . . .", VGA_ATR_DEFAULT);
-
+    init_ui();
 
     // Set the interrupt flag; enable interrupts; scheduler kicks in
     __asm__ volatile ("sti");

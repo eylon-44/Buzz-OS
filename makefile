@@ -23,10 +23,13 @@ KRNL_BIN := $(BIN_DIR)/kernel/kernel.elf
 LIBC_BIN := $(BIN_DIR)/libc/lib_bzlibc.a
 
 # File System
-FS_ROOT		:= usr/fs_layout
-FS_BUILDER	:= python3 auto/fs/main.py
-FS_IMG		:= $(BIN_DIR)/fs.img
-FS_START	:= 768	# disk sector number at which the file system starts; must match FS_START_SECTOR definition in kernel/fs.h
+FS_BUILDER		:= python3 auto/fs/main.py
+FS_IMG			:= $(BIN_DIR)/fs.img
+FS_START		:= 64	# disk sector number at which the file system starts; must match FS_START_SECTOR definition in kernel/fs.h
+FS_LAYOUT		:= usr/fs_layout
+USR_PRGS		:= $(shell find usr/exe/* -maxdepth 0 -type d)
+USR_FILES_DIR	:= usr/file
+KERNEL_PATH		:= /sys/kernel.elf
 
 # Compiler settings
 CC      := gcc
@@ -79,9 +82,24 @@ $(KRNL_BIN): $(LIBC_BIN) $(KRNL_OBJS)
 	# Make the kernel's binary
 	${LD} -o $@ $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS)) -T ${KRNL_LD_SCRIPT} ${LDFLAGS}
 
+# Build user programs and the file system layout
+$(FS_LAYOUT): $(USR_PRGS) $(USR_FILES_DIR) $(KRNL_BIN)
+	cp -r $(USR_FILES_DIR) $@
+
+	# {REMOVE}
+
+	cp ${KRNL_BIN} $@/${KERNEL_PATH}
+
 # Build the file system
-$(FS_IMG): $(FS_ROOT)
-	${FS_BUILDER} $< $@
+$(FS_IMG): $(KRNL_BIN) $(BOOT_BIN)
+	cp -r $(USR_FILES_DIR) ${FS_LAYOUT}
+
+	for prog in $(USR_PRGS); do \
+		${MAKE} -C $$prog _DO_BUILD=true; \
+	done
+
+	cp ${KRNL_BIN} ${FS_LAYOUT}/${KERNEL_PATH}
+	${FS_BUILDER} ${FS_LAYOUT} ${FS_IMG}
 
 # Build the disk image
 $(DISK_IMG): $(KRNL_BIN) $(BOOT_BIN) $(FS_IMG)
@@ -114,7 +132,7 @@ rund: $(DISK_IMG)
 #-------------#
 
 clean:
-	rm -rf ${BIN_DIR}
+	rm -rf ${BIN_DIR} ${FS_LAYOUT}
 
 # fully recompile
 re: clean all

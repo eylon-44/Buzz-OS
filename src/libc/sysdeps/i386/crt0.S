@@ -22,11 +22,11 @@
 _start:
     xorl %ebp, %ebp         // reset EBP to mark the outermost frame
     popl %esi               // save [argc] in ESI
-    movl %esp, %ecx         // save [argv] in ECX
+    movl (%esp), %ecx       // save [argv] in ECX
     andl $0xfffffff0, %esp  // 16-byte align ESP
-    pushl %ecx              // push [argv]
+    pushl $main             // push the [main] function
     pushl %esi              // push [argc]
-    pushl main              // push the [main] function
+    pushl %ecx              // push [argv]
     call __libc_start_main  // call [__libc_start_main]
     
     // If [__libc_start_main] couldn't exit for any reason, exit by rasing a GPF

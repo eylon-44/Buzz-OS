@@ -164,7 +164,10 @@ void sched_switch(process_t* proc)
 // Setup a task switch into the next READY process
 void sched_switch_next()
 {
-    sched_set_status(sched_get_active(), TS_READY);   // set current process to READY (was ACTIVE)
+    // Set current process to READY if it was ACTIVE
+    if (sched_get_active()->status == TS_ACTIVE) {
+        sched_set_status(sched_get_active(), TS_READY);
+    }
 
     // Step the queue until finding a READY process to execute. Kill all DONE processes.
     for (;;) {

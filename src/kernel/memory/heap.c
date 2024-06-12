@@ -180,22 +180,6 @@ void kfree(void* ptr)
     }
 }
 
-// void* kmalloc_aligned(uint32_t size, uint32_t alignment)
-// {
-
-// }
-
-// void* kcalloc(uint32_t nmemb, uint32_t size)
-// {
-
-// }
-
-// void* krealloc(void* ptr, uint32_t size)
-// {
-
-// }
-
-
 void init_kheap()
 {
     // allocated a physical page and map it to the start of the heap [TODO] use the extension function instead

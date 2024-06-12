@@ -1,10 +1,8 @@
 # Process Manager
 
+The Buzz-OS is a multi-processing system. It allows multiple processes run simultaneously while not interrupting or getting interrupted by other processes.
+
 ### Task Switching
-
-> [!Note] 
-As for the current version of this OS, each process can only have a single thread; described below are the steps for switching between processes, not threads within the same process!
-
 A task switch is about saving the last context and loading a new one. A context includes the following attributes:
 
 * EAX, EBX, ECX, EBP, EDI, ESI, EDX registers
@@ -12,7 +10,7 @@ A task switch is about saving the last context and loading a new one. A context 
 * CR3 register (address space)
 * Kernel's ESP
 
-In this OS, each process has its own address space; in that address space, the first 3GB of memory belongs to the user, and the last 1GB for the kernel. Across all address spaces, the kernel's memory layout stays the same, except for the kernel's stacks area (and the last 4MB of memory, but that's a story for another time). The kernel's stack changes with each address space, or put simply, each user thread has its own kernel stack stored in its own address space. That way, a kernel stack is where information regarding a single particular thread is being stored.
+In Buzz, each process has its own address space; in that address space, the first 3GB of memory belongs to the user, and the last 1GB for the kernel. Across all address spaces, the kernel's memory layout stays the same, except for the kernel's stacks area (and the last 4MB of memory, but that's a story for another time). The kernel's stack changes with each address space, or put simply, each user thread has its own kernel stack stored in its own address space. That way, a kernel stack is where information regarding a single particular thread is being stored.
 
 The only way to transition from user space to kernel space, is by using an interrupt. When an interrupt occurs, either by hardware or by a user instruction, the following happens:
 
