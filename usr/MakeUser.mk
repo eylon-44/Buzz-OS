@@ -39,7 +39,7 @@ LIBC := $(BUZZ)/bin/libc/lib_bzlibc.a
 
 # Compiler settings #
 # the C compiler
-CC      := gcc
+CC      ?= gcc
 # compiler flags
 CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/include/libc -m32 -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb # -fno-pic
 
