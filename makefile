@@ -92,6 +92,7 @@ $(FS_LAYOUT): $(USR_PRGS) $(USR_FILES_DIR) $(KRNL_BIN)
 
 # Build the file system
 $(FS_IMG): $(KRNL_BIN) $(BOOT_BIN)
+	mkdir -p $(USR_FILES_DIR) 
 	cp -r $(USR_FILES_DIR) ${FS_LAYOUT}
 
 	for prog in $(USR_PRGS); do \
