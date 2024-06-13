@@ -41,7 +41,7 @@ EXEC := $(FS_LAYOUT)/$(shell cat .path)
 LIBC := $(BUZZ)/bin/libc/lib_bzlibc.a
 
 # The C compiler
-CC      := gcc
+CC      ?= gcc
 # Compiler flags
 CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/inc/libc/ -m32 -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb # -fno-pic
 
