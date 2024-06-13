@@ -32,13 +32,13 @@ USR_FILES_DIR	:= usr/file
 KERNEL_PATH		:= /sys/kernel.elf
 
 # Compiler settings
-CC      := gcc
+CC      ?= gcc
 CFLAGS  := -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf
 
-LD      := ld
+LD      ?= ld
 LDFLAGS := -m elf_i386 -nostdlib -L$(shell dirname $(LIBC_BIN)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC_BIN)))
 KRNL_LD_SCRIPT := auto/kernel.ld
 

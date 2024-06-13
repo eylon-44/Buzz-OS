@@ -1,8 +1,10 @@
 ## bzlibc Makefile ## ~ eylon
 
 ## Setting ##
-CC	   := gcc
+CC	   ?= gcc
 CFLAGS := -I$(INC_DIR)/libc -ggdb -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror
+AR    ?= ar
+RANLIB ?= ranlib
 
 LIB_BIN_DIR := $(BIN_DIR)/libc
 LIB_BIN := $(LIB_BIN_DIR)/lib_bzlibc.a
@@ -21,5 +23,5 @@ $(LIB_BIN_DIR)/%.o: %
 # Link and archive
 $(LIB_BIN): $(LIB_OBJS)
 	@mkdir -p $(shell dirname $@)
-	ar rcs $@ $^
-	ranlib $@
+	${AR} rcs $@ $^
+	${RANLIB} $@
