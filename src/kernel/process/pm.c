@@ -150,7 +150,7 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
         .child_count= 0,                            // 0 children by defualt
         .kesp       = 0,                            // kernel stack pointer to set when entering ring 0
         .cr3        = (uint32_t) new_pd_p,          // physical address of the process' page directory
-        .status     = TS_NEW,                       // status of the task; will be set to READY once placed into the scheduler's queue
+        .status     = PSTATUS_NEW,                       // status of the task; will be set to READY once placed into the scheduler's queue
         .ticks      = 0,                            // ACTIVE time left; set by the scheduler
         .priority   = priority,                     // task's priority
         .fds        = NULL,                         // process's open file descriptors list
@@ -235,10 +235,11 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
 
 /* Kill a process.
     Set its status to DONE and let the scheduler handle the rest. */
-void pm_kill(process_t* t)
+    //[TODO] set all child to DONE
+void pm_kill(process_t* proc)
 {
-    sched_set_status(t, TS_DONE);
-    if (t == sched_get_active()) {
+    sched_set_status(proc, PSTATUS_DONE);
+    if (proc == sched_get_active()) {
         sched_switch_next();
     }
 }
@@ -252,7 +253,7 @@ static void init_init()
     /* Add the dummy process to the queue and set its status to DONE.
         The dummy process represents the process of the current startup context,
         that holds no user process, and therefore should be deleted after initialization. */
-    sched_set_status( sched_add_process(_dummy_proc), TS_DONE );
+    sched_set_status( sched_add_process(_dummy_proc), PSTATUS_DONE );
     queue.active = queue.proc_list;
 
     // Load the init process

@@ -4,10 +4,10 @@ set print pretty
 add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
+add-symbol-file usr/fs_layout/sys/terminal.elf
 
-layout asm
-layout reg
-#layout src
+#layout prev
+layout src
 
 target remote localhost:1234
 
@@ -27,7 +27,12 @@ break kernel_main
 #break init_fs
 
 #break pm_load
-break common_interrupt_handler
+#break interrupt_handler
+#break ui_tab_open
+# break pmm_free_page
+# break vmm_del_ctx
+# break __gdb_break
 break ui_stdout_write
+# break ui_key_event_handler
 
 continue

@@ -108,10 +108,10 @@ void sched_sleep(int pid, size_t ticks)
 
     exit:
         // Set process status to BLOCKED
-        sched_set_status(new_node->proc, TS_BLOCKED);
+        sched_set_status(new_node->proc, PSTATUS_SLEEPED);
 
         // If it is the active process that has asked to sleep, switch a task
-        if (sched_get_active()->status == TS_BLOCKED) {
+        if (sched_get_active()->status == PSTATUS_SLEEPED) {
             sched_switch_next();
         }
         return;
@@ -133,7 +133,7 @@ static void kill_process(process_t* proc)
         }
         node = node->next;
     }
-    sched_set_status(proc, TS_DONE);    // set the status of the process to DONE and by that remove its priority from the queue's priority sum
+    sched_set_status(proc, PSTATUS_DONE);    // set the status of the process to DONE and by that remove its priority from the queue's priority sum
     vmm_del_ctx(proc->cr3);             // delete the address space of the process
     LIST_REMOVE(queue.proc_list, proc); // remove it from the queue
     kfree(proc);                        // free the process structure
@@ -156,8 +156,8 @@ static void update_process()
 // Setup a task switch into a given process
 void sched_switch(process_t* proc)
 {
-    sched_set_status(sched_get_active(), TS_READY);
-    sched_set_status(proc, TS_ACTIVE);
+    sched_set_status(sched_get_active(), PSTATUS_READY);
+    sched_set_status(proc, PSTATUS_ACTIVE);
     queue.active = proc;
 }
 
@@ -165,8 +165,8 @@ void sched_switch(process_t* proc)
 void sched_switch_next()
 {
     // Set current process to READY if it was ACTIVE
-    if (sched_get_active()->status == TS_ACTIVE) {
-        sched_set_status(sched_get_active(), TS_READY);
+    if (sched_get_active()->status == PSTATUS_ACTIVE) {
+        sched_set_status(sched_get_active(), PSTATUS_READY);
     }
 
     // Step the queue until finding a READY process to execute. Kill all DONE processes.
@@ -175,16 +175,16 @@ void sched_switch_next()
         step_queue();
 
         // Check if the active process should be terminated
-        if (sched_get_active()->status == TS_DONE) {
+        if (sched_get_active()->status == PSTATUS_DONE) {
             kill_process(sched_get_active());
         }
         // Check if the active process is READY to run
-        else if (sched_get_active()->status == TS_READY) {
+        else if (sched_get_active()->status == PSTATUS_READY) {
             break;
         }
     }
 
-    sched_set_status(sched_get_active(), TS_ACTIVE);    // set the status of the active process to ACTIVE
+    sched_set_status(sched_get_active(), PSTATUS_ACTIVE);    // set the status of the active process to ACTIVE
     set_active_time_slice();                            // set the execution time slice for the active process
 }
 
@@ -204,7 +204,7 @@ process_t* sched_add_process(process_t proc)
     LIST_ADD_END(queue.proc_list, node);
 
     // Set the status of the task to READY and by that add its priority to the queue's priority sum
-    sched_set_status(node, TS_READY);
+    sched_set_status(node, PSTATUS_READY);
     // Increment the queue count
     queue.count++;
 
@@ -215,19 +215,19 @@ process_t* sched_add_process(process_t proc)
 void sched_set_status(process_t* proc, pstatus_t status)
 {
     /* Status DONE cannot be changed. */
-    if (proc->status == TS_DONE) return;
+    if (proc->status == PSTATUS_DONE) return;
 
     /* If was READY or ACTIVE and is now changed to something that is neither READY nor ACTIVE,
         exclude the thread's priority from the queue's priority sum. */
-    if ((proc->status == TS_ACTIVE || proc->status == TS_READY)
-        && !(status == TS_ACTIVE || status == TS_READY)) 
+    if ((proc->status == PSTATUS_ACTIVE || proc->status == PSTATUS_READY)
+        && !(status == PSTATUS_ACTIVE || status == PSTATUS_READY)) 
     {
         queue.psum -= proc->priority;
     }
     /* If wasn'proc READY or ACTIVE and is now changed to something that is READY or ACTIVE,
         add the thread's priority to the queue's priority sum. */
-    else if (!(proc->status == TS_ACTIVE || proc->status == TS_READY)
-        && (status == TS_ACTIVE || status == TS_READY)) 
+    else if (!(proc->status == PSTATUS_ACTIVE || proc->status == PSTATUS_READY)
+        && (status == PSTATUS_ACTIVE || status == PSTATUS_READY)) 
     {
         queue.psum += proc->priority;
     }
@@ -240,7 +240,7 @@ void sched_set_status(process_t* proc, pstatus_t status)
 void sched_set_priority(process_t* proc, int priority)
 {
     // If the thread is ACTIVE or READY, update the queue's priority sum accordingly
-    if (proc->status == TS_ACTIVE || proc->status == TS_READY) {
+    if (proc->status == PSTATUS_ACTIVE || proc->status == PSTATUS_READY) {
         queue.psum += priority - proc->priority;
     }
     // Set the priority

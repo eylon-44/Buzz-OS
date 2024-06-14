@@ -411,7 +411,7 @@ ssize_t fs_read(int fd, void* buff, size_t count)
     switch (fd)
     {
     case 0:     // STDIN
-        return 0;
+        return ui_stdin_read(buff, count);
     case 1:     // STDOUT
         return -1;
     case 2:     // STDERR

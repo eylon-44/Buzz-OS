@@ -9,7 +9,7 @@
     Take [name] out of sys_[name] or SYS_[name]. */
 #define SYSCALL_HANDLER(name) \
     extern void (sys_##name)(int_frame_t* param); \
-    syscall_handlers[SYS_##name] = sys_##name;
+    syscall_handlers[SYS_##name] = sys_##name
 
 // Array of syscall handlers arranged by their syscall number
 static syscall_t syscall_handlers[SYSCALL_NUM];
@@ -40,6 +40,7 @@ void init_syscall()
 
     // Set the list with handlers
     SYSCALL_HANDLER(exit);
-    SYSCALL_HANDLER(write)
-    SYSCALL_HANDLER(sched_yield)
+    SYSCALL_HANDLER(read);
+    SYSCALL_HANDLER(write);
+    SYSCALL_HANDLER(sched_yield);
 }

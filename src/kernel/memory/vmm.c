@@ -185,7 +185,9 @@ void vmm_del_ctx(paddr_t pd)
             {
                 // If PTE is present, free the physical page
                 if (pt[k].present) {
-                    pmm_free_page((paddr_t) MM_GET_PF(pt+k));
+                    if (i != MM_PD_ENTRIES-1 && k < MM_PDE_INDEX(MM_KSPACE_START)) {
+                        pmm_free_page((paddr_t) MM_GET_PF(pt+k));
+                    }
                 }
             }
 

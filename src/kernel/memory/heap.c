@@ -84,7 +84,7 @@ void* kmalloc(size_t size)
     if (best_chunk == NULL) {
         // in this case the variable [chunk_ptr] represents the last (highest) chunk in the heap
         // alocate more space for the heap; increase the heap size by 4KB
-        if (heap_extend(&kheap, (size_t) kheap.top + MM_PAGE_SIZE)) {
+        if (!heap_extend(&kheap, (size_t) kheap.top + MM_PAGE_SIZE)) {
             // if the last chunk (the highest in the address space) is free, merge it with the newly allocated space
             if (!CHUNK_USED(chunk_ptr)) {
                 // add to its size the allocated space and set it as the best chunk

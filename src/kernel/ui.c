@@ -11,21 +11,41 @@
 #include <libc/sys/syscall.h>
 #include <libc/unistd.h>
 #include <libc/string.h>
+#include <libc/ctype.h>
 #include <libc/list.h>
+
+static void shortcut_handler_tab_switch(char key);
+static void shortcut_handler_tab_open(char key);
+static void shortcut_handler_tab_close(char key);
+
 
 static tab_list_t tabs = {.tab_list=NULL, .active=NULL, .active_index=0, .count=0};
 static const char tab_indexes[UI_MAX_TABS+1] = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
 static char stdin_buff[UI_MAX_IN];
+// Shortcut list
+static struct
+{
+    char key;
+    uint8_t modifiers;
+    void (*handler)(char key);
+}
+shortcuts[] = {
+    {'\0', KB_MFLAG_ALT, shortcut_handler_tab_switch},
+    {'t', KB_MFLAG_CTRL | KB_MFLAG_SHIFT, shortcut_handler_tab_open},
+    {'w', KB_MFLAG_CTRL | KB_MFLAG_SHIFT, shortcut_handler_tab_close}
+};
 
+// Get the list index of a tab by its header index
 static int get_index_by_char(char chr_indx)
 {    
-    size_t lst_indx = (int) strchr(tab_indexes, chr_indx) - (int) tab_indexes;
-    if (lst_indx > UI_MAX_TABS || tabs.count <= lst_indx) {
+    int lst_indx = (int) strchr(tab_indexes, chr_indx) - (int) tab_indexes;
+    if (lst_indx > UI_MAX_TABS) {
         return -1;
     }
-    return (int) lst_indx;
+    return lst_indx;
 }
 
+// Get a pointer to a tab by its screen header index
 static tab_t* get_tab_by_index(char index)
 {
     tab_t* tab = tabs.tab_list;
@@ -49,7 +69,7 @@ static tab_t* get_tab_by_index(char index)
 static void update_header()
 {
     // Go over all tab indexes
-    for (size_t i = 0; i < UI_MAX_TABS; i++)
+    for (int i = 0; i < UI_MAX_TABS; i++)
     {
         if (i < tabs.count) {
             // Print active tab
@@ -74,8 +94,7 @@ static void update_header()
 /* Scroll the screen down (move the text up) so it could fit [count] bytes and return the new offset.
     [buff_out] is the screen buffer; could be the VGA screen or any other stdout buffer.
     [offset] is the current cursor location on the buffer.
-    [count] is the number of bytes we try to fit in the screen by scrolling.
-*/
+    [count] is the number of bytes we try to fit in the screen by scrolling. */
 static size_t handle_scrolling(char* buff_out, int offset, size_t count)
 {
     // If print is going out of screen bounds
@@ -94,10 +113,19 @@ static size_t handle_scrolling(char* buff_out, int offset, size_t count)
 }
 
 
-
-static void handle_shortcut(UNUSED char key, UNUSED uint8_t modifiers)
+// Shortcut handler
+static void shortcut_handler_tab_open(UNUSED char key) { ui_tab_open(); }
+static void shortcut_handler_tab_close(UNUSED char key) { ui_tab_close(); }
+static void shortcut_handler_tab_switch(char key) { ui_tab_switch(key); }
+static void handle_shortcut(char key, uint8_t modifiers)
 {
-//TODO
+    // Iterate over the shortcut list
+    for (size_t i = 0; i < sizeof(shortcuts)/sizeof(shortcuts[0]); i++)
+    {
+        if ((modifiers & shortcuts[i].modifiers) && (shortcuts[i].key == '\0' || shortcuts[i].key == tolower(key))) {
+            shortcuts[i].handler(key);
+        }
+    }
 }
 
 // Keyboard event handler
@@ -129,7 +157,9 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     }
     // If return was pressed
     if (key == KEY_RETURN) {
-        // flush
+        if (tabs.active->flags & TABF_TAKING_INPUT) {
+            sched_set_status(tabs.active->parnet, PSTATUS_READY);
+        }
         return;
     }
 
@@ -147,23 +177,49 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     vga_put_char(key, UI_ATR_DEFAULT);
 }
 
-// BOTH OF THESE FUNCTIONS NEED TO HAVE THE CALLING PROCESS HAS A PARAMETER
-void ui_stdin_read(UNUSED const char* buff, UNUSED size_t count)
+/* Read [count] bytes from the stdin buffer to [buff].
+    The function blocks the calling process until an stdin flush. On that flush
+    it copies no more than [count] bytes from the stdin buffer into [buff] and
+    returns the number of bytes read. */
+size_t ui_stdin_read(const char* buff, size_t count)
 {
-    UNUSED tab_t* tab = pm_get_active()->tab;
-    sched_set_status(pm_get_active(), TS_BLOCKED);
-    syscall(SYS_sched_yield);
+    tab_t* tab;
+    size_t input_size;   
 
-    /* possible solution:
-        the caller for this function must be of the same address space. what if we block the current address
-        space and yield, meaning that we force a task switch. another process, (who? what if we have only 1) will
-        handle the keyboard event and when it comes the time to flush it will simply put this context back to work. */
-    /* reset stdin buffer, block the calling process, resume it only after a flush. */
+    // Get caller's tab and reset its stdin buffer if needed
+    tab = pm_get_active()->tab;
+
+    // Reset input buffer and mark tab as taking input
+    tab->in_offset=0;
+    tab->flags |= TABF_TAKING_INPUT;
+    
+    // Block this context; control will return once stdin flushes
+    sched_set_status(pm_get_active(), PSTATUS_BLOCKED);
+    syscall(SYS_sched_yield);
+    
+
+    // Calcuate input size
+    if ((size_t) tab->in_offset < count) {
+        input_size = tab->in_offset;
+    }
+    else {
+        input_size = count;
+    }
+
+    // Reset input buffer and mark tab as not taking input
+    tab->in_offset = 0;
+    tab->flags &= ~TABF_TAKING_INPUT;
+
+    // Copy the input buffer into [buff]
+    memcpy((void*) buff, stdin_buff, input_size);
+
+    return input_size;
 }
 
-// Write to the stdout buffer of the calling process
+// Write [count] bytes from [buff] to the stdout buffer of the calling process
 void ui_stdout_write(const char* buff, size_t count)
 {
+    // Tab of caller
     tab_t* tab = pm_get_active()->tab;
 
     // If the tab is the active tab, write directly to the screen
@@ -176,14 +232,14 @@ void ui_stdout_write(const char* buff, size_t count)
     // If not, write to its buffer
     else {
         // Temporarlily attach the buffer of the target tab
-        tab_buff_t* buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
+        tab_buff_t* tab_buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
 
-        // Scroll the screen as needed        
-        tab->out_offset = handle_scrolling(buff->out, tab->out_offset, count);
+        // Scroll the screen as needed
+        tab->out_offset = handle_scrolling(tab_buff->out, tab->out_offset, count);
         // Copy add the string into the buffer
-        memcpy(buff->out, buff + count - (count%UI_MAX_OUT), count % UI_MAX_OUT);
+        memcpy(tab_buff->out, buff + count - (count%UI_MAX_OUT), count % UI_MAX_OUT);
 
-        vmm_detach_page((vaddr_t) buff);
+        vmm_detach_page((vaddr_t) tab_buff);
     }
 }
 
@@ -213,17 +269,28 @@ size_t ui_cursor_get(tab_t* tab)
 }
 
 // Open a new tab with the default program and switch to it
-void ui_tab_open(process_t* parent)
+void ui_tab_open()
 {
     tab_t* tab;
     tab_buff_t* buff;
+    process_t* terminal;
+
+    // Check we don't open too much tabs
+    if (tabs.count >= UI_MAX_TABS) {
+        return;
+    }
 
     // Allocate and set the new tab
     tab = (tab_t*) kmalloc(sizeof(tab_t));
     tab->out_offset = 0;
     tab->in_offset  = 0;
-    tab->parnet     = parent;
+    tab->flags      = 0;
     tab->buff       = (tab_buff_t*) pmm_get_page();
+
+    // Create a new terminal process
+    terminal = pm_load(NULL, UI_DEFAULT_TERMINAL, 20);
+    terminal->tab   = tab;
+    tab->parnet     = terminal;
 
     // Clear stdout buffer
     buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
@@ -241,6 +308,8 @@ void ui_tab_open(process_t* parent)
 // Close the displayed tab
 void ui_tab_close()
 {
+    pm_kill(tabs.active->parnet);
+
     // Free tab resources and remove it from the list
     pmm_free_page((paddr_t) tabs.active->buff);
     LIST_REMOVE(tabs.tab_list, tabs.active);
@@ -250,13 +319,20 @@ void ui_tab_close()
     // Decrease tab count
     tabs.count--;
 
-    // If there are tabs left open, switch to [TODO]
+    // If there are open tabs, switch to the tab that is on the left, or to the tab that is on the right if this is the last tab
     if (tabs.count > 0) {
-        ui_tab_switch('1');
+        // If there is a tab to the left of the one we closed, switch to it
+        if (get_index_by_char(tabs.active_index) < tabs.count) {
+            ui_tab_switch(tabs.active_index);
+        }
+        // If not, switch to the tab on the left.
+        else {
+            ui_tab_switch(tab_indexes[get_index_by_char(tabs.active_index)-1]);
+        }
     }
-    // Else, update the header
+    // Else, open a new tab
     else {
-        update_header();
+        ui_tab_open();
     }
 }
 
@@ -313,8 +389,5 @@ void ui_tab_switch(char index)
 void init_ui()
 {
     vga_clear();
-
-    process_t* p = pm_load(NULL, "/sys/itest.elf", 2000);
-    ui_tab_open(p);
-    p->tab = tabs.active;
+    ui_tab_open();
 }

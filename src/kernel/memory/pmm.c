@@ -5,10 +5,10 @@
 #include <kernel/memory/mm.h>
 #include <kernel/memory/mmlayout.h>
 #include <kernel/panic.h>
+#include <drivers/screen.h>
 #include <libc/stdint.h>
 #include <libc/string.h>
 #include <libc/bitfield.h>
-#include <drivers/screen.h>
 
 // Get the page number from its index in the array
 #define INDX_TO_PAGE_NUM(element, index) ((uint32_t) (element)*32+(index))
@@ -37,7 +37,9 @@ extern char _vend;
 paddr_t pmm_get_page()
 {
     // search for the first free physcial page starting from [search_start]
-    for (uint32_t n = search_start; n < sizeof(bitmap)/sizeof(bitmap[0]); n++) {
+    for (uint32_t n = search_start;; n++) {
+        if (n >= sizeof(bitmap)/sizeof(bitmap[0])) n = 0;
+
         // if the element is not equal to 0xFFFFFFFF it means it has free pages in it (bits set to 0)
         if (bitmap[n] != 0xFFFFFFFF) {
             // find the first free page in the element

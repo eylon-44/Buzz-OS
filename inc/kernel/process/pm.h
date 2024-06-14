@@ -14,12 +14,12 @@
 // Process status enum
 typedef enum
 {
-    TS_NEW      = 0x01,     // process is initiating
-    TS_READY    = 0x02,     // process is ready to be picked by the scheduler and run
-    TS_ACTIVE   = 0x04,     // process is currently running
-    TS_BLOCKED  = 0x08,     // process is blocked
-    TS_DONE     = 0x10,     // process is done and is about to be deleted
-    TS_STOPPED  = 0x20      // process stopped until being continued
+    PSTATUS_NEW      = 0x01,     // process is initiating
+    PSTATUS_READY    = 0x02,     // process is ready to be picked by the scheduler and run
+    PSTATUS_ACTIVE   = 0x04,     // process is currently running
+    PSTATUS_SLEEPED  = 0x08,     // process is blocked
+    PSTATUS_DONE     = 0x10,     // process is done and is about to be deleted
+    PSTATUS_BLOCKED  = 0x20      // process stopped until being continued
 } pstatus_t;
 
 // Process data structure
@@ -47,6 +47,7 @@ typedef struct process {
 
 process_t* pm_get_active();
 process_t* pm_load(process_t* parent, const char* path, int priority);
+void pm_kill(process_t* proc);
 int pm_get_pid();
 void init_pm();
 
