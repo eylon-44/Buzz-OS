@@ -470,8 +470,7 @@ ssize_t fs_write(int fd, const void* buff, size_t count)
     case 0:     // STDIN
         return -1;
     case 1:     // STDOUT
-        ui_stdout_write((const char*) buff, count);
-        return 0;
+        return ui_stdout_write((const char*) buff, count);
     case 2:     // STDERR
         return 0;
     }

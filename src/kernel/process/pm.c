@@ -49,6 +49,7 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
     pde_t *new_pd_p;
     vaddr_t scratch_v; paddr_t scratch_p;
     process_t process;
+    size_t pbrk = 0;
 
     // Open the ELF file
     fd = fs_open(path, O_RDONLY);
@@ -97,6 +98,9 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
 
         // If the segment is not a LOAD segment, skip it
         if (prghdr.seg_type != 1) continue;
+
+        // Get the program break
+        if (prghdr.vaddr+prghdr.memsz > pbrk) pbrk = MM_ALIGN_UP(prghdr.vaddr+prghdr.memsz);
 
         // Seek the start of the data
         fs_lseek(fd, prghdr.offset, SEEK_SET);
@@ -150,7 +154,8 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
         .child_count= 0,                            // 0 children by defualt
         .kesp       = 0,                            // kernel stack pointer to set when entering ring 0
         .cr3        = (uint32_t) new_pd_p,          // physical address of the process' page directory
-        .status     = PSTATUS_NEW,                       // status of the task; will be set to READY once placed into the scheduler's queue
+        .status     = PSTATUS_NEW,                  // status of the task; will be set to READY once placed into the scheduler's queue
+        .pbrk       = pbrk,                         // program break
         .ticks      = 0,                            // ACTIVE time left; set by the scheduler
         .priority   = priority,                     // task's priority
         .fds        = NULL,                         // process's open file descriptors list
@@ -242,6 +247,40 @@ void pm_kill(process_t* proc)
     if (proc == sched_get_active()) {
         sched_switch_next();
     }
+}
+
+/* Set the program break of a given process.
+    Set the program break of [proc] to [addr]. If [addr] is bigger than the current
+    program break, allocate pages, else, deallocate pages. [addr] must be within the userspace.
+    [addr] must be 4KB aligned; if not, [addr] will be rounded up.
+    On success returns the new program break. On error returns 0. */
+size_t pm_brk(process_t* proc, size_t addr)
+{
+    // Round [addr] up to get the program break top
+    addr = MM_ALIGN_UP(addr);
+
+    // If [addr] is not within the address space, return NULL
+    if (addr > MM_KSPACE_START || addr < MM_USPACE_START) return 0;
+
+    // If [addr] is bigger than the current program break, allocate pages
+    if (addr > proc->pbrk)
+    {
+        for (; addr < proc->pbrk; addr+=MM_PAGE_SIZE) {
+            vmm_map_page((pde_t*) proc->cr3, pmm_get_page(), addr-MM_PAGE_SIZE, 1, 1, 0, 0);
+        }
+    }
+    // If [addr] is smaller than the current program break, deallocate pages
+    else if (addr < proc->pbrk)
+    {
+        for (; addr > proc->pbrk; addr-=MM_PAGE_SIZE) {
+            pmm_free_page(vmm_get_physical((pde_t*) proc->cr3, addr-MM_PAGE_SIZE));
+            vmm_unmap_page((pde_t*) proc->cr3, addr-MM_PAGE_SIZE);
+        }
+    }
+
+    // Update and return the program break
+    proc->pbrk = addr;
+    return proc->pbrk;
 }
 
 // Initiate the initiation process

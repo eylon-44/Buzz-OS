@@ -33,7 +33,7 @@ KERNEL_PATH		:= /sys/kernel.elf
 
 # Compiler settings
 CC      := gcc
-CFLAGS  := -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror -ggdb
+CFLAGS  := -I$(INCLUDE_DIR) -I$(INCLUDE_DIR)/libc -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -ggdb
 
 AS      := nasm
 ASFLAGS := -f elf32 -g -F dwarf

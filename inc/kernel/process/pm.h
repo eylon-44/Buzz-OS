@@ -26,6 +26,7 @@ typedef enum
 typedef struct process {
     size_t cr3;             // CR3 register - address space
     size_t kesp;            // kernel stack pointer
+    size_t pbrk;            // program break
 
     int pid;                // process id
     struct process* parnet; // parent process pointer
@@ -46,6 +47,7 @@ typedef struct process {
 } process_t;
 
 process_t* pm_get_active();
+size_t pm_brk(process_t* proc, size_t addr);
 process_t* pm_load(process_t* parent, const char* path, int priority);
 void pm_kill(process_t* proc);
 int pm_get_pid();

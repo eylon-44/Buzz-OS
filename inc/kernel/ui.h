@@ -62,7 +62,7 @@ typedef struct
 
 void ui_key_event_handler(char key, uint8_t modifiers);
 size_t ui_stdin_read(UNUSED const char* buff, UNUSED size_t count);
-void ui_stdout_write(const char* buff, size_t count);
+ssize_t ui_stdout_write(const char* buff, size_t count);
 void ui_cursor_set(tab_t* tab, size_t offset);
 size_t ui_cursor_get(tab_t* tab);
 void ui_tab_open();

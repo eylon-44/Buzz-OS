@@ -216,15 +216,16 @@ size_t ui_stdin_read(const char* buff, size_t count)
     return input_size;
 }
 
-// Write [count] bytes from [buff] to the stdout buffer of the calling process
-void ui_stdout_write(const char* buff, size_t count)
+/* Write [count] bytes from [buff] to the stdout buffer of the calling process.
+    Returns the number of bytes written. */
+ssize_t ui_stdout_write(const char* buff, size_t count)
 {
     // Tab of caller
     tab_t* tab = pm_get_active()->tab;
 
     // If the tab is the active tab, write directly to the screen
     if (tab == tabs.active) {
-        // Scroll the screen as needed        
+        // Scroll the screen as needed
         ui_cursor_set(tab, handle_scrolling((char*) UI_SCREEN_BUFF, ui_cursor_get(tab), count));
         // Print the string to the screen
         vga_print_n(buff + count - (count%UI_MAX_OUT), UI_ATR_DEFAULT, count % UI_MAX_OUT);
@@ -241,6 +242,8 @@ void ui_stdout_write(const char* buff, size_t count)
 
         vmm_detach_page((vaddr_t) tab_buff);
     }
+
+    return count;
 }
 
 // Set the cursor for the given tab

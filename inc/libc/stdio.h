@@ -8,4 +8,6 @@ typedef struct {
     int _fileno;
 } FILE;
 
+int printf(const char* format, ...);
+
 #endif
