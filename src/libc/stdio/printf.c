@@ -2,7 +2,11 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/syscall.h>
 #include <stdarg.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* The classic printf.
 
@@ -12,9 +16,19 @@
     #include <stdio.h>
     int printf(const char* format, ...);
 */
-int printf(UNUSED const char* format, ...)
+int printf(const char* format, ...)
 {
-    // https://stackoverflow.com/a/23842944/22586830
-    // syscall for allocating pages (sbrk/brk/?) -> malloc -> asprintf -> printf
-    return 0;
+    char* str;
+    size_t len;
+    va_list args;
+    
+    va_start(args, format);
+    len = vasprintf(&str, format, args);
+
+    syscall(SYS_write, stdout, str, len);
+
+    va_end(args);
+    free(str);
+
+    return len;
 }

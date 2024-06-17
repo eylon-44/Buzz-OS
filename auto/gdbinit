@@ -8,6 +8,8 @@ add-symbol-file usr/fs_layout/sys/terminal.elf
 
 #layout prev
 layout src
+layout asm
+layout reg
 
 target remote localhost:1234
 
@@ -21,7 +23,7 @@ target remote localhost:1234
 #break _start
 
 # Kernel main start
-break kernel_main
+# break kernel_main
 #break _entry
 
 #break init_fs
@@ -40,5 +42,6 @@ break kernel_main
 # break heap_extend
 # break pm_brk
 break main
+break printf
 
 continue
