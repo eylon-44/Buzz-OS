@@ -2,7 +2,6 @@
 
 /* C runtime termination.
 */
-
 void __libc_fini()
 {
     // [TODO]

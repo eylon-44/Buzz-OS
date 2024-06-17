@@ -16,6 +16,9 @@
 #define SEEK_END 2      // the file offset is set to the size of the file plus offset bytes
 
 int syscall(int sysno, ...);
+ssize_t read(int fd, void* buff, size_t count);
 ssize_t write(int fd, const void* buff, size_t count);
+int brk(void *addr);
+void* sbrk(size_t increment);
 
 #endif

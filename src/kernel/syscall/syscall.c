@@ -42,5 +42,7 @@ void init_syscall()
     SYSCALL_HANDLER(exit);
     SYSCALL_HANDLER(read);
     SYSCALL_HANDLER(write);
+    SYSCALL_HANDLER(brk);
+    SYSCALL_HANDLER(sbrk);
     SYSCALL_HANDLER(sched_yield);
 }

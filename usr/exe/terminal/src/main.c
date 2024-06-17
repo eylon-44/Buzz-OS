@@ -5,19 +5,25 @@
 
 extern char end, edata;
 
+// int a = 10;
+// const int b = 20;
+// int c;
+
 int main()
 {
-    char end_str[16];
-    itoa((size_t) &edata, end_str);
-    char input[128] = "Input: ";
+    // c = 10;
     char result[] = " | You inputed: ";
 
-    syscall(SYS_write, 1, input, strlen(input));
-    input[syscall(SYS_read, 0, input, sizeof(input))] = '\0';
+    char* input = malloc(128);
+    free(input);
+    
+    syscall(SYS_write, 1, "Input: ", 6);
+    input[syscall(SYS_read, 0, input, 128)] = '\0';
     syscall(SYS_write, 1, result, strlen(result));
     syscall(SYS_write, 1, input, strlen(input));
 
-    syscall(SYS_write, 1, end_str, strlen(end_str));
+
+
     while (1) {}
 
 	return 0;

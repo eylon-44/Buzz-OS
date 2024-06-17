@@ -1,17 +1,17 @@
-// Kernel Heap Header File // ~ eylon
+// LIBC Heap Header File // ~ eylon
 
-#if !defined(KHEAP_H)
-#define KHEAP_H
+#if !defined(__LIBC_HEAP_H)
+#define __LIBC_HEAP_H
 
-#include <kernel/memory/mm.h>
-#include <libc/stdint.h>
-#include <libc/stddef.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <mm.h>
 
 // Heap data structure
 typedef struct
 {
-    vaddr_t start;
-    vaddr_t top;
+    size_t start;
+    size_t top;
 } heap_t;
 
 // Heap chunk header data structure
@@ -20,6 +20,9 @@ typedef struct
     uint32_t size;         // size & 0x1 = free/used
     uint32_t prev_size;
 } heap_header_t;
+
+// Max heap size
+#define HEAP_MAX_SIZE MB(2)
 
 // Heap chunks alignment
 #define HEAP_ALIGNMENT 8
@@ -39,10 +42,7 @@ typedef struct
 #define PREV_CHUNK(header_ptr)            ((heap_header_t*) ((uint8_t*) (header_ptr) - CHUNK_PREV_SIZE(header_ptr)))
 // Get a pointer to the start of the data in the chunk
 #define CHUNK_DATA(header_ptr)            ((void*) ((uint8_t*) (header_ptr) + sizeof(heap_header_t)))
-
-/* Function declarations */
-void init_kheap();
-void* kmalloc(size_t size);
-void kfree(void* ptr);
+// Get a poniter to the chunk's header by a pointer to its data
+#define CHUNK_HEADER(header_ptr)          ((heap_header_t*) ((uint8_t*) (header_ptr) - sizeof(heap_header_t)))
 
 #endif

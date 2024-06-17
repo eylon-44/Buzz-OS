@@ -182,9 +182,8 @@ void kfree(void* ptr)
 
 void init_kheap()
 {
-    // allocated a physical page and map it to the start of the heap [TODO] use the extension function instead
-    kheap.extension = heap_extend;
-    kheap.extension(&kheap, MM_KHEAP_START + MM_PAGE_SIZE);
+    // allocated a physical page and map it to the start of the heap
+    heap_extend(&kheap, MM_KHEAP_START + MM_PAGE_SIZE);
     // create the first header in the heap
     *(heap_header_t*) kheap.start = (heap_header_t) { .size = HEAP_SIZE(kheap), .prev_size = 0 };
 }

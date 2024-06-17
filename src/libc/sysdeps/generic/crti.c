@@ -1,11 +1,10 @@
 // sys/generic/crti.c // ~ eylon
 
-/* C runtime initialization.
+extern void __libc_init_heap();
 
-    Heap initialization. Initialize stdio (i.e., stdin, stdout, stderr). placing atexit functions for cleanup
+/* LIBC runtime initialization.
 */
-
 void __libc_init()
 {
-    // [TODO]
+    __libc_init_heap();
 }

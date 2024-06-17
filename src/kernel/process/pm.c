@@ -106,39 +106,44 @@ process_t* pm_load(process_t* parent, const char* path, int priority)
         fs_lseek(fd, prghdr.offset, SEEK_SET);
 
         // Load and map the segment
-        for (size_t offset = prghdr.vaddr; offset < prghdr.vaddr + prghdr.memsz;)
+        for (size_t load_addr = prghdr.vaddr; load_addr < prghdr.vaddr + prghdr.memsz;)
         {
             size_t load_size;
-
-            // Allocate a page and attach it
-            scratch_p = pmm_get_page();
-            scratch_v = vmm_attach_page(scratch_p);
-
-            // If page is not mapped, map it
-            if (!vmm_is_mapped(new_pd_p, offset)) {
-                vmm_map_page(new_pd_p, scratch_p, offset, prghdr.flags & 2, 1, 0, 0);
+            
+            // If page is mapped already, attach its physical page
+            if (vmm_is_mapped(new_pd_p, load_addr)) {
+                scratch_v = vmm_attach_page(vmm_get_physical(new_pd_p, load_addr));
+            }
+            // Else, allocate and map it
+            else {
+                scratch_p = pmm_get_page();
+                scratch_v = vmm_attach_page(scratch_p);
+                // vmm_map_page(new_pd_p, scratch_p, load_addr, prghdr.flags & ~2, 1, 0, 0);
+                vmm_map_page(new_pd_p, scratch_p, load_addr, (prghdr.flags >> 2) & 1, 1, 0, 0);
             }
 
             // Load data from file
-            if (offset <= prghdr.vaddr + prghdr.filesz)
+            if (load_addr < prghdr.vaddr + prghdr.filesz)
             {
                 // Calculate the number of bytes to load
-                load_size = MM_PAGE_SIZE - (offset % MM_PAGE_SIZE);
-                if (offset + load_size > prghdr.vaddr + prghdr.filesz) {
-                    load_size = prghdr.vaddr + prghdr.filesz - offset;
+                load_size = MM_PAGE_SIZE - (load_addr % MM_PAGE_SIZE);
+                if (load_addr + load_size > prghdr.vaddr + prghdr.filesz) {
+                    load_size = prghdr.vaddr + prghdr.filesz - load_addr;
                 }
                 // Read [load_size] bytes from file into the scratch space
-                fs_read(fd, (void*) (scratch_v + (offset % MM_PAGE_SIZE)), load_size);
-                offset += load_size;
+                fs_read(fd, (void*) (scratch_v + (load_addr % MM_PAGE_SIZE)), load_size);
+                load_addr += load_size;
             }
             // Zero out BSS section
-            if (offset > prghdr.vaddr + prghdr.filesz)
+            if (load_addr >= prghdr.vaddr + prghdr.filesz && prghdr.filesz < prghdr.memsz)
             {
-                // Calculate the number of bytes to set
-                load_size = MM_ALIGN_UP(offset) - offset;
+                load_size = MM_PAGE_SIZE - (load_addr % MM_PAGE_SIZE);
+                if (load_addr + load_size > prghdr.vaddr + prghdr.memsz) {
+                    load_size = prghdr.vaddr + prghdr.memsz - load_addr;
+                }
                 // Set [load_size] bytes to 0 at the scratch space
-                memset((void*) (scratch_v + (offset % MM_PAGE_SIZE)), 0, load_size);
-                offset += load_size;
+                memset((void*) (scratch_v + (load_addr % MM_PAGE_SIZE)), 0, load_size);
+                load_addr += load_size;
             }
 
             // Free temporarly attached page
@@ -263,23 +268,16 @@ size_t pm_brk(process_t* proc, size_t addr)
     if (addr > MM_KSPACE_START || addr < MM_USPACE_START) return 0;
 
     // If [addr] is bigger than the current program break, allocate pages
-    if (addr > proc->pbrk)
-    {
-        for (; addr < proc->pbrk; addr+=MM_PAGE_SIZE) {
-            vmm_map_page((pde_t*) proc->cr3, pmm_get_page(), addr-MM_PAGE_SIZE, 1, 1, 0, 0);
-        }
+    for (; addr > proc->pbrk; proc->pbrk+=MM_PAGE_SIZE) {
+        vmm_map_page((pde_t*) proc->cr3, pmm_get_page(), proc->pbrk, 1, 1, 0, 0);
     }
     // If [addr] is smaller than the current program break, deallocate pages
-    else if (addr < proc->pbrk)
-    {
-        for (; addr > proc->pbrk; addr-=MM_PAGE_SIZE) {
-            pmm_free_page(vmm_get_physical((pde_t*) proc->cr3, addr-MM_PAGE_SIZE));
-            vmm_unmap_page((pde_t*) proc->cr3, addr-MM_PAGE_SIZE);
-        }
+    for (; addr < proc->pbrk; proc->pbrk-=MM_PAGE_SIZE) {
+        pmm_free_page(vmm_get_physical((pde_t*) proc->cr3, proc->pbrk-MM_PAGE_SIZE));
+        vmm_unmap_page((pde_t*) proc->cr3, proc->pbrk-MM_PAGE_SIZE);
     }
 
-    // Update and return the program break
-    proc->pbrk = addr;
+    // Return the program break
     return proc->pbrk;
 }
 
@@ -295,8 +293,7 @@ static void init_init()
     sched_set_status( sched_add_process(_dummy_proc), PSTATUS_DONE );
     queue.active = queue.proc_list;
 
-    // Load the init process
-    pm_load(NULL, "sys/init.elf", 20);
+    pm_load(NULL, "/sys/init.elf", 1);
 }
 
 void init_pm()
