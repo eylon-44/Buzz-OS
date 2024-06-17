@@ -357,7 +357,7 @@ int fs_open(const char* path, int flags)
     fd = (fd_t*) kmalloc(sizeof(fd_t));
     fd->fileno = fileno;
     fd->flags  = flags;
-    fd->inode  = index;
+    fd->inode_indx  = index;
     fd->offset = 0;
 
     // Get the active process and add the new file descriptors to its list
@@ -430,10 +430,10 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         return -1;
     }
 
-    inode = inode_read(fd_p->inode);            // get the file's inode
-    scratch = vmm_attach_page(fs_phys_scratch); // attach temporary scratch space
+    inode = inode_read(fd_p->inode_indx);            // get the file's inode
+    scratch = vmm_attach_page(fs_phys_scratch); // attach scratch space
 
-    // Go over the inode's direct list
+    // Go over the inode's direct list starting from the block at offset [offset]
     for (size_t i = fd_p->offset / super.block_size; i <= inode.count / super.block_size; i++)
     {
         size_t offset, size;
@@ -458,10 +458,16 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         }
     }
 
-    vmm_detach_page(scratch);                   // detach temporary scratch space
+    vmm_detach_page(scratch);
     return bytes_read;
 }
 
+/* Attempt to write [count] bytes to file descriptor [fd] from [buff].
+    The writing starts from the seek offset in the file and stops after
+        writing [count] bytes. The function my truncate the file to fit
+        the data.
+    On success, the number of bytes written is returned, and the file position
+    is advanced by this number. On failure, -1 is returned.*/
 ssize_t fs_write(int fd, const void* buff, size_t count)
 {
     /* Handle standard streams */
@@ -476,14 +482,89 @@ ssize_t fs_write(int fd, const void* buff, size_t count)
     }
 
     /* Handle file streams */
-    // get fd linked list from the active process
-    return 0;
+    fd_t* fd_p;
+    vaddr_t scratch;
+    inode_t inode;
+    size_t bytes_written = 0;
+
+    // Check if the file is open
+    fd_p = fd_seek(fd);
+    if (fd_p == NULL) {
+        return -1;
+    }
+
+    inode = inode_read(fd_p->inode_indx);           // get the file's inode
+    scratch = vmm_attach_page(fs_phys_scratch);     // attach scratch space
+
+    // Trunacte the file to fit the new data if needed
+    if (fd_p->offset + count > inode.count) {
+        fs_ftruncate(fd, fd_p->offset+count);
+        inode = inode_read(fd_p->inode_indx);
+
+    }
+
+    // Go over the inode's direct list starting from the block at offset [offset]
+    for (size_t i = fd_p->offset / super.block_size; i < FS_DIRECT_NUM; i++)
+    {
+        size_t offset, size;
+
+        // Calculate the offset within the block and the size to write to it
+        offset = scratch + (fd_p->offset % super.block_size);
+        size   = count - bytes_written;
+        if (offset + size > scratch + super.block_size) {
+            size = (scratch+super.block_size) - offset;
+        }
+
+        // Read the block, copy the buffer into it and write the block back into the disk
+        block_read((void*) scratch, inode.direct[i]);
+        memcpy((void*) offset, (void*) ((size_t) buff + bytes_written), size);
+        block_write((void*) scratch, inode.direct[i]);
+
+        fd_p->offset  += size;
+        bytes_written += size;
+
+        // If read [count] bytes exit
+        if (bytes_written >= count) {
+            break;
+        }
+    }
+
+    vmm_detach_page(scratch);
+    return bytes_written;
 }
 
-/* Retrieve information about the file pointed to by [path].
-    Inormation is stored in the stat struct buffer [buf].
-    On success, zero is returned, on failure, a non-zero number is returned. */
-int fs_stat(const char *path, struct stat *buf)
+
+/* The fs_truncate() and fs_ftruncate() functions cause the regular file
+    named by [path] or referenced by [fd] to be truncated to a size of
+    precisely [length] bytes.
+    
+    If the file previously was larger than this size, the extra data
+    is lost. If the file previously was shorter, it is extended, and
+    the extended part reads as null bytes ('\0').
+
+    With ftruncate(), the file must be open for writing, and the file offset is not changed.
+
+    On success, zero is returned.  On error, -1 is returned, and
+    errno is set to indicate the error.*/
+static int itruncate(inode_t inode, int index, size_t length)
+{
+    // Deallocate blocks if decreasing the file's size
+    for (size_t i = inode.count / super.block_size; i > length / super.block_size; i--)
+    {
+        blockmap_set(inode.direct[i], 0);
+    }
+    // Allocate blocks if increasing the file's size
+    for (size_t i = inode.count / super.block_size; i < length / super.block_size || i == 0; i++)
+    {
+        inode.direct[i] = blockmap_get();
+    }
+
+    inode.count = length;
+    inode_write(inode, index);
+
+    return 0;
+}
+int fs_truncate(const char* path, size_t length)
 {
     inode_t inode;
     int index;
@@ -494,15 +575,10 @@ int fs_stat(const char *path, struct stat *buf)
     }
     inode = inode_read(index);
 
-    buf->st_size = inode.count;
+    return itruncate(inode, index, length);
 
-    return 0;
 }
-
-/* Retrieve information about the the open file descriptor [fd].
-    Inormation is stored in the stat struct buffer [buf].
-    On success, zero is returned, on failure, a non-zero number is returned. */
-int fs_fstat(int fd, struct stat *buf)
+int fs_ftruncate(int fd, size_t length)
 {
     fd_t* fd_p;
     inode_t inode;
@@ -511,11 +587,47 @@ int fs_fstat(int fd, struct stat *buf)
     if (fd_p == NULL) {
         return -1;
     }
-    inode = inode_read(fd_p->inode);
+    inode = inode_read(fd_p->inode_indx);
 
+    return itruncate(inode, fd_p->inode_indx, length);
+}
+
+
+/* The fs_stat() and fs_fstat() functions retrieve information about the regular file
+    named by [path] or referenced by [fd].
+        Inormation is stored in the stat struct buffer [buf].
+    On success, zero is returned, on failure, -1 is returned. */
+static int fs_istat(inode_t inode, struct stat* buf)
+{
     buf->st_size = inode.count;
 
     return 0;
+}
+int fs_stat(const char *path, struct stat* buf)
+{
+    inode_t inode;
+    int index;
+
+    index = fs_seek(path);
+    if (index < 0) {
+        return -1;
+    }
+    inode = inode_read(index);
+    
+    return fs_istat(inode, buf);
+}
+int fs_fstat(int fd, struct stat* buf)
+{
+    fd_t* fd_p;
+    inode_t inode;
+    
+    fd_p = fd_seek(fd);
+    if (fd_p == NULL) {
+        return -1;
+    }
+    inode = inode_read(fd_p->inode_indx);
+
+    return fs_istat(inode, buf);
 }
 
 /* Reposition the file offset of an open file by [offset] and according
@@ -547,7 +659,7 @@ int fs_lseek(int fd, int offset, int whence)
             return fd_p->offset;
 
         case SEEK_END:
-            size_t fsize = inode_read(fd_p->inode).count;
+            size_t fsize = inode_read(fd_p->inode_indx).count;
             if ((int) fsize + offset < 0) { break; }
             fd_p->offset = fsize + offset;
             return fd_p->offset;
@@ -561,6 +673,4 @@ void init_fs()
 {
     fs_phys_scratch = pmm_get_page();   // allocate a physical scratch space for the file system
     super_read();                       // read the superblock
-
-    blockmap_get();     // DEBUG
 }

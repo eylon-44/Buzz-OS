@@ -8,4 +8,6 @@
 #define O_WRONLY       01   // open for writing only */
 #define O_RDWR         02   // open for reading and writing */
 
+int open(const char *pathname, int flags);
+
 #endif

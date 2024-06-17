@@ -81,7 +81,7 @@ typedef struct fd {
     int fileno;             // file descriptor number
     int flags;              // file descriptor flags
     uint32_t offset;        // the current position within the file
-    size_t inode;           // the inode index of the file
+    size_t inode_indx;           // the inode index of the file
 
     struct fd* next;
     struct fd* prev;
@@ -96,9 +96,11 @@ int fs_open(const char* path, int flags);
 int fs_close(int fd);
 ssize_t fs_read(int fd, void* buff, size_t count);
 ssize_t fs_write(int fd, const void* buff, size_t count);
-int fs_stat(const char *path, struct stat *buf);
+int fs_stat(const char *path, struct stat* buf);
 int fs_fstat(int fd, struct stat *buf);
 int fs_lseek(int fd, int offset, int whence);
+int fs_truncate(const char* path, size_t length);
+int fs_ftruncate(int fd, size_t length);
 void init_fs();
 
 #endif

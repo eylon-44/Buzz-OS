@@ -1,4 +1,4 @@
-// sys_sched_yield // ~ eylon
+// sys_write // ~ eylon
 
 #include <kernel/syscall.h>
 #include <kernel/fs.h>
