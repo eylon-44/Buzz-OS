@@ -13,6 +13,7 @@
 #include <libc/string.h>
 #include <libc/ctype.h>
 #include <libc/list.h>
+#include <libc/stdlib.h>
 
 static void shortcut_handler_tab_switch(char key);
 static void shortcut_handler_tab_open(char key);
@@ -112,6 +113,31 @@ static size_t handle_scrolling(char* buff_out, int offset, size_t count)
     return offset;
 }
 
+// Print a new line
+static void new_line(tab_t* tab)
+{
+    if (tab == tabs.active) {
+        ui_cursor_set(tab, handle_scrolling((char*) UI_SCREEN_BUFF, ALIGN_DOWN(ui_cursor_get(tab) + VGA_COL_COUNT, VGA_COL_COUNT), 0));
+    }
+    else {
+        tab_buff_t* tab_buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
+        tab->out_offset = handle_scrolling((char*) UI_SCREEN_BUFF, ALIGN_DOWN(ui_cursor_get(tab) + VGA_COL_COUNT, VGA_COL_COUNT), 0);
+        vmm_detach_page((vaddr_t) tab_buff);
+    }
+}
+// Handle escape sequence characters. If [c] is not an escape sequence, return false, else true.
+static bool handle_escape_sequences(tab_t* tab, char c)
+{
+    switch (c)
+    {
+    case '\n':
+        new_line(tab);
+        return true;
+    
+    default:
+        return false;
+    }
+}
 
 // Shortcut handler
 static void shortcut_handler_tab_open(UNUSED char key) { ui_tab_open(); }
@@ -160,6 +186,7 @@ void ui_key_event_handler(char key, uint8_t modifiers)
         if (tabs.active->flags & TABF_TAKING_INPUT) {
             sched_set_status(tabs.active->parnet, PSTATUS_READY);
         }
+        new_line(tabs.active);
         return;
     }
 
@@ -172,7 +199,7 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     stdin_buff[tabs.active->in_offset] = key;
     tabs.active->in_offset++;
 
-    // Print the key ???with stdout????
+    // Print the key
     ui_cursor_set(tabs.active, handle_scrolling((char*) UI_SCREEN_BUFF, ui_cursor_get(tabs.active), 1));
     vga_put_char(key, UI_ATR_DEFAULT);
 }
@@ -186,17 +213,19 @@ size_t ui_stdin_read(const char* buff, size_t count)
     tab_t* tab;
     size_t input_size;   
 
-    // Get caller's tab and reset its stdin buffer if needed
+    // Get caller's tab
     tab = pm_get_active()->tab;
-
-    // Reset input buffer and mark tab as taking input
-    tab->in_offset=0;
-    tab->flags |= TABF_TAKING_INPUT;
+    // If input buffer is empty wait for input
+    if (tab->in_offset == 0)
+    {
+        tab->flags |= TABF_TAKING_INPUT;
+        
+        // Block this context; control will return once stdin flushes
+        sched_set_status(pm_get_active(), PSTATUS_BLOCKED);
+        syscall(SYS_sched_yield);   // see you later!
+    }
     
-    // Block this context; control will return once stdin flushes
-    sched_set_status(pm_get_active(), PSTATUS_BLOCKED);
-    syscall(SYS_sched_yield);
-    
+    /* ~ ~ ~ ~ ~ ~ ~ ~ ~ */
 
     // Calcuate input size
     if ((size_t) tab->in_offset < count) {
@@ -206,12 +235,16 @@ size_t ui_stdin_read(const char* buff, size_t count)
         input_size = count;
     }
 
-    // Reset input buffer and mark tab as not taking input
-    tab->in_offset = 0;
+    // Mark tab as not taking input
     tab->flags &= ~TABF_TAKING_INPUT;
 
     // Copy the input buffer into [buff]
     memcpy((void*) buff, stdin_buff, input_size);
+
+    // Move the buffer's leftovers to the start
+    tab->in_offset -= input_size;
+    if (tab->in_offset < 0) tab->in_offset = 0;
+    memcpy(stdin_buff, stdin_buff+input_size, tab->in_offset);
 
     return input_size;
 }
@@ -228,7 +261,13 @@ ssize_t ui_stdout_write(const char* buff, size_t count)
         // Scroll the screen as needed
         ui_cursor_set(tab, handle_scrolling((char*) UI_SCREEN_BUFF, ui_cursor_get(tab), count));
         // Print the string to the screen
-        vga_print_n(buff + count - (count%UI_MAX_OUT), UI_ATR_DEFAULT, count % UI_MAX_OUT);
+        for (size_t i = 0; i < count; i++) {
+            char c = (buff + count - (count%UI_MAX_OUT))[i];
+            // If [c] is not an escape sequence character, print it
+            if (!handle_escape_sequences(tab, c)) {
+                vga_put_char(c, UI_ATR_DEFAULT);
+            }
+        }
     }
     // If not, write to its buffer
     else {
@@ -237,8 +276,15 @@ ssize_t ui_stdout_write(const char* buff, size_t count)
 
         // Scroll the screen as needed
         tab->out_offset = handle_scrolling(tab_buff->out, tab->out_offset, count);
-        // Copy add the string into the buffer
-        memcpy(tab_buff->out, buff + count - (count%UI_MAX_OUT), count % UI_MAX_OUT);
+
+        // Copy the string to the buffer
+        for (size_t i = 0; i < count; i++) {
+            char c = (buff + count - (count%UI_MAX_OUT))[i];
+            // If [c] is not an escape sequence character, copy it to the buffer
+            if (!handle_escape_sequences(tab, c)) {
+                tab_buff->out[tab->out_offset+i] = c;
+            }
+        }
 
         vmm_detach_page((vaddr_t) tab_buff);
     }

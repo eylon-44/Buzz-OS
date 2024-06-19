@@ -14,7 +14,7 @@
 static uint8_t* vidmem = (uint8_t*) VGA_VIRT_MEM;
 
 // Put a single character on the screen at the current cursor location
-void vga_put_char(char character, uint8_t attribute)
+inline void vga_put_char(char character, uint8_t attribute)
 {
     // Print the character at the current cursor location
     size_t offset = vga_put_char_at(character, attribute, vga_get_cursor());
@@ -24,7 +24,7 @@ void vga_put_char(char character, uint8_t attribute)
 
 /* Put a single character on the screen at a given offset.
     Returns the screen offset at which the string terminates. */
-size_t vga_put_char_at(char character, uint8_t attribute, size_t offset)
+inline size_t vga_put_char_at(char character, uint8_t attribute, size_t offset)
 {
     if (attribute == 0) { attribute = UI_ATR_DEFAULT; }
 

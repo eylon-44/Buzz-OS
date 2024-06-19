@@ -8,10 +8,10 @@ int main()
 {
     char* input = malloc(128);
 
-    printf("Enter your name: ");
+    printf("Enter your name:");
     input[syscall(SYS_read, stdin, input, 128)] = '\0';
 
-    printf(" Hello %s", input);
+    printf("\nHello %s", input);
 
     while (1) {}
 }

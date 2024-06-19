@@ -41,8 +41,8 @@ typedef struct
 typedef struct tab
 {
     struct process* parnet;     // orphan process of tab
-    size_t in_offset;           // offset in stdin buffer
-    size_t out_offset;          // offset in stdout buffer; cursor offset
+    int in_offset;              // offset in stdin buffer
+    int out_offset;             // offset in stdout buffer; cursor offset
     tab_buff_t* buff;           // physical address of tab stdin and stdout buffer
 
     uint32_t flags;

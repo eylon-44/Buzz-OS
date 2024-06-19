@@ -133,12 +133,16 @@ static void kill_process(process_t* proc)
         }
         node = node->next;
     }
+
+    // Close open file descriptors
+    fd_t* fd = proc->fds;
+    while (fd != NULL) { fs_close(fd->fileno); }
+
     sched_set_status(proc, PSTATUS_DONE);    // set the status of the process to DONE and by that remove its priority from the queue's priority sum
     vmm_del_ctx(proc->cr3);             // delete the address space of the process
     LIST_REMOVE(queue.proc_list, proc); // remove it from the queue
     kfree(proc);                        // free the process structure
     queue.count--;                      // decrement the process count in the queue
-    // [TODO] close FDs
 }
 
 // Update active process on scheduler tick
