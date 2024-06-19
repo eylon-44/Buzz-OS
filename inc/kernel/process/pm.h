@@ -9,6 +9,7 @@
 #include <libc/stddef.h>
 
 #define PM_DEFAULT_PRIORITY 20
+#define PM_MAX_ARGV         32
 
 // Process status enum
 typedef enum

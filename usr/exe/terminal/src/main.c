@@ -2,16 +2,21 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <string.h>
-#include <stdlib.h>
 
 int main()
 {
-    char* input = malloc(128);
+    char input[128];
+    char* str[] = {"hey", "wow", NULL};
 
-    printf("Enter your name:");
-    input[syscall(SYS_read, stdin, input, 128)] = '\0';
+    while (1)
+    {
+        input[syscall(SYS_read, stdin, input, 128)] = '\0';
+        printf("%s\n", input);
+        if (strcmp(input, "echo") == 0) {
+            execve("/bin/echo.elf", str);
+        }
 
-    printf("\nHello %s", input);
+    }
 
     while (1) {}
 }

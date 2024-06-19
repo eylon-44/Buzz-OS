@@ -4,12 +4,13 @@ set print pretty
 add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
-add-symbol-file usr/fs_layout/sys/terminal.elf
+# add-symbol-file usr/fs_layout/sys/terminal.elf
+add-symbol-file usr/fs_layout/bin/echo.elf
 
 #layout prev
-#layout src
-layout asm
-layout reg
+layout src
+# layout asm
+# layout reg
 
 target remote localhost:1234
 
@@ -41,8 +42,10 @@ target remote localhost:1234
 # break __libc_init_heap
 # break heap_extend
 # break pm_brk
-break main
+# break main
 #break pm_load
 # break printf
+# break pm.c:216
+break main
 
 continue

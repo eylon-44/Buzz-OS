@@ -159,6 +159,7 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
         .child_count= 0,                            // 0 children by defualt
         .kesp       = 0,                            // kernel stack pointer to set when entering ring 0
         .cr3        = (uint32_t) new_pd_p,          // physical address of the process' page directory
+        .tab        = NULL,                         // UI tab
         .status     = PSTATUS_NEW,                  // status of the task; will be set to READY once placed into the scheduler's queue
         .pbrk       = pbrk,                         // program break
         .ticks      = 0,                            // ACTIVE time left; set by the scheduler
@@ -171,9 +172,10 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     // Close the ELF file
     fs_close(fd);
 
-    // Increment the child count of the parent
+    // If new process has a parent
     if (parent != NULL) {
         parent->child_count++;
+        process.tab = parent->tab;
     }
 
     /* Allocate and set up kernel and user stacks for the new process.
@@ -185,12 +187,12 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     {
         size_t kesp;
         int_frame_t int_frame = {
-            .eax=0xBABABABA,
-            .ebx=0xCAFECAFE,
-            .ecx=0xBEEFBEEF,
-            .edx=0xDEAFDEAF,
-            .esi=0xDEADDEAD,
-            .ebp=0xBABEBABE,
+            .eax=0,
+            .ebx=0,
+            .ecx=0,
+            .edx=0,
+            .esi=0,
+            .ebp=0,
             .error_code=0xABCDEFFF,
             .esp=MM_KSTACK_TOP - sizeof(int_frame_t)
         };
@@ -206,7 +208,47 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
         vmm_map_page(new_pd_p, (paddr_t) kesp,
             MM_ALIGN_DOWN(MM_KSTACK_TOP), 1, 0, 0, 0);
 
-        // Temporarly attach the stack so we can access it
+        // Preserve the stack pointer as the initial kernel stack pointer of the process
+        process.kesp = MM_KSTACK_TOP - sizeof(int_frame_t) - sizeof(iret_frame_t);
+
+
+        // Allocate a user stack and set it up with argc & argv
+        scratch_p = pmm_get_page();
+        if (argv != NULL)
+        {
+            char* argv_ptr[PM_MAX_ARGV];
+            size_t arg_i;
+
+            // Attach the user stack
+            scratch_v = vmm_attach_page(scratch_p);
+
+            // Copy the [argv] string into the stack
+            for (arg_i = 0; argv[arg_i] != NULL && arg_i < PM_MAX_ARGV; arg_i++)
+            {
+                size_t len = MM_ALIGN_X_UP(strlen(argv[arg_i])+1, 4);           // get the length of the string
+                iret_frame.esp -= len;                                          // allocate space on the stack for the string
+                memcpy((void*) (scratch_v + iret_frame.esp % MM_PAGE_SIZE),     // copy the string into the stack
+                    argv[arg_i], len);
+                argv_ptr[arg_i] = (char*) iret_frame.esp;                       // save a pointer to the string on the stack
+            }
+
+            // Copy the string pointers and count into the stack
+            iret_frame.esp -= sizeof(argv_ptr) * arg_i;                         // allocate [arg_i] string pointers on the stack
+            memcpy((void*) (scratch_v + iret_frame.esp % MM_PAGE_SIZE),         // copy the string pointers into the stack
+                (void*) argv_ptr, sizeof(argv_ptr) * arg_i);
+            iret_frame.esp -= sizeof(arg_i);
+
+            *(size_t*) (scratch_v + iret_frame.esp % MM_PAGE_SIZE) = arg_i;
+            vmm_detach_page(scratch_v);
+        }
+        // Map the user stack
+        vmm_map_page(new_pd_p,
+            scratch_p,
+            MM_ALIGN_DOWN(MM_USTACK_TOP),
+            1, 1, 0, 0);
+
+
+        // Temporarly attach the kernel stack so we can access it
         kesp = vmm_attach_page(kesp) + (MM_KSTACK_TOP % MM_PAGE_SIZE);
 
         // Place the frames in the stack
@@ -214,15 +256,6 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
         *(iret_frame_t*) kesp = iret_frame;
         kesp -= sizeof(int_frame_t);
         *(int_frame_t*) kesp = int_frame;
-
-        // Preserve the stack pointer as the initial kernel stack pointer of the process
-        process.kesp = MM_KSTACK_TOP - sizeof(int_frame_t) - sizeof(iret_frame_t);
-
-        // Allocate a user stack
-        vmm_map_page(new_pd_p,
-            pmm_get_page(),
-            MM_ALIGN_DOWN(MM_USTACK_TOP),
-            1, 1, 0, 0);
 
         // Free temporarily attached page
         vmm_detach_page((vaddr_t) kesp);
