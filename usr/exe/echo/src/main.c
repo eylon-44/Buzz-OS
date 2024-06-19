@@ -9,10 +9,10 @@ int main(int argc, char *argv[])
     strcpy(inp, argv[0]);
     
     // printf("%s\n", argv[0]);
-    for (int i = 0; i < 2; i++)
+    for (int i = 0; i < argc; i++)
     {
         // syscall(SYS_write, STDOUT_FILENO, "SYSboi", 5);
-        printf("text1 %s", (char*) argv[0]);
+        printf("text1 %s", (char*) argv[i]);
     }
     return 0;
 }

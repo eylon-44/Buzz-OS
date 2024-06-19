@@ -24,6 +24,11 @@ syscall:
     // Prologue
     pushl %ebp
     movl %esp, %ebp
+    pushl %ebx
+    pushl %ecx
+    pushl %edx
+    pushl %esi
+    pushl %edi
     
     movl 8(%ebp), %eax     // move the syscall number into eax
     movl 12(%ebp), %ebx    // move the first argument into ebx
@@ -35,6 +40,11 @@ syscall:
     int $SYS_int           // perform the syscall
 
     // Epilogue
+    popl %edi
+    popl %esi
+    popl %edx
+    popl %ecx
+    popl %ebx
     movl %ebp, %esp
     popl %ebp
     ret
