@@ -7,9 +7,9 @@ add-symbol-file bin/kernel/kernel.elf
 add-symbol-file usr/fs_layout/sys/terminal.elf
 
 #layout prev
-layout src
-#layout asm
-#layout reg
+#layout src
+layout asm
+layout reg
 
 target remote localhost:1234
 

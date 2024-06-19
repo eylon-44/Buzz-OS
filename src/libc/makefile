@@ -2,7 +2,7 @@
 
 ## Setting ##
 CC	   := gcc
-CFLAGS := -I$(INC_DIR)/libc -ggdb -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror
+CFLAGS := -I$(INC_DIR)/libc -O0 -ggdb -m32 -nostdlib -nostdinc -fno-builtin -fno-pic -static -ffreestanding -no-pie -Wall -Wextra -Werror
 
 LIB_BIN_DIR := $(BIN_DIR)/libc
 LIB_BIN := $(LIB_BIN_DIR)/lib_bzlibc.a

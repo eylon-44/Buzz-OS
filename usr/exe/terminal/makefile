@@ -43,7 +43,7 @@ LIBC := $(BUZZ)/bin/libc/lib_bzlibc.a
 # The C compiler
 CC      := gcc
 # Compiler flags
-CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/inc/libc/ -O1 -m32 -fno-pic -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb
+CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/inc/libc/ -O0 -m32 -fno-pic -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb
 
 #---------------#
 #---<COMPILE>---#
