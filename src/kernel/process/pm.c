@@ -176,6 +176,7 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     if (parent != NULL) {
         parent->child_count++;
         process.tab = parent->tab;
+        sched_set_status(parent, PSTATUS_BLOCKED);
     }
 
     /* Allocate and set up kernel and user stacks for the new process.
@@ -278,7 +279,6 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
 
 /* Kill a process.
     Set its status to DONE and let the scheduler handle the rest. */
-    //[TODO] set all child to DONE
 void pm_kill(process_t* proc)
 {
     // Set process and all of his children to done
@@ -298,6 +298,10 @@ void pm_kill(process_t* proc)
     // Unblock the parent
     if (proc->parnet != NULL) {
         sched_set_status(proc->parnet, PSTATUS_READY);
+    }
+    // If process has no parent and a tab, close its tab
+    else if (proc->tab != NULL) {
+        ui_tab_close_tab(proc->tab);
     }
 
     // If the process is the active process switch it
@@ -333,6 +337,22 @@ size_t pm_brk(process_t* proc, size_t addr)
     return proc->pbrk;
 }
 
+// Error handler
+static void handle_error()
+{
+    // Kill the active process
+    pm_kill(pm_get_active());
+}
+
+// Initiate the error handler 
+static void init_error()
+{
+    // Register all error interrupts to the error handler function
+    for (int i = 0; i < IRQ0; i++) {
+        set_interrupt_handler(i, handle_error);
+    }
+}
+
 // Terminate the dummy process
 static void kill_dummy_proc()
 {
@@ -354,4 +374,5 @@ void init_pm()
     init_tss();
     init_scheduler();
     kill_dummy_proc();
+    init_error();
 }

@@ -354,19 +354,17 @@ void ui_tab_open()
     ui_tab_switch(tab_indexes[tabs.count-1]);
 }
 
-// Close the displayed tab
-void ui_tab_close()
+// Close a given tab without killing the parent
+void ui_tab_close_tab(tab_t* tab)
 {
-    pm_kill(tabs.active->parnet);
-
     // Free tab resources and remove it from the list
-    pmm_free_page((paddr_t) tabs.active->buff);
-    LIST_REMOVE(tabs.tab_list, tabs.active);
-    kfree(tabs.active);
-    tabs.active = NULL;
+    pmm_free_page((paddr_t) tab->buff);
+    LIST_REMOVE(tabs.tab_list, tab);
+    kfree(tab);
 
     // Decrease tab count
     tabs.count--;
+    if (tab == tabs.active) tabs.active = NULL;
 
     // If there are open tabs, switch to the tab that is on the left, or to the tab that is on the right if this is the last tab
     if (tabs.count > 0) {
@@ -383,6 +381,13 @@ void ui_tab_close()
     else {
         ui_tab_open();
     }
+}
+
+// Close the currently displayed tab and kill its parent
+void ui_tab_close()
+{
+    pm_kill(tabs.active->parnet);
+    ui_tab_close_tab(tabs.active);
 }
 
 // Switch displayed tab
