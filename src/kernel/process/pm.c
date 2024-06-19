@@ -281,7 +281,26 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     //[TODO] set all child to DONE
 void pm_kill(process_t* proc)
 {
+    // Set process and all of his children to done
     sched_set_status(proc, PSTATUS_DONE);
+    if (proc->child_count > 0)
+    {
+        extern sched_queue_t queue;
+        process_t* child = queue.proc_list;
+        while (child != NULL) {
+            if (child->parnet == proc) {
+                pm_kill(proc);
+            }
+            child = child->next;
+        }
+    }
+
+    // Unblock the parent
+    if (proc->parnet != NULL) {
+        sched_set_status(proc->parnet, PSTATUS_READY);
+    }
+
+    // If the process is the active process switch it
     if (proc == sched_get_active()) {
         sched_switch_next();
     }
@@ -323,7 +342,7 @@ static void kill_dummy_proc()
     /* Add the dummy process to the queue and set its status to DONE.
         The dummy process represents the process of the current startup context,
         that holds no user process, and therefore should be deleted after initialization. */
-    sched_set_status( sched_add_process(_dummy_proc), PSTATUS_DONE );
+    sched_set_status(sched_add_process(_dummy_proc), PSTATUS_DONE);
     queue.active = queue.proc_list;
 
     // Load a busy process

@@ -75,6 +75,7 @@ static void update_sleep()
     {
         // Delete the task from the sleepy list and point onto the next one
         node = *sleep_lst;          // save the node in a temporary variable so we can free it from the heap
+        sched_set_status(node.proc, PSTATUS_READY);
         kfree(sleep_lst);           // free the sleep node from the heap
         sleep_lst = node.next;      // point to the next task in the linked list
     }
@@ -94,7 +95,7 @@ void sched_sleep(int pid, size_t ticks)
     {
         /* If the delta ticks of the current node is larger than those of the the new node,
             insert the new node before of the current */
-        if (node->dticks >= ticks) {
+        if (node->dticks >= (int) ticks) {
             node->dticks -= ticks;  // decrement the ticks of the current node to not affect the other nodes by the change
             LIST_ADD_BEFORE(sleep_lst, new_node, node); // insert the new node before of the current one
             goto exit;
@@ -107,7 +108,7 @@ void sched_sleep(int pid, size_t ticks)
     LIST_ADD_END(sleep_lst, new_node);
 
     exit:
-        // Set process status to BLOCKED
+        // Set process status to SLEEPED
         sched_set_status(new_node->proc, PSTATUS_SLEEPED);
 
         // If it is the active process that has asked to sleep, switch a task

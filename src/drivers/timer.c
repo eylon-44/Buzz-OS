@@ -35,7 +35,7 @@ static void set_timer_hz(uint32_t hz)
 void init_timer()
 {
     port_outb(PIT_CMD_PORT, PIT_MOD_BIN | PIT_MOD_OP3 | PIT_MOD_ACS_LH | PIT_MOD_CH0);
-    set_timer_hz(TICK_HZ);
+    set_timer_hz(TIMER_TICK_HZ);
 
     set_interrupt_handler(IRQ0, timer_callback);
 }

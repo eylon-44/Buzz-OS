@@ -19,6 +19,7 @@
 #define SYS_brk         0x2d
 #define SYS_sbrk        0x5a
 #define SYS_sched_yield	0x9e
+#define SYS_milisleep   0xa2
 
 #define SYS_int 92      // syscall interrupt number (0x5C)
 

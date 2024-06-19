@@ -18,20 +18,20 @@ typedef struct
 // Scheduler's sleeping processes list structure
 typedef struct sleep_node {
     process_t* proc;        // sleeping process
-    size_t dticks;          // delta ticks
+    int dticks;             // delta ticks
 
     struct sleep_node* next;
     struct sleep_node* prev;
 } sleep_node_t;
 
 /* Number of ticks in which a full queue cycle must be completed.
-    By multiplying the TICK_HZ constant (the tick rate of the clock) with a certain value, we get a 
+    By multiplying the TIMER_TICK_HZ constant (the tick rate of the clock) with a certain value, we get a 
     constant value which indicates the number of ticks the clock has to commit in order for the 
-    multiplayer's value in seconds to pass. Any change of the TICK_HZ value will affect the value stored 
+    multiplayer's value in seconds to pass. Any change of the TIMER_TICK_HZ value will affect the value stored 
     in SCHED_CYCLE_TICKS, but won't affect the actual time it takes for a full cycle to complete. */
-#define SCHED_CYCLE_TICKS (0.25*TICK_HZ)
+#define SCHED_CYCLE_TICKS (0.05*TIMER_TICK_HZ)
 // Minimum ticks for a task to execute
-#define SCHED_MIN_TICKS (0.01*TICK_HZ)
+#define SCHED_MIN_TICKS (0.01*TIMER_TICK_HZ)
 
 void sched_tick();
 void sched_sleep(int pid, size_t ticks);

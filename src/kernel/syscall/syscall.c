@@ -50,4 +50,5 @@ void init_syscall()
     SYSCALL_HANDLER(sbrk);
     SYSCALL_HANDLER(sched_yield);
     SYSCALL_HANDLER(unlink);
+    SYSCALL_HANDLER(milisleep);
 }
