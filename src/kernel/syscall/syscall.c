@@ -43,7 +43,11 @@ void init_syscall()
     SYSCALL_HANDLER(read);
     SYSCALL_HANDLER(write);
     SYSCALL_HANDLER(open);
+    SYSCALL_HANDLER(close);
+    SYSCALL_HANDLER(execve);
+    SYSCALL_HANDLER(creat);
     SYSCALL_HANDLER(brk);
     SYSCALL_HANDLER(sbrk);
     SYSCALL_HANDLER(sched_yield);
+    SYSCALL_HANDLER(unlink);
 }

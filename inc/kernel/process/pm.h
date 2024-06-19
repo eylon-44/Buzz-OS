@@ -8,8 +8,7 @@
 #include <libc/stdint.h>
 #include <libc/stddef.h>
 
-// [DEBUG] REMOVE
-#define PM_TMP_INIT_PRC_DISK_OFFSET 512*60
+#define PM_DEFAULT_PRIORITY 20
 
 // Process status enum
 typedef enum
@@ -48,7 +47,7 @@ typedef struct process {
 
 process_t* pm_get_active();
 size_t pm_brk(process_t* proc, size_t addr);
-process_t* pm_load(process_t* parent, const char* path, int priority);
+process_t* pm_load(process_t* parent, const char* path,  char* const argv[], int priority);
 void pm_kill(process_t* proc);
 int pm_get_pid();
 void init_pm();

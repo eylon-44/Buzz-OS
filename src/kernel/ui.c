@@ -337,7 +337,7 @@ void ui_tab_open()
     tab->buff       = (tab_buff_t*) pmm_get_page();
 
     // Create a new terminal process
-    terminal = pm_load(NULL, UI_DEFAULT_TERMINAL, 20);
+    terminal = pm_load(NULL, UI_DEFAULT_TERMINAL, NULL, 20);
     terminal->tab   = tab;
     tab->parnet     = terminal;
 

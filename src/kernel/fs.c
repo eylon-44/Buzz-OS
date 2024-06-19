@@ -267,7 +267,7 @@ int fs_seek(const char* path)
 }
 
 /* Create a new file.
-    On success, returns the new file's inode index; on failure, returns a negative number. */
+    On success, returns the new file's inode index; on failure, returns -1. */
 int fs_create(const char* path, inode_type_t type)
 {
     int indx_p, indx_c;
@@ -347,6 +347,7 @@ int fs_open(const char* path, int flags)
     process_t* p;
     int index;
 
+    // [TODO] create file if not exists and O_CREAT in flags
     // Seek the file's inode; if the file could not be found, return -1
     index = fs_seek(path);
     if (index < 0) {
@@ -369,7 +370,7 @@ int fs_open(const char* path, int flags)
 }
 
 /* Close an open file descriptor of the currently running process.
-    On success returns 0, on failure returns a negative number.
+    On success returns 0, on failure returns -1.
     WARNING: the three standard file descriptors (stdin=0, stdout=1,
         and stderr=2) cannot be closed. */
 int fs_close(int fd)

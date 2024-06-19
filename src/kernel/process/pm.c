@@ -42,7 +42,7 @@ inline process_t* pm_get_active() {
 /* Create a new process.
     [path] must be a file path for an ELF file.
     On success returns a pointer to the new process structure, on failure returns NULL. */
-process_t* pm_load(process_t* parent, const char* path, int priority)
+process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[], int priority)
 {
     int fd;
     elfheader_t elfhdr;
@@ -281,8 +281,8 @@ size_t pm_brk(process_t* proc, size_t addr)
     return proc->pbrk;
 }
 
-// Initiate the initiation process
-static void init_init()
+// Terminate the dummy process
+static void kill_dummy_proc()
 {
     extern process_t _dummy_proc;   // extern dummy process created by the virtual memory manager
     extern sched_queue_t queue;     // extern scheduler queue to manipulate it
@@ -293,12 +293,13 @@ static void init_init()
     sched_set_status( sched_add_process(_dummy_proc), PSTATUS_DONE );
     queue.active = queue.proc_list;
 
-    pm_load(NULL, "/sys/init.elf", 1);
+    // Load a busy process
+    pm_load(NULL, "/sys/_busy.elf", NULL, 1);
 }
 
 void init_pm()
 {
     init_tss();
     init_scheduler();
-    init_init();
+    kill_dummy_proc();
 }
