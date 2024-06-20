@@ -63,8 +63,6 @@ static void set_active_time_slice()
 // Update sleeped tasks on scheduler tick
 static void update_sleep()
 {
-    sleep_node_t node;
-
     // If there are no sleeping tasks, return
     if (sleep_lst == NULL) return;
 
@@ -74,10 +72,10 @@ static void update_sleep()
     while (sleep_lst != NULL && sleep_lst->dticks <= 0)
     {
         // Delete the task from the sleepy list and point onto the next one
-        node = *sleep_lst;          // save the node in a temporary variable so we can free it from the heap
-        sched_set_status(node.proc, PSTATUS_READY);
-        kfree(sleep_lst);           // free the sleep node from the heap
-        sleep_lst = node.next;      // point to the next task in the linked list
+        sleep_node_t* node = sleep_lst;                 // save the node in a temporary variable so we can free it from the heap
+        sched_set_status(sleep_lst->proc, PSTATUS_READY);
+        LIST_REMOVE_FRONT(sleep_lst);                   // remove the node from the list
+        kfree(node);                                    // free the sleep node from the heap
     }
 }
 

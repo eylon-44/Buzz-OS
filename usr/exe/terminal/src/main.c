@@ -11,12 +11,12 @@ int main()
 
     printf("Hello! World!\n");
     size_t i = 0;
-    // while(1)
-    // {
-    //     printf("%d\n", i);
-    //     i++;
-    //     milisleep(500);
-    // }
+    while(1)
+    {
+        printf("%d\n", i);
+        i++;
+        milisleep(500);
+    }
     while (1)
     {
         printf("> ");

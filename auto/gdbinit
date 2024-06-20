@@ -25,27 +25,18 @@ target remote localhost:1234
 
 # Kernel main start
 # break kernel_main
-#break _entry
+# break _entry
 
-#break init_fs
-
-#break pm_load
-#break interrupt_handler
-#break ui_tab_open
-# break pmm_free_page
-# break vmm_del_ctx
-# break __gdb_break
-# break ui_stdout_write
-# break ui_key_event_handler
-# break pm_load
-# break main
-# break __libc_init_heap
-# break heap_extend
-# break pm_brk
-# break main
-#break pm_load
-# break printf
-# break pm.c:216
+# User program start
 break main
+
+define plist
+  set $node = $arg0
+  while $node != 0
+    printf "Node at %p:\n", $node
+    p *$node
+    set $node = $node->next
+  end
+end
 
 continue
