@@ -30,5 +30,3 @@ int execve(const char* pathname, char* const argv[])
 {
     return syscall(SYS_execve, pathname, argv);
 }
-
-

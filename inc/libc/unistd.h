@@ -23,5 +23,8 @@ void* sbrk(size_t increment);
 int unlink(const char *pathname);
 int execve(const char* pathname, char* const argv[]);
 int milisleep(size_t miliseconds);
+int lseek(int fd, int offset, int whence);
+int truncate(const char *path, size_t length);
+int ftruncate(int fd, size_t length);
 
 #endif

@@ -16,10 +16,14 @@
 #define SYS_unlink      0x0a
 #define SYS_execve      0x0b
 #define SYS_chdir       0x0c
+#define SYS_lseek       0x13
 #define SYS_brk         0x2d
 #define SYS_sbrk        0x5a
 #define SYS_sched_yield	0x9e
 #define SYS_milisleep   0xa2
+#define SYS_mkdir       0x27
+#define SYS_truncate    0x5c
+#define SYS_ftruncate   0x5d
 
 #define SYS_int 92      // syscall interrupt number (0x5C)
 

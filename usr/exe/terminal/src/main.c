@@ -19,6 +19,7 @@ int main()
     // }
     while (1)
     {
+        printf("> ");
         input[syscall(SYS_read, stdin, input, 128)] = '\0';
         printf("%s\n", input);
         if (strcmp(input, "echo") == 0) {

@@ -51,4 +51,8 @@ void init_syscall()
     SYSCALL_HANDLER(sched_yield);
     SYSCALL_HANDLER(unlink);
     SYSCALL_HANDLER(milisleep);
+    SYSCALL_HANDLER(lseek);
+    SYSCALL_HANDLER(mkdir);
+    SYSCALL_HANDLER(truncate);
+    SYSCALL_HANDLER(ftruncate);
 }

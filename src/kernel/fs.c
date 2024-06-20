@@ -554,10 +554,20 @@ static int itruncate(inode_t inode, int index, size_t length)
     {
         blockmap_set(inode.direct[i], 0);
     }
-    // Allocate blocks if increasing the file's size
-    for (size_t i = inode.count / super.block_size; i < length / super.block_size || i == 0; i++)
+    // Allocate blocks if increasing the file's size; zero out the blocks.
+    if ((inode.count / super.block_size < length / super.block_size) || (inode.count / super.block_size == 0))
     {
-        inode.direct[i] = blockmap_get();
+        // Create a null buffer
+        vaddr_t scratch = vmm_attach_page(fs_phys_scratch);
+        memset((void*) scratch, 0, super.block_size);
+
+        // Allocate blocks while copying the null buffer into them
+        for (size_t i = inode.count / super.block_size; i < length / super.block_size || i == 0; i++)
+        {
+            inode.direct[i] = blockmap_get();
+            block_write((void*) scratch, inode.direct[i]);
+        }
+        vmm_detach_page(scratch);
     }
 
     inode.count = length;
