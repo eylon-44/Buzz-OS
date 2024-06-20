@@ -15,15 +15,17 @@ int main()
     // {
     //     printf("%d\n", i);
     //     i++;
-    //     syscall(SYS_milisleep, 500);
+    //     milisleep(500);
     // }
     while (1)
     {
         input[syscall(SYS_read, stdin, input, 128)] = '\0';
         printf("%s\n", input);
         if (strcmp(input, "echo") == 0) {
-            // str[0xFFFFFFF] = 'c';
             execve("/bin/echo.elf", str);
+        }
+        if (strcmp(input, "bug") == 0) {
+            *(char*) 0xFFFFFFFF = 'a';
         }
 
     }

@@ -359,8 +359,10 @@ void ui_tab_close_tab(tab_t* tab)
 {
     // Free tab resources and remove it from the list
     pmm_free_page((paddr_t) tab->buff);
+    tab->parnet->tab = NULL;
     LIST_REMOVE(tabs.tab_list, tab);
     kfree(tab);
+
 
     // Decrease tab count
     tabs.count--;
@@ -386,8 +388,9 @@ void ui_tab_close_tab(tab_t* tab)
 // Close the currently displayed tab and kill its parent
 void ui_tab_close()
 {
-    pm_kill(tabs.active->parnet);
-    ui_tab_close_tab(tabs.active);
+    tab_t* tab = tabs.active;
+    ui_tab_close_tab(tab);
+    pm_kill(tab->parnet);
 }
 
 // Switch displayed tab

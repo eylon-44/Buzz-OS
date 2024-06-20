@@ -22,5 +22,6 @@ int brk(void *addr);
 void* sbrk(size_t increment);
 int unlink(const char *pathname);
 int execve(const char* pathname, char* const argv[]);
+int milisleep(size_t miliseconds);
 
 #endif
