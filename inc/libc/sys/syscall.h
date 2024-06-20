@@ -16,6 +16,7 @@
 #define SYS_unlink      0x0a
 #define SYS_execve      0x0b
 #define SYS_chdir       0x0c
+#define SYS_militime    0x0d
 #define SYS_lseek       0x13
 #define SYS_brk         0x2d
 #define SYS_sbrk        0x5a

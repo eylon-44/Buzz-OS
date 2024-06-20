@@ -55,4 +55,5 @@ void init_syscall()
     SYSCALL_HANDLER(mkdir);
     SYSCALL_HANDLER(truncate);
     SYSCALL_HANDLER(ftruncate);
+    SYSCALL_HANDLER(militime);
 }

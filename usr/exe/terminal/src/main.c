@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 #include <string.h>
+#include <time.h>
 
 int main()
 {
@@ -13,8 +14,7 @@ int main()
     size_t i = 0;
     while(1)
     {
-        printf("%d\n", i);
-        i++;
+        printf("%d, ", militime());
         milisleep(500);
     }
     while (1)

@@ -6,12 +6,16 @@
 #include <libc/stdint.h>
 #include <kernel/process/scheduler.h>
 
+// Tick counter
+size_t ticks = 0;
+
 // Array of void functions() to be called uppon a timer interrupt
 static void (*callbacks[])() = { sched_tick };
 
 /* This function is being called uppon a timer interrupt;
     it calls all of the functions in the [callbacks] array. */
 static void timer_callback(UNUSED int_frame_t*) {
+    ticks++;
     for (size_t i = 0; i < sizeof(callbacks)/sizeof(callbacks[0]); i++) {
         callbacks[i]();
     }

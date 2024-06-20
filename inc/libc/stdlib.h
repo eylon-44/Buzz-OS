@@ -16,5 +16,7 @@ void* realloc(void* ptr, size_t size);
 void exit(int status);
 int atoi(const char *nptr);
 void itoa(int n, char s[16]);
+uint32_t rand();
+void srand(unsigned int seed);
 
 #endif
