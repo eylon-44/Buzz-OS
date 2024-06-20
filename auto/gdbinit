@@ -29,6 +29,7 @@ target remote localhost:1234
 
 # User program start
 break main
+break ui.c:276
 
 define plist
   set $node = $arg0

@@ -282,7 +282,7 @@ ssize_t ui_stdout_write(const char* buff, size_t count)
             char c = (buff + count - (count%UI_MAX_OUT))[i];
             // If [c] is not an escape sequence character, copy it to the buffer
             if (!handle_escape_sequences(tab, c)) {
-                tab_buff->out[tab->out_offset+i] = c;
+                tab_buff->out[tab->out_offset++] = c;
             }
         }
 
