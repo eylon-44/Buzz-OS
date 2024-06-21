@@ -26,5 +26,8 @@ int milisleep(size_t miliseconds);
 int lseek(int fd, int offset, int whence);
 int truncate(const char *path, size_t length);
 int ftruncate(int fd, size_t length);
+int rmdir(const char *path);
+int chdir(const char *path);
+char* getcwd(char* buff, size_t size);
 
 #endif

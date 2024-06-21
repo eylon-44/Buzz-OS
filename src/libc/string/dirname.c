@@ -1,6 +1,7 @@
 // string/dirname.c // ~ eylon
 
 #include <string.h>
+#include <limits.h>
 
 /*  Extract directory name out of path.
 
@@ -20,7 +21,7 @@
 */
 char* dirname(const char* path)
 {
-    static char buff[256];
+    static char buff[PATH_LEN_MAX];
     char* last_slash;
 
     // If path is NULL or empty, return "."

@@ -4,7 +4,7 @@
 
 /*  Locate the last given character in a string.
 
-    The strrchr() function shalllocate the last occurrence of [c]
+    The strrchr() function shall locate the last occurrence of [c]
     in the string pointed to by [s]. The terminating NULL character
     is considered to be part of the string.
     

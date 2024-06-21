@@ -16,7 +16,7 @@
 
     On success, brk() returns zero. On error, -1 is returned.
 
-    #include <stdlib.h>
+    #include <unistd.h>
     int brk(void *addr);
 */
 int brk(void *addr)

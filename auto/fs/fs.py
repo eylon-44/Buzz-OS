@@ -10,7 +10,7 @@ class FileSystem:
     def __init__(self, img_dest: str):
         self._super    = SuperBlock()
         self._disk     = Disk(img_dest, self.fs_size)
-        self._root     = Inode("/", InodeType.DIR)
+        self._root     = Inode("/", InodeType.DIR, 0)
         self._inodemap = BitField(self._super.inode_count)
         self._blockmap = BitField(self._super.block_count)
 
@@ -31,9 +31,8 @@ class FileSystem:
         return int(self._super.inode_start + index * (self._super.block_size/self._super.inodes_per_block))
 
 
-    def _write_inode(self, inode: Inode) -> int:
+    def _write_inode(self, inode: Inode, index: int) -> int:
         ''' Write an inode at an available location in the disk and return its index. '''
-        index  = self._inodemap.get()
         offset = self._get_inode_offset(index)
         self._disk.write(inode.binary, offset)
 
@@ -73,21 +72,21 @@ class FileSystem:
         self._disk.write(self._inodemap.binary, self._super.inodemap_start)
 
 
-    def _seek(self, parent: Inode, path: str):
-
+    def _seek(self, parent: Inode, pindx: int, path: str):
         # Iterate over all the files in the directory
         for f in [os.path.join(path, f) for f in os.listdir(path)]:
+            index  = self._inodemap.get()
             print(f"Reading {f}.")
             # If file is a directory, scan it recursively and link it to parent
             if os.path.isdir(f):
-                dir = Inode(os.path.basename(f), InodeType.DIR)
-                parent.link(self._write_inode(self._seek(dir, f)))
+                dir = Inode(os.path.basename(f), InodeType.DIR, pindx)
+                parent.link(self._write_inode(self._seek(dir, index, f), index))
             # If its a normal file, write its contents to the disk and link it to parent
             else:
-                file = Inode(os.path.basename(f), InodeType.FILE)
+                file = Inode(os.path.basename(f), InodeType.FILE, pindx)
                 blocks, fsize = self._write_file(f)
                 file.link(blocks, fsize)
-                parent.link(self._write_inode(file))
+                parent.link(self._write_inode(file, index))
 
         return parent
 
@@ -96,6 +95,6 @@ class FileSystem:
         if not os.path.isdir(path):
             raise ValueError("File system can only mount directories, not files.")
         
-        self._root = self._seek(self._root, path)
+        self._root = self._seek(self._root, 0, path)
         self._disk.write(self._root.binary, self._get_inode_offset(0))
         self._flush()

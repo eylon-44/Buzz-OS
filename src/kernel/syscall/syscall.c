@@ -56,4 +56,9 @@ void init_syscall()
     SYSCALL_HANDLER(truncate);
     SYSCALL_HANDLER(ftruncate);
     SYSCALL_HANDLER(militime);
+    SYSCALL_HANDLER(stat);
+    SYSCALL_HANDLER(fstat);
+    SYSCALL_HANDLER(rmdir);
+    SYSCALL_HANDLER(getcwd);
+    SYSCALL_HANDLER(chdir);
 }

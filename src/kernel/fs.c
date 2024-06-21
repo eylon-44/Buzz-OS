@@ -16,6 +16,7 @@
 #include <libc/string.h>
 #include <libc/sys/stat.h>
 #include <libc/unistd.h>
+#include <libc/dirent.h>
 
 static superblock_t super;
 static paddr_t fs_phys_scratch;
@@ -211,8 +212,7 @@ static fd_t* fd_seek(int fd)
 }
 
 /* Seek a file.
-    Get file's inode index by its path. Returns a negative value if
-    the file could not be found. */
+    Get file's inode index by its path. Returns -1 if the file could not be found. */
 int fs_seek(const char* path)
 {
     char *path_cp, *token;
@@ -273,6 +273,11 @@ int fs_create(const char* path, inode_type_t type)
     int indx_p, indx_c;
     inode_t parent, child;
 
+    // If the file's name is too long, return -1
+    if (strlen(basename(path)) >= FNAME_LEN_MAX) {
+        return -1;
+    }
+
     // Get the parent directory of the new file; if it does not exist return -1
     indx_p = fs_seek(dirname(path));
     if (indx_p < 0) {
@@ -303,36 +308,52 @@ int fs_create(const char* path, inode_type_t type)
 
     return indx_c;
 }
-
-/* Delete a file.
-    On success, returns 0; on failure, returns non-zero.
-    WARNING: be careful about deleting directories unrecursively or deleting files
-        without freeing their data blocks first. */
-int fs_remove(const char* path)
+/* Remove a file and its contents from the file system. If the file is a regular file, the function
+    frees all of its data blocks and unlinks it from the parent. If the file is a directory,
+    the function recursively delete every directory and file in it. On success, 0 is returned, on failure, -1. */
+static int iremove(int cindx)
 {
-    int indx_p, indx_c;
-    inode_t parent;
+    int pindx;
+    inode_t inode = inode_read(cindx);
 
-    // Get the child's inode index; if it does not exist return -1
-    indx_c = fs_seek(path);
-    if (indx_c < 0) {
-        return -1;
+    // If the file is a regular file, free its data blocks
+    if (inode.type == FS_NT_FILE)
+    {
+        for (size_t i = 0; i <= inode.count / super.block_size; i++) {
+            blockmap_set(inode.direct[i], 0);
+        }
+    }
+    // If the file is a directory, remove all of its entries
+    else if (inode.type == FS_NT_DIR)
+    {
+        for (size_t i = 0; i < inode.count; i++) {
+            iremove(inode.direct[i]);
+        }
     }
 
     // Get the parent directory of the file
-    indx_p = fs_seek(dirname(path));
-    parent = inode_read(indx_p);
+    pindx = inode.pindx;
+    inode = inode_read(pindx);
 
-    // Unlink the child from its parent; if unlink succeed,
-    inode_unlink(&parent, indx_c);
+    // Unlink the child from its parent
+    inode_unlink(&inode, cindx);
 
     // Decrease the parent's count and update its inode in the disk
-    parent.count--;
-    inode_write(parent, indx_p);
+    inode.count--;
+    inode_write(inode, pindx);
 
     // Free the child's inode
-    inodemap_set(indx_c, 0);
+    inodemap_set(cindx, 0);
 
+    return 0;
+}
+int fs_remove(const char* path)
+{
+    int indx = fs_seek(path);
+    if (indx < 0) {
+        return -1;
+    }
+    iremove(indx);
     return 0;
 }
 
@@ -399,13 +420,19 @@ int fs_close(int fd)
     return -1;
 }
 
-/* Attempt to read [count] bytes from file descriptor [fd] into [buff].
-    The reading starts from the seek offset in the file and stops after
-        reading [count] bytes, or at the end of the file.
-    On success, the number of bytes read is returned (zero indicates
-        end of file), and the file position is advanced by this number,
-        on failure, -1 is returned.
-    NOTE: read function only works on files, not directories. */
+/* If the file is a regular file, the function attempts to read [count]
+    bytes from file descriptor [fd] into [buff]. The reading starts from
+    seek-offset bytes into the file and stops after reading [count] bytes, or 
+    at the end of the file. [buff] should be large enough to contain atleast [count] bytes.
+    On success, the number of bytes read is returned (zero indicates end of
+    file), and the file position is advanced by this number. On failure, -1 is returned.
+
+    If the file is a directory, the function attempts to read [count] file entries from
+    file descriptor [fd] into [buff]. The reading starts at the entry with index seek-offset
+    and stops after reading [count] entries, or until there are no more entries to read.
+    [buff] should be large enough to contain atleast [count]*sizeof(struct dirent) bytes.
+    On success, the number of entries read is returned (zero indicates end of directory),
+    and the file position is advanced by this number. On failure, -1 is returned. */
 ssize_t fs_read(int fd, void* buff, size_t count)
 {
     /* Handle standard streams */
@@ -421,9 +448,7 @@ ssize_t fs_read(int fd, void* buff, size_t count)
 
     /* Handle file streams */
     fd_t* fd_p;
-    vaddr_t scratch;
     inode_t inode;
-    size_t bytes_read = 0;
 
     // Check if the file is open
     fd_p = fd_seek(fd);
@@ -431,36 +456,75 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         return -1;
     }
 
-    inode = inode_read(fd_p->inode_indx);            // get the file's inode
-    scratch = vmm_attach_page(fs_phys_scratch); // attach scratch space
+    // Get the file's inode
+    inode = inode_read(fd_p->inode_indx);
 
-    // Go over the inode's direct list starting from the block at offset [offset]
-    for (size_t i = fd_p->offset / super.block_size; i <= inode.count / super.block_size; i++)
+    // If inode is a regular file
+    if (inode.type == FS_NT_FILE)
     {
-        size_t offset, size;
+        vaddr_t scratch;
+        size_t bytes_read = 0;
 
-        // Calculate the offset within the block and the size to copy
-        offset = scratch + (fd_p->offset % super.block_size);
-        size   = count - bytes_read;
-        if (offset + size > scratch + super.block_size) {
-            size = (scratch+super.block_size) - offset;
+        scratch = vmm_attach_page(fs_phys_scratch); // attach scratch space
+
+        // Go over the inode's direct list starting from the block at offset [offset]
+        for (size_t i = fd_p->offset / super.block_size; i <= inode.count / super.block_size; i++)
+        {
+            size_t offset, size;
+
+            // Calculate the offset within the block and the size to copy
+            offset = scratch + (fd_p->offset % super.block_size);
+            size   = count - bytes_read;
+            if (offset + size > scratch + super.block_size) {
+                size = (scratch+super.block_size) - offset;
+            }
+
+            // Read the block and copy it into the buffer
+            block_read((void*) scratch, inode.direct[i]);
+            memcpy((void*) ((size_t) buff + bytes_read), (void*) offset, size);
+
+            fd_p->offset += size;
+            bytes_read   += size;
+
+            // If read [count] bytes, exit
+            if (bytes_read >= count) {
+                break;
+            }
         }
 
-        // Read the block and copy it into the buffer
-        block_read((void*) scratch, inode.direct[i]);
-        memcpy((void*) ((size_t) buff + bytes_read), (void*) offset, size);
+        vmm_detach_page(scratch);
+        return bytes_read;
+    }
+    // If Inode is a directory
+    else if (inode.type == FS_NT_DIR)
+    {
+        size_t files_read = 0;
+        struct dirent* entbuff = (struct dirent*) buff;
 
-        fd_p->offset += size;
-        bytes_read   += size;
+        // Go over the inode's direct list starting from the inode at offset [offset]
+        for (size_t i = fd_p->offset; i < inode.count; i++)
+        {
+            inode_t entinode;
+            
+            // Read inode of the directory entry
+            entinode = inode_read(inode.direct[i]);
 
-        // If read [count] bytes exit
-        if (bytes_read >= count) {
-            break;
+            // Define the dirnet structure
+            strcpy(entbuff[i].d_name, entinode.name);
+            entbuff[i].d_type = (entinode.type == FS_NT_FILE ? DT_REG : DT_DIR);
+
+            files_read++;
+
+            if (files_read >= count) {
+                break;
+            }
         }
+        
+
+        return files_read;
     }
 
-    vmm_detach_page(scratch);
-    return bytes_read;
+    return -1;
 }
 
 /* Attempt to write [count] bytes to file descriptor [fd] from [buff].
@@ -608,37 +672,37 @@ int fs_ftruncate(int fd, size_t length)
     named by [path] or referenced by [fd].
         Inormation is stored in the stat struct buffer [buf].
     On success, zero is returned, on failure, -1 is returned. */
-static int fs_istat(inode_t inode, struct stat* buf)
+static int fs_istat(int inode_indx, struct stat* buf)
 {
+    inode_t inode = inode_read(inode_indx);
+
     buf->st_size = inode.count;
+    buf->type    = inode.type == FS_NT_FILE ? DT_REG : DT_DIR;
+    buf->indx    = inode_indx;
 
     return 0;
 }
 int fs_stat(const char *path, struct stat* buf)
 {
-    inode_t inode;
     int index;
 
     index = fs_seek(path);
     if (index < 0) {
         return -1;
     }
-    inode = inode_read(index);
     
-    return fs_istat(inode, buf);
+    return fs_istat(index, buf);
 }
 int fs_fstat(int fd, struct stat* buf)
 {
     fd_t* fd_p;
-    inode_t inode;
     
     fd_p = fd_seek(fd);
     if (fd_p == NULL) {
         return -1;
     }
-    inode = inode_read(fd_p->inode_indx);
 
-    return fs_istat(inode, buf);
+    return fs_istat(fd_p->inode_indx, buf);
 }
 
 /* Reposition the file offset of an open file by [offset] and according
@@ -677,6 +741,42 @@ int fs_lseek(int fd, int offset, int whence)
     }
 
     return 1;
+}
+
+/* Construct a path null terminated string from an inode index. The function takes
+    [inode_indx], which is the index of the inode to which we want to find the path,
+    and [buff], which is a [size] bytes long buffer that will hold the path string.
+
+    If length of the absolute path of the inode exceeds [size], NULL is returned and
+    the string in [buff] is undefined.
+
+    On success, [buff] is returned. On error NULL is returned. */
+char* fs_build_path(int indx, char* buff, size_t size)
+{
+    size_t pathlen = 0;
+    buff[--size] = '\0';
+    
+    // Step until reaching the root directory
+    while (indx != FS_ROOT_INDEX)
+    {
+        inode_t inode  = inode_read(indx);          // read inode
+        size_t namelen = strlen(inode.name);        // get string length
+        pathlen += namelen+1;                       // add string length plus '/' separator to the path length
+
+        // If path string is too long to fit in [buff], return NULL
+        if (pathlen > size) {
+            return NULL;
+        }
+
+        // Copy the inode name into the buffer
+        buff[size-pathlen] = FS_SPLIT_CHAR[0];
+        memcpy(buff + (size-pathlen+1), inode.name, namelen);
+
+        indx = inode.pindx;                   // get the inode index of the current inode's parnet
+    }
+    memcpy(buff, buff + size-pathlen, pathlen+1);
+
+    return buff;
 }
 
 // Initiate the file system

@@ -15,7 +15,7 @@
 
     On success, sbrk() returns the new program break. On error, NULL is returned.
 
-    #include <stdlib.h>
+    #include <unistd.h>
     void* sbrk(size_t increment);
 */
 void* sbrk(size_t increment)

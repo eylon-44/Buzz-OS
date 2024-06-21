@@ -6,15 +6,12 @@
 #include <drivers/pata.h>
 #include <libc/stdint.h>
 #include <libc/sys/stat.h>
+#include <libc/limits.h>
 
 // Disk sector index from which the file system begins
 #define FS_START_SECTOR 64
-// Max name length of an Inode
-#define FS_MAX_NAME_LEN 64
 // Number of direct refrences in an Inode
-#define FS_DIRECT_NUM   12
-// Number of indirect refrences in an Inode
-#define FS_INDIRECT_NUM 4
+#define FS_DIRECT_NUM   32
 // File system's magic number
 #define FS_MAGIC        0xf604c7bc
 // File system's path spiltting character
@@ -69,11 +66,11 @@ typedef uint32_t inode_type_t;
 
 // Inode structure
 typedef struct {
-    char name[FS_MAX_NAME_LEN];         // file name
+    char name[FNAME_LEN_MAX];           // file name
     inode_type_t type;                  // file type
     size_t count;                       // count of <NT_FILE> bytes of data/<NT_DIR> number of files in direcotry
     size_t direct[FS_DIRECT_NUM];       // direct refrence to <NT_FILE> blocks of data/<NT_DIR> inodes
-    size_t indirect[FS_INDIRECT_NUM];   // [TODO] REMOVE (don't forget python script!)
+    size_t pindx;                       // parent index
 } __attribute__((packed)) inode_t;
 
 // File descriptor structure
@@ -101,6 +98,7 @@ int fs_fstat(int fd, struct stat *buf);
 int fs_lseek(int fd, int offset, int whence);
 int fs_truncate(const char* path, size_t length);
 int fs_ftruncate(int fd, size_t length);
+char* fs_build_path(int indx, char* buff, size_t size);
 void init_fs();
 
 #endif

@@ -9,7 +9,7 @@
 #include <libc/stddef.h>
 
 #define PM_DEFAULT_PRIORITY 20
-#define PM_MAX_ARGV         32
+#define PM_DEFUALT_CWD      "/home"
 
 // Process status enum
 typedef enum
@@ -38,6 +38,7 @@ typedef struct process {
 
     fd_t* fds;              // process's file descriptors list
     struct tab* tab;        // process's tab
+    int cwd;                // inode index of current working directory of the process
 
     void (*entry)();        // process entry point
     uint8_t exit_status;    // exit status

@@ -3,6 +3,9 @@
 #include <sys/syscall.h>
 #include <string.h>
 #include <time.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <dirent.h>
 
 int main()
 {
@@ -10,11 +13,30 @@ int main()
     char* str[] = {"hey", "wow", NULL};
     int a = 0;
 
-    printf("Hello! World!\n");
+    chdir("/sys");
+    getcwd(input, 128);
+
+    printf("Hello! World! | %s\n", input);
+
+
+    struct dirent entry[4];
+
+    int fd = open("/sys", O_RDONLY | O_DIRECTORY);
+
+    int count = read(fd, entry, sizeof(entry)/sizeof(entry[0]));
+    for (int i = 0; i < count; i++) {
+        printf("%s: %s\n", entry[i].d_type == DT_REG ? "File" : "Dir", entry[i].d_name);
+    }    
+
+    close(fd);
+
+
+
+
     size_t i = 0;
     while(1)
     {
-        printf("%d, ", militime());
+        printf("%d, ", i++);
         milisleep(500);
     }
     while (1)

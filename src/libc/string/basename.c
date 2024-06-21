@@ -1,6 +1,7 @@
 // string/basename.c // ~ eylon
 
 #include <string.h>
+#include <limits.h>
 
 /*  Extract file name out of path.
 
@@ -19,7 +20,7 @@
     char* basename(char* path);
 */
 char* basename(const char* path) {
-    static char buff[256];
+    static char buff[FNAME_LEN_MAX];
     char* last_slash;
 
     // If path is NULL or empty, return "."

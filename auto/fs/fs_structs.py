@@ -9,8 +9,7 @@ from config import Config
 class Consts:
     ''' Consts must match the macro definitions in the kernel/fs.h file. '''
     FS_MAX_NAME_LEN = 64
-    FS_DIRECT_NUM   = 12
-    FS_INDIRECT_NUM = 4
+    FS_DIRECT_NUM   = 32
 
 
 class InodeType:
@@ -58,17 +57,17 @@ class Inode(Struct):
         inode_type_t type;                  // file type
         size_t count;                       // count of <NT_FILE> bytes of data/<NT_DIR> number of files in direcotry
         size_t direct[FS_DIRECT_NUM];       // direct refrence to <NT_FILE> blocks of data/<NT_DIR> inodes
-        size_t indirect[FS_INDIRECT_NUM];   // block indexs containing a list to <NT_FILE> blocks of data/<NT_DIR> inodes
+        size_t pindx;                       // parent index
     } __attribute__((packed)) inode_t;
     '''
 
-    def __init__(self, name : str, type: InodeType) -> None:
-        super().__init__(Consts.FS_MAX_NAME_LEN*1, 4, 4, Consts.FS_DIRECT_NUM*4, Consts.FS_DIRECT_NUM*4)
+    def __init__(self, name : str, type: InodeType, pindx: int) -> None:
+        super().__init__(Consts.FS_MAX_NAME_LEN*1, 4, 4, Consts.FS_DIRECT_NUM*4, 4)
         self.name     = name + '\0' * (Consts.FS_MAX_NAME_LEN - len(name))
         self.type     = type
         self.count    = 0
         self.direct   = [0] * Consts.FS_DIRECT_NUM
-        self.indirect = [0] * Consts.FS_INDIRECT_NUM
+        self.pindx    = pindx
 
     def __str__(self) -> str:
         return f"Inode {self.name}: type <{self.type}> count <{self.count}> direct <{self.direct}"
@@ -76,7 +75,7 @@ class Inode(Struct):
     @property
     def binary(self) -> bytes:
         ''' Get the binary representation of the inode. '''
-        return self.pack(self.name, self.type, self.count, self.direct, self.indirect)
+        return self.pack(self.name, self.type, self.count, self.direct, self.pindx)
 
 
     def link(self, index: int | list[int], size=0):
