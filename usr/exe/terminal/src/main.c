@@ -15,6 +15,7 @@ char wd[PATH_MAX];
 // Argument array to be passed to the handling command
 char* argv[ARGC_MAX];
 
+/* The default user terminal. */
 int main()
 {
     init_freestanding();

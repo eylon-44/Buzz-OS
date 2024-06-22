@@ -502,24 +502,20 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         struct dirent* entbuff = (struct dirent*) buff;
 
         // Go over the inode's direct list starting from the inode at offset [offset]
-        for (size_t i = fd_p->offset; i < inode.count; i++)
+        for (int i = 0; fd_p->offset < inode.count && files_read < count; i++)
         {
             inode_t entinode;
             
             // Read inode of the directory entry
-            entinode = inode_read(inode.direct[i]);
+            entinode = inode_read(inode.direct[fd_p->offset]);
 
             // Define the dirnet structure
             strcpy(entbuff[i].d_name, entinode.name);
             entbuff[i].d_type = (entinode.type == FS_NT_FILE ? DT_REG : DT_DIR);
 
             files_read++;
-
-            if (files_read >= count) {
-                break;
-            }
+            fd_p->offset++;
         }
-        
 
         return files_read;
     }
