@@ -21,7 +21,7 @@
 
         int main(int argc, char *argv[]);
 
-    On success, execve() returns 0, and on failure -1.
+    On success, execve() returns the new process's PID, and on failure -1.
 
     #include <unistd.h>
     int execve(const char* pathname, char* const argv[]);

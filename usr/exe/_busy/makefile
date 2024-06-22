@@ -9,8 +9,6 @@
 # recompile and run), rerd (delete, recompile, run and debug), clean (delete).
 # Only C code located at the SRC_DIR will be compiled. Pay attention that the compiler will
 # link the bzlibc and NOT the standard glibc.
-#
-# !!!IMPORTANT!!! You must set the variable BUZZ with the path of the Buzz OS project on your system.
 
 #----------------#
 #---<SETTINGS>---#
@@ -43,7 +41,7 @@ LIBC := $(BUZZ)/bin/libc/lib_bzlibc.a
 # The C compiler
 CC      := gcc
 # Compiler flags
-CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/inc/libc/ -m32 -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb # -fno-pic
+CFLAGS  := -I$(INC_DIR) -I$(BUZZ)/inc/libc/ -O0 -m32 -fno-pic -nostdlib -nostartfiles -nostdinc -fno-builtin -static -no-pie -Wall -Wextra -ggdb
 
 #---------------#
 #---<COMPILE>---#
@@ -53,7 +51,7 @@ all: $(EXEC)
 	
 # Compile C & GAS source files into object files
 $(BIN_DIR)/%.o: $(SRC_DIR)/%
-	@mkdir -p ${BIN_DIR}
+	@mkdir -p ${shell dirname $@}
 	${CC} -c ${CFLAGS} -o $@ $<
 
 # Link all objects into a single ELF file
@@ -61,7 +59,7 @@ $(EXEC): $(OBJS)
 # Build the program
 ifeq ($(_DO_BUILD), true)
 	@mkdir -p ${shell dirname ${EXEC}}
-	${CC} ${CFLAGS} -L$(shell dirname $(LIBC)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC))) -o $@ $^ 
+	${CC} ${CFLAGS} -o $@ $^ -L$(shell dirname $(LIBC)) -l$(patsubst lib%.a,%,$(shell basename $(LIBC)))
 # Build the operating system
 else
 	$(MAKE) -C $(BUZZ)

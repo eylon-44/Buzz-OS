@@ -4,8 +4,8 @@ set print pretty
 add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
-add-symbol-file usr/fs_layout/sys/terminal.elf
-# add-symbol-file usr/fs_layout/bin/echo.elf
+# add-symbol-file usr/fs_layout/sys/terminal.elf
+add-symbol-file usr/fs_layout/bin/echo
 
 #layout prev
 layout src
@@ -29,9 +29,11 @@ target remote localhost:1234
 
 # User program start
 break main
-break realloc
+#break freestanding_execute
+# break cmd_builtin_cd
 # break ui.c:276
 # break fs_build_path
+
 
 define plist
   set $node = $arg0

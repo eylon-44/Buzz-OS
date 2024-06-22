@@ -116,7 +116,7 @@ void* malloc(size_t size)
 
     // Mark the [best_chunk] as used
     best_chunk->size |= 1;
-    // Ff this is not the last chunk, set the [prev_size] of the next chunk with the size of [best_chunk]
+    // If this is not the last chunk, set the [prev_size] of the next chunk with the size of [best_chunk]
     if ((void*) NEXT_CHUNK(best_chunk) != (void*) heap.top) {
         chunk_ptr = NEXT_CHUNK(best_chunk);
         chunk_ptr->prev_size = best_chunk->size;

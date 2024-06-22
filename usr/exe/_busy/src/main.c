@@ -1,5 +1,7 @@
+// Busy Process // ~ eylon
+
 int main()
 {
-    while(1) {};
+    for (;;) {};
 	return 0;
 }

@@ -7,7 +7,7 @@
 #include <dirent.h>
 
 struct stat {
-    size_t st_size;     // size of file in bytes
+    size_t size;        // size of file in bytes, or number of files in directory
     unsigned char type; // file type
     int indx;           // inode index
 };

@@ -18,7 +18,8 @@
 #include <libc/unistd.h>
 #include <libc/fcntl.h>
 #include <libc/limits.h>
-
+#include <libc/unistd.h>
+#include <libc/sys/syscall.h>
 
 /* Generate a unique process ID.
     The function simply assumes that we will never create more than 4 billion (2^32) processes.
@@ -50,6 +51,7 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     pde_t *new_pd_p;
     vaddr_t scratch_v; paddr_t scratch_p;
     process_t process;
+    process_t* process_ptr;
     size_t pbrk = 0;
 
     // Open the ELF file
@@ -177,7 +179,7 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     if (parent != NULL) {
         parent->child_count++;
         process.tab = parent->tab;
-        process.cr3 = parent->cr3;
+        process.cwd = parent->cwd;
         sched_set_status(parent, PSTATUS_BLOCKED);
     }
     else {
@@ -278,8 +280,15 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     }
     vmm_detach_page((vaddr_t) scratch_v);
 
+    // Queue the new process in the scheduler
+    process_ptr = sched_add_process(process);
+    // If parent should be blocked, yield
+    if (parent != NULL && parent->status == PSTATUS_BLOCKED) {
+        syscall(SYS_sched_yield);   // see you later!
+    }
+
     // Queue the task in the scheduler's queue and return it
-    return sched_add_process(process);
+    return process_ptr;
 }
 
 /* Kill a process.

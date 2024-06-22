@@ -1,8 +1,7 @@
 // sys_exit // ~ eylon
 
 #include <kernel/syscall.h>
-#include <kernel/process/scheduler.h>
-#include <libc/stddef.h>
+#include <kernel/process/pm.h>
 
 /* Terminate the calling process.
     [no-return] syscall(SYS_exit, int status);
@@ -10,9 +9,5 @@
 */
 void sys_exit(UNUSED int_frame_t* param)
 {
-    // Set the process to DONE and switch to the next process
-    sched_set_status(sched_get_active(), PSTATUS_DONE);
-    sched_switch_next();
-
-    // [TODO] return status to waiter
+    pm_kill(pm_get_active());
 }

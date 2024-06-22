@@ -10,7 +10,7 @@
     to by [pathname] or refrenced by [fd] into the buffer [statbuff]
     of the type struct stat, which is defined at sys/stat.h.
 
-    On success, zero is returned.  On error, -1 is returned.
+    On success, 0 is returned.  On error, -1 is returned.
     
     #include <sys/stat.h>
     int stat(const char* pathname, struct stat* statbuf);

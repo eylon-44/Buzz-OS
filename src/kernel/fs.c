@@ -705,7 +705,7 @@ static int fs_istat(int inode_indx, struct stat* buf)
 {
     inode_t inode = inode_read(inode_indx);
 
-    buf->st_size = inode.count;
+    buf->size = inode.count;
     buf->type    = inode.type == FS_NT_FILE ? DT_REG : DT_DIR;
     buf->indx    = inode_indx;
 
@@ -785,6 +785,12 @@ char* fs_build_path(int indx, char* buff, size_t size)
     size_t pathlen = 0;
     buff[--size] = '\0';
     
+    // If it's the root
+    if (indx == 0) {
+        strcpy(buff, "/");
+        return buff;
+    }
+
     // Step until reaching the root directory
     while (indx != FS_ROOT_INDEX)
     {
