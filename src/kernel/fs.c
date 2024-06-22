@@ -527,6 +527,35 @@ ssize_t fs_read(int fd, void* buff, size_t count)
     return -1;
 }
 
+
+// int fs_rename(const char *oldpath, const char *newpath)
+// {
+//     char dirname_old[PATH_MAX];
+//     char* dirname_new;
+//     int indx;
+//     inode_t inode;
+    
+//     // Try to get the file's inode; if file does not exist, return -1
+//     indx = fs_seek(oldpath);;
+//     if (indx < 0) {
+//         return -1;
+//     }
+//     inode = inode_read(indx);
+
+//     // Get the direcotry name of the old and new paths
+//     strcpy(dirname_old, dirname(oldpath));
+//     dirname_new = dirname(newpath);
+
+//     // Compare the old directory with the new one; if they are not the same, move the inode into the new directory
+//     if (strcmp(dirname_old, dirname_new) != 0)
+//     {
+        
+//     }
+
+//     // Change the inode's name
+    
+// }
+
 /* Attempt to write [count] bytes to file descriptor [fd] from [buff].
     The writing starts from the seek offset in the file and stops after
         writing [count] bytes. The function my truncate the file to fit

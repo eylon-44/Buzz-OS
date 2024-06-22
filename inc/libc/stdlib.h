@@ -8,6 +8,7 @@
 #define ALIGN_UP(value, align)     ((value) + (((align) - ((value) % (align))) % (align))) 
 
 #include <stddef.h>
+#include <limits.h>
 
 void* malloc(size_t size);
 void free(void* ptr);
@@ -18,5 +19,6 @@ int atoi(const char *nptr);
 void itoa(int n, char s[16]);
 uint32_t rand();
 void srand(unsigned int seed);
+char* realpath(const char* path, char resolved[PATH_MAX]);
 
 #endif

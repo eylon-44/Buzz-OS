@@ -19,5 +19,9 @@ char* strchr(const char *str, int c);
 char* strrchr(const char *str, int c);
 char* basename(const char* path);
 char* dirname(const char* path);
+size_t strlcpy(char* dest, const char* src, size_t size);
+void* memmove(void* dest, const void* src, size_t n);
+size_t strlcat(char* dest, const char* src, size_t size);
+size_t strnlen(const char* s, size_t maxlen);
 
 #endif

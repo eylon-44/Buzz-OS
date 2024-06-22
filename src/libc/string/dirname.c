@@ -21,7 +21,7 @@
 */
 char* dirname(const char* path)
 {
-    static char buff[PATH_LEN_MAX];
+    static char buff[PATH_MAX];
     char* last_slash;
 
     // If path is NULL or empty, return "."

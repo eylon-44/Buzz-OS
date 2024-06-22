@@ -5,7 +5,7 @@
 
 #define ARGV_MAX        32
 #define FNAME_LEN_MAX   64
-#define PATH_LEN_MAX    256
+#define PATH_MAX        256
 
 #define CHAR_BIT        8
 #define SCHAR_MIN       -128

@@ -82,16 +82,8 @@ $(KRNL_BIN): $(LIBC_BIN) $(KRNL_OBJS)
 	# Make the kernel's binary
 	${LD} -o $@ $(KRNL_ENTRY) $(filter-out $(KRNL_ENTRY), $(KRNL_OBJS)) -T ${KRNL_LD_SCRIPT} ${LDFLAGS}
 
-# Build user programs and the file system layout
-$(FS_LAYOUT): $(USR_PRGS) $(USR_FILES_DIR) $(KRNL_BIN)
-	cp -r $(USR_FILES_DIR) $@
-
-	# {REMOVE}
-
-	cp ${KRNL_BIN} $@/${KERNEL_PATH}
-
 # Build the file system
-$(FS_IMG): $(KRNL_BIN) $(BOOT_BIN)
+$(FS_IMG): $(KRNL_BIN) $(BOOT_BIN) $(shell find $(USR_FILES_DIR) $(USR_PRGS) ! -name '*.o' ! -name '*.elf')
 	cp -r $(USR_FILES_DIR) ${FS_LAYOUT}
 
 	for prog in $(USR_PRGS); do \

@@ -9,12 +9,17 @@
 
 int main()
 {
-    char input[128];
-    char* str[] = {"hey", "wow", NULL};
+    char input[PATH_MAX];
+    char* str[] = {"hey", "woof", NULL};
     int a = 0;
 
     chdir("/sys");
-    getcwd(input, 128);
+    getcwd(input, sizeof(input));
+    printf("At: %s\n", input);
+
+    realpath(".//..//sys/../home///", input);
+    printf("Real path: %s\n", input);
+
 
     printf("Hello! World! | %s\n", input);
 
