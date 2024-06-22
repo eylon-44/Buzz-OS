@@ -803,7 +803,7 @@ char* fs_build_path(int indx, char* buff, size_t size)
         buff[size-pathlen] = FS_SPLIT_CHAR[0];
         memcpy(buff + (size-pathlen+1), inode.name, namelen);
 
-        indx = inode.pindx;                   // get the inode index of the current inode's parnet
+        indx = inode.pindx;                   // get the inode index of the current inode's parent
     }
     memcpy(buff, buff + size-pathlen, pathlen+1);
 

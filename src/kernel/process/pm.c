@@ -158,7 +158,7 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     // Create the process data structure
     process = (process_t) {
         .pid        = gen_pid(),                    // find an available PID for the process and set it
-        .parnet     = parent,                       // parent of this process
+        .parent     = parent,                       // parent of this process
         .child_count= 0,                            // 0 children by defualt
         .kesp       = 0,                            // kernel stack pointer to set when entering ring 0
         .cr3        = (uint32_t) new_pd_p,          // physical address of the process' page directory
@@ -302,16 +302,17 @@ void pm_kill(process_t* proc)
         extern sched_queue_t queue;
         process_t* child = queue.proc_list;
         while (child != NULL) {
-            if (child->parnet == proc) {
-                pm_kill(proc);
+            if (child->parent == proc) {
+                pm_kill(child);
             }
             child = child->next;
         }
     }
 
     // Unblock the parent
-    if (proc->parnet != NULL) {
-        sched_set_status(proc->parnet, PSTATUS_READY);
+    if (proc->parent != NULL) {
+        sched_set_status(proc->parent, PSTATUS_READY);
+        proc->parent->child_count--;
     }
     // If process has no parent and a tab, close its tab
     else if (proc->tab != NULL) {

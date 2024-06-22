@@ -200,7 +200,7 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     if (key == KEY_RETURN) {
         if (tabs.active->flags & TABF_TAKING_INPUT) {
             // Resume process execution and insert \n into the buffer
-            sched_set_status(tabs.active->parnet, PSTATUS_READY);
+            sched_set_status(tabs.active->parent, PSTATUS_READY);
             stdin_buff[tabs.active->in_offset] = '\n';
             tabs.active->in_offset++;
         }
@@ -357,7 +357,7 @@ void ui_tab_open()
     // Create a new terminal process
     terminal = pm_load(NULL, UI_DEFAULT_TERMINAL, NULL, 20);
     terminal->tab   = tab;
-    tab->parnet     = terminal;
+    tab->parent     = terminal;
 
     // Clear stdout buffer
     buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
@@ -377,7 +377,7 @@ void ui_tab_close_tab(tab_t* tab)
 {
     // Free tab resources and remove it from the list
     pmm_free_page((paddr_t) tab->buff);
-    tab->parnet->tab = NULL;
+    tab->parent->tab = NULL;
     LIST_REMOVE(tabs.tab_list, tab);
     kfree(tab);
 
@@ -407,8 +407,9 @@ void ui_tab_close_tab(tab_t* tab)
 void ui_tab_close()
 {
     tab_t* tab = tabs.active;
+    process_t* parent = tab->parent;
     ui_tab_close_tab(tab);
-    pm_kill(tab->parnet);
+    pm_kill(parent);
 }
 
 // Switch displayed tab

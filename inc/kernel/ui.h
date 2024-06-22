@@ -40,7 +40,7 @@ typedef struct
 // Tab structure
 typedef struct tab
 {
-    struct process* parnet;     // orphan process of tab
+    struct process* parent;     // orphan process of tab
     int in_offset;              // offset in stdin buffer
     int out_offset;             // offset in stdout buffer; cursor offset
     tab_buff_t* buff;           // physical address of tab stdin and stdout buffer

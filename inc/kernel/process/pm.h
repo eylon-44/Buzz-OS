@@ -29,7 +29,7 @@ typedef struct process {
     size_t pbrk;            // program break
 
     int pid;                // process id
-    struct process* parnet; // parent process pointer
+    struct process* parent; // parent process pointer
     size_t child_count;     // child processes count
 
     pstatus_t status;       // process status
