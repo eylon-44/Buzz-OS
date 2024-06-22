@@ -3,7 +3,7 @@
 #if !defined(__LIBC_LIMITS_H)
 #define __LIBC_LIMITS_H
 
-#define ARGV_MAX        32
+#define ARGC_MAX        5
 #define FNAME_LEN_MAX   64
 #define PATH_MAX        256
 

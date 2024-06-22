@@ -199,7 +199,10 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     // If return was pressed
     if (key == KEY_RETURN) {
         if (tabs.active->flags & TABF_TAKING_INPUT) {
+            // Resume process execution and insert \n into the buffer
             sched_set_status(tabs.active->parnet, PSTATUS_READY);
+            stdin_buff[tabs.active->in_offset] = '\n';
+            tabs.active->in_offset++;
         }
         new_line(tabs.active);
         return;

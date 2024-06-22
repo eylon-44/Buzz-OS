@@ -18,5 +18,6 @@ typedef struct {
 int printf(const char* format, ...);
 int asprintf(char **strp, const char *fmt, ...);
 int vasprintf(char **strp, const char *fmt, va_list ap);
+char* fgets(char* s, int n, int stream);
 
 #endif

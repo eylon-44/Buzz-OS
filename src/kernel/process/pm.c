@@ -222,14 +222,14 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
         scratch_p = pmm_get_page();
         if (argv != NULL)
         {
-            char* argv_ptr[ARGV_MAX];
+            char* argv_ptr[ARGC_MAX];
             size_t arg_i;
 
             // Attach the user stack
             scratch_v = vmm_attach_page(scratch_p);
 
             // Copy the [argv] string into the stack
-            for (arg_i = 0; argv[arg_i] != NULL && arg_i < ARGV_MAX; arg_i++)
+            for (arg_i = 0; argv[arg_i] != NULL && arg_i < ARGC_MAX; arg_i++)
             {
                 size_t len = MM_ALIGN_X_UP(strlen(argv[arg_i])+1, 4);           // get the length of the string
                 iret_frame.esp -= len;                                          // allocate space on the stack for the string
