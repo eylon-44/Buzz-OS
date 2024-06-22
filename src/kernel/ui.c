@@ -101,7 +101,7 @@ static size_t handle_screen_scrolling(int offset, size_t count)
 {
     // If print is going out of screen bounds
     while (offset+count >= UI_MAX_OUT) {
-        memcpy((void*) UI_SCREEN_BUFF, (const void*) UI_SCREEN_BUFF + VGA_COL_COUNT * 2, (VGA_SIZE - VGA_COL_COUNT)*2);
+        memmove((void*) UI_SCREEN_BUFF, (const void*) UI_SCREEN_BUFF + VGA_COL_COUNT * 2, (VGA_SIZE - VGA_COL_COUNT)*2);
         // blank the last line
         for (uint8_t i = 0; i < VGA_COL_COUNT; i++) {
             vga_put_char_at(' ', UI_ATR_DEFAULT, (VGA_SIZE - VGA_COL_COUNT + i));
@@ -117,7 +117,7 @@ static size_t handle_buffer_scrolling(char* buff_out, int offset, size_t count)
 {
     // If print is going out of screen bounds
     while (offset+count >= UI_MAX_OUT) {
-        memcpy(buff_out, buff_out + VGA_COL_COUNT, (VGA_SIZE - VGA_COL_COUNT));
+        memmove(buff_out, buff_out + VGA_COL_COUNT, (VGA_SIZE - VGA_COL_COUNT));
         // blank the last line
         memset(buff_out + (VGA_SIZE - VGA_COL_COUNT), ' ', VGA_COL_COUNT);
         offset -= VGA_COL_COUNT;
@@ -136,7 +136,7 @@ static void new_line(tab_t* tab)
     }
     else {
         tab_buff_t* tab_buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
-        tab->out_offset = handle_buffer_scrolling((char*) tab_buff, ALIGN_DOWN(ui_cursor_get(tab) + VGA_COL_COUNT, VGA_COL_COUNT), 0);
+        tab->out_offset = handle_buffer_scrolling((char*) tab_buff->out, ALIGN_DOWN(ui_cursor_get(tab) + VGA_COL_COUNT, VGA_COL_COUNT), 0);
         vmm_detach_page((vaddr_t) tab_buff);
     }
 }

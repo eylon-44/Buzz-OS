@@ -29,7 +29,8 @@ target remote localhost:1234
 
 # User program start
 break main
-break fs.c:501
+break handle_buffer_scrolling
+# break fs.c:501
 #break freestanding_execute
 # break cmd_builtin_cd
 # break ui.c:276
