@@ -61,4 +61,5 @@ void init_syscall()
     SYSCALL_HANDLER(rmdir);
     SYSCALL_HANDLER(getcwd);
     SYSCALL_HANDLER(chdir);
+    SYSCALL_HANDLER(rename);
 }

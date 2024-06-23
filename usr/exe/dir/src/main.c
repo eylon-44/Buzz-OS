@@ -11,7 +11,6 @@ int main(int argc, char* argv[])
     char path[PATH_MAX];
     int fd;
 
-
     if (argc < 2) {
         printf("Missing arguments. Aborting.\n");
         return -1;
@@ -25,7 +24,7 @@ int main(int argc, char* argv[])
         fd = mkdir(path);
 
         if (fd < 0) {
-            printf(" - Could not create new directory at \"%s\".\n", path);
+            printf(" - Could not create new directory at \"%s\". Aborting.\n", path);
             return -1;
         }
         printf(" - Created new directory at \"%s\".\n", path);

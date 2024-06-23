@@ -7,7 +7,7 @@
 
     unlink() deletes a file from the filesystem.
 
-    On success, zero is returned and on error -1.
+    On success, 0 is returned and on error -1.
 
     #include <unistd.h>
     int unlink(const char* pathname);

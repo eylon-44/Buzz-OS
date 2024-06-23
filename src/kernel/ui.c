@@ -19,7 +19,6 @@ static void shortcut_handler_tab_switch(char key);
 static void shortcut_handler_tab_open(char key);
 static void shortcut_handler_tab_close(char key);
 
-
 static tab_list_t tabs = {.tab_list=NULL, .active=NULL, .active_index=0, .count=0};
 static const char tab_indexes[UI_MAX_TABS+1] = "1234567890qwertyuiopasdfghjkl;zxcvbnm,./";
 static char stdin_buff[UI_MAX_IN];
@@ -33,7 +32,7 @@ static struct
 shortcuts[] = {
     {'\0', KB_MFLAG_ALT, shortcut_handler_tab_switch},
     {'t', KB_MFLAG_CTRL | KB_MFLAG_SHIFT, shortcut_handler_tab_open},
-    {'w', KB_MFLAG_CTRL | KB_MFLAG_SHIFT, shortcut_handler_tab_close}
+    {'w', KB_MFLAG_CTRL | KB_MFLAG_SHIFT, shortcut_handler_tab_close},
 };
 
 // Get the list index of a tab by its header index
@@ -163,7 +162,7 @@ static void handle_shortcut(char key, uint8_t modifiers)
     // Iterate over the shortcut list
     for (size_t i = 0; i < sizeof(shortcuts)/sizeof(shortcuts[0]); i++)
     {
-        if ((modifiers & shortcuts[i].modifiers) && (shortcuts[i].key == '\0' || shortcuts[i].key == tolower(key))) {
+        if ((modifiers == shortcuts[i].modifiers) && (shortcuts[i].key == '\0' || shortcuts[i].key == tolower(key))) {
             shortcuts[i].handler(key);
         }
     }

@@ -99,6 +99,7 @@ int fs_lseek(int fd, int offset, int whence);
 int fs_truncate(const char* path, size_t length);
 int fs_ftruncate(int fd, size_t length);
 char* fs_build_path(int indx, char* buff, size_t size);
+int fs_rename(const char* oldpath, const char* newpath);
 void init_fs();
 
 #endif

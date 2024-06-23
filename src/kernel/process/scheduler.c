@@ -50,6 +50,11 @@ static process_t* get_process_by_id(int pid)
 // Calculate and set the time slice for the active process
 static void set_active_time_slice()
 {
+    if (sched_get_active()->priority == 0) {
+        sched_get_active()->ticks = 1;
+        return;
+    }
+
     size_t ticks = SCHED_CYCLE_TICKS * sched_get_active()->priority / queue.psum;
     // Ensure that the task gets at the minimum amount of execution time
     if (ticks < SCHED_MIN_TICKS) ticks = SCHED_MIN_TICKS;

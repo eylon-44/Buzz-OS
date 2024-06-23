@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
         fd = creat(path);
 
         if (fd < 0) {
-            printf(" - Could not create new file at \"%s\".\n", path);
+            printf(" - Could not create new file at \"%s\". Aborting.\n", path);
             return -1;
         }
         printf(" - Created new file at \"%s\".\n", path);

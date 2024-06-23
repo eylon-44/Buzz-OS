@@ -381,7 +381,7 @@ static void kill_dummy_proc()
     queue.active = queue.proc_list;
 
     // Load a busy process
-    pm_load(NULL, "/sys/_busy.elf", NULL, 1);
+    pm_load(NULL, "/sys/_busy.elf", NULL, 0);
 }
 
 void init_pm()

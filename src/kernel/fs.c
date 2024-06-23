@@ -83,32 +83,34 @@ static void inode_write(inode_t inode, size_t index)
     vmm_detach_page(scratch);
 }
 
-/* Link an index into an available location in an inode's direct list.
+/* Link an index into an available location in an inode's direct list and increase the count.
     On success returns 0, on failure returns non zero.
-    IMPORTANT: function does not affect the disk directly; caller is
+    WARNING: function does not affect the disk directly; caller is
         responsible for updating the inode in the disk. */
 static int inode_link(inode_t* inode, size_t link)
 {
-    for (size_t i = 0; i < sizeof(inode->direct) * sizeof(inode->direct[0]); i++)
-    {
-        if (inode->direct[i] == 0) {
-            inode->direct[i] = link;
-            return 0;
-        }
+    // If too many files
+    if (inode->count >= sizeof(inode->direct) / sizeof(inode->direct[0])) {
+        return -1;
     }
-    return -1;
+
+    inode->direct[inode->count] = link;
+    inode->count++;
+    return 0;
 }
 
-/* Unlink an index from an inode's direct list.
+/* Unlink an index from an inode's direct list and decrease the count.
     On success returns 0, on failure returns non zero.
     WARNING: function does not affect the disk directly; caller is
         responsible for updating the inode in the disk. */
 static int inode_unlink(inode_t* inode, size_t link)
 {
-    for (size_t i = 0; i < sizeof(inode->direct) * sizeof(inode->direct[0]); i++)
+    for (size_t i = 0; i < sizeof(inode->direct) / sizeof(inode->direct[0]); i++)
     {
         if (inode->direct[i] == link) {
+            inode->count--;
             inode->direct[i] = 0;
+            memmove(inode->direct+i, inode->direct+i+1, inode->count-i);
             return 0;
         }
     }
@@ -303,8 +305,7 @@ int fs_create(const char* path, inode_type_t type)
     if (inode_link(&parent, indx_c) != 0) {
         return -1;
     }
-    // Increase the parent's count and update its inode in the disk
-    parent.count++;
+    // Update the paren't inode in the disk
     inode_write(parent, indx_p);
 
     return indx_c;
@@ -339,8 +340,7 @@ static int iremove(int cindx)
     // Unlink the child from its parent
     inode_unlink(&inode, cindx);
 
-    // Decrease the parent's count and update its inode in the disk
-    inode.count--;
+    // Update the parent's inode in the disk
     inode_write(inode, pindx);
 
     // Free the child's inode
@@ -513,7 +513,7 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         for (int i = 0; fd_p->offset < inode.count && files_read < count; i++)
         {
             inode_t entinode;
-            
+
             // Read inode of the directory entry
             entinode = inode_read(inode.direct[fd_p->offset]);
 
@@ -531,34 +531,51 @@ ssize_t fs_read(int fd, void* buff, size_t count)
     return -1;
 }
 
-
-// int fs_rename(const char *oldpath, const char *newpath)
-// {
-//     char dirname_old[PATH_MAX];
-//     char* dirname_new;
-//     int indx;
-//     inode_t inode;
+/* Rename and move a file from its old path into its new path. */
+int fs_rename(const char* oldpath, const char* newpath)
+{
+    char dirname_old[PATH_MAX];
+    char* dirname_new;
+    int file_indx, dir_indx;
+    inode_t file_inode, tmp_inode;
     
-//     // Try to get the file's inode; if file does not exist, return -1
-//     indx = fs_seek(oldpath);;
-//     if (indx < 0) {
-//         return -1;
-//     }
-//     inode = inode_read(indx);
+    // Try to get the file's inode; if file does not exist, return -1
+    file_indx = fs_seek(oldpath);
+    if (file_indx < 0) {
+        return -1;
+    }
+    file_inode = inode_read(file_indx);
 
-//     // Get the direcotry name of the old and new paths
-//     strcpy(dirname_old, dirname(oldpath));
-//     dirname_new = dirname(newpath);
+    // Get the direcotry name of the old and new paths
+    strcpy(dirname_old, dirname(oldpath));
+    dirname_new = dirname(newpath);
 
-//     // Compare the old directory with the new one; if they are not the same, move the inode into the new directory
-//     if (strcmp(dirname_old, dirname_new) != 0)
-//     {
-        
-//     }
+    // Compare the old directory with the new one; if they are not the same, move the inode into the new directory
+    if (strcmp(dirname_old, dirname_new) != 0)
+    {
+        // Link the file to its new parent
+        dir_indx = fs_seek(dirname_new);
+        if (dir_indx < 0) {
+            return -1;
+        }
+        tmp_inode = inode_read(dir_indx);
+        inode_link(&tmp_inode, file_indx);
+        inode_write(tmp_inode, dir_indx);
+        file_inode.pindx = dir_indx;
 
-//     // Change the inode's name
+        // Unlink the file from its old parent
+        dir_indx  = fs_seek(dirname_old);
+        tmp_inode = inode_read(dir_indx);
+        inode_unlink(&tmp_inode, file_indx);
+        inode_write(tmp_inode, dir_indx);
+    }
+
+    // Change the inode's name and write the changes into the disk
+    strcpy(file_inode.name, basename(newpath));
+    inode_write(file_inode, file_indx);
     
-// }
+    return 0;
+}
 
 /* Attempt to write [count] bytes to file descriptor [fd] from [buff].
     The writing starts from the seek offset in the file and stops after

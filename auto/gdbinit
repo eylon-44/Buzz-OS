@@ -28,8 +28,7 @@ target remote localhost:1234
 # break _entry
 
 # User program start
-break ui_tab_close
-break fs_create
+break fs_remove
 # break fs.c:501
 #break freestanding_execute
 # break cmd_builtin_cd
