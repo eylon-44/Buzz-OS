@@ -5,7 +5,7 @@ add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 # add-symbol-file usr/fs_layout/sys/terminal.elf
-add-symbol-file usr/fs_layout/bin/echo
+add-symbol-file usr/fs_layout/bin/read
 
 #layout prev
 layout src
@@ -28,8 +28,8 @@ target remote localhost:1234
 # break _entry
 
 # User program start
-break fs_remove
-break itruncate
+break main
+# break itruncate
 # break fs.c:501
 #break freestanding_execute
 # break cmd_builtin_cd

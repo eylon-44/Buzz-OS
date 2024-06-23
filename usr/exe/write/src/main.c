@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     int fd, whence;
 
     if (argc < 4) {
-        printf(" - Usage: %s [filepath] [-w/-a](write/append) [data...\n", argv[0]);
+        printf(" - Usage: %s [filename] [-w/-a](write/append) [data...\n", argv[0]);
         return -1;
     }
 

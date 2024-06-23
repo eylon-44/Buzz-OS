@@ -105,12 +105,12 @@ static int inode_link(inode_t* inode, size_t link)
         responsible for updating the inode in the disk. */
 static int inode_unlink(inode_t* inode, size_t link)
 {
-    for (size_t i = 0; i < sizeof(inode->direct) / sizeof(inode->direct[0]); i++)
+    for (size_t i = 0; i < inode->count; i++)
     {
         if (inode->direct[i] == link) {
             inode->count--;
             inode->direct[i] = 0;
-            memmove(inode->direct+i, inode->direct+i+1, inode->count-i);
+            memmove(inode->direct+i, inode->direct+i+1, (inode->count-i) * sizeof(inode->direct[0]));
             return 0;
         }
     }
@@ -476,31 +476,30 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         scratch = vmm_attach_page(fs_phys_scratch); // attach scratch space
 
         // Go over the inode's direct list starting from the block at offset [offset]
-        for (size_t i = fd_p->offset / super.block_size; i <= inode.count / super.block_size; i++)
+        while (bytes_read < count && fd_p->offset < inode.count)
         {
             size_t offset, size;
 
-            // Calculate the offset within the block and the size to copy
+            /* Calculate the offset within the block and the size to copy. */
             offset = scratch + (fd_p->offset % super.block_size);
+
             size   = count - bytes_read;
-            if (offset + size > scratch + super.block_size) {
-                size = (scratch+super.block_size) - offset;
-            }
+            // If size is too big for the caller's buffer
+            // If size is too big for the file
             if (fd_p->offset + size > inode.count) {
                 size = inode.count - fd_p->offset;
             }
+            // If size is too big for the block buffer
+            if (offset + size > scratch + super.block_size) {
+                size = (scratch+super.block_size) - offset;
+            }
 
-            // Read the block and copy it into the buffer
-            block_read((void*) scratch, inode.direct[i]);
+            // Read the block into the scratch space and from there copy it into the buffer
+            block_read((void*) scratch, inode.direct[fd_p->offset / super.block_size]);
             memcpy((void*) ((size_t) buff + bytes_read), (void*) offset, size);
 
             fd_p->offset += size;
             bytes_read   += size;
-
-            // If read [count] bytes, exit
-            if (bytes_read >= count) {
-                break;
-            }
         }
 
         vmm_detach_page(scratch);
@@ -555,6 +554,18 @@ int fs_rename(const char* oldpath, const char* newpath)
         // If [newpath] is a directory, 
         if (dir_inode.type == FS_NT_DIR) {
             dir_indx = dir_indx;
+
+            int tmp_indx;
+            char path[PATH_MAX];
+            strcpy(path, newpath);
+            strlcat(path, "/", sizeof(path));
+            strlcat(path, basename(oldpath), sizeof(path));
+
+            tmp_indx = fs_seek(path);
+            if (tmp_indx >= 0 && tmp_indx != file_indx) {
+                fs_remove(path);
+                strcpy(file_inode.name, basename(path));
+            }
         }
         // If [newpath] is a regular file, remove it and replace [oldpath] with it
         else {

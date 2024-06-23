@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     int fd;
 
     if (argc < 2) {
-        printf("Missing arguments. Aborting.\n");
+        printf(" - Usage: %s [dirname]\n", argv[0]);
         return -1;
     }
 

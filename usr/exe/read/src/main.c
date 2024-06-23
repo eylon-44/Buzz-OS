@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     int fd;
 
     if (argc < 2) {
-        printf(" - Usage: %s [filepath]\n", argv[0]);
+        printf(" - Usage: %s [filename]\n", argv[0]);
         return -1;
     }
 

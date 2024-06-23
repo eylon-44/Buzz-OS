@@ -41,6 +41,11 @@ char* dirname(const char* path)
         return buff;
     }
 
+    // If the only slash is at the start of the string
+    if (last_slash == buff) {
+        return "/";
+    }
+
     /* This code executes only if the path contains a slash and is not equal to "/" */
     
     // If the slash is a trailing slash, find the previous one in the string

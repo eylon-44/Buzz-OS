@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     char newpath[PATH_MAX];
 
     if (argc < 3) {
-        printf("Missing arguments. Aborting.\n");
+        printf(" - Usage: %s [oldpath] [newpath]\n", argv[0]);
         return -1;
     }
 
