@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
             // Go over all files in the directory and print them
             for (size_t i = 0; i < statbuf.size && read(fd, &entry, 1) != 0; i++)
             {
-                printf(" - %s\n", entry.d_name);
+                printf(" - <%s> %s\n", entry.d_type == DT_REG ? "F" : "D", entry.d_name);
             }
             
             // Close the directory
