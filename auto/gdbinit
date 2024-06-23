@@ -29,6 +29,7 @@ target remote localhost:1234
 
 # User program start
 break fs_remove
+break itruncate
 # break fs.c:501
 #break freestanding_execute
 # break cmd_builtin_cd

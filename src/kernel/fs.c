@@ -467,7 +467,7 @@ ssize_t fs_read(int fd, void* buff, size_t count)
     // Get the file's inode
     inode = inode_read(fd_p->inode_indx);
 
-    // If inode is a regular file
+    // If file is a regular file
     if (inode.type == FS_NT_FILE)
     {
         vaddr_t scratch;
@@ -486,6 +486,9 @@ ssize_t fs_read(int fd, void* buff, size_t count)
             if (offset + size > scratch + super.block_size) {
                 size = (scratch+super.block_size) - offset;
             }
+            if (fd_p->offset + size > inode.count) {
+                size = inode.count - fd_p->offset;
+            }
 
             // Read the block and copy it into the buffer
             block_read((void*) scratch, inode.direct[i]);
@@ -503,7 +506,7 @@ ssize_t fs_read(int fd, void* buff, size_t count)
         vmm_detach_page(scratch);
         return bytes_read;
     }
-    // If Inode is a directory
+    // If file is a directory
     else if (inode.type == FS_NT_DIR)
     {
         size_t files_read = 0;
@@ -615,7 +618,6 @@ ssize_t fs_write(int fd, const void* buff, size_t count)
     if (fd_p->offset + count > inode.count) {
         fs_ftruncate(fd, fd_p->offset+count);
         inode = inode_read(fd_p->inode_indx);
-
     }
 
     // Go over the inode's direct list starting from the block at offset [offset]
@@ -669,7 +671,7 @@ static int itruncate(inode_t inode, int index, size_t length)
         blockmap_set(inode.direct[i], 0);
     }
     // Allocate blocks if increasing the file's size; zero out the blocks.
-    if ((inode.count / super.block_size < length / super.block_size) || (inode.count / super.block_size == 0))
+    if ((inode.count / super.block_size < length / super.block_size) || (inode.direct[0] == 0))
     {
         // Create a null buffer
         vaddr_t scratch = vmm_attach_page(fs_phys_scratch);

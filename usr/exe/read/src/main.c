@@ -1,4 +1,4 @@
-// Terminal Command cat // ~ eylon
+// Terminal Command read // ~ eylon
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <sys/stat.h>
 
-/* Print a file. */
+/* Read a file to the screen. */
 int main(int argc, char* argv[])
 {
     struct stat statbuf;
@@ -17,24 +17,24 @@ int main(int argc, char* argv[])
     int fd;
 
     if (argc < 2) {
-        printf("Missing arguments. Aborting.\n");
+        printf(" - Usage: %s [filepath]\n", argv[0]);
         return -1;
     }
 
-    // cat for each argument
+    // read for each argument
     for (int i = 1; i < argc; i++)
     {
-        realpath(argv[1], path);
+        realpath(argv[i], path);
 
         // Get the stat of the file
         if (stat(path, &statbuf) != 0) {
-            printf("Cannot access \"%s\": No such file or directory.\n", path);
+            printf(" - Cannot access \"%s\": No such file or directory.\n", path);
             return -1;
         }
 
-        // If file is not a regular file
+        // If file is not a regular file, abort
         if (statbuf.type != DT_REG) {
-            printf("File %s is not a regular file. Aborting.\n", path);
+            printf(" - File \"%s\" is not a regular file. Aborting.\n", path);
             return -1;
         }
         
@@ -42,8 +42,10 @@ int main(int argc, char* argv[])
         fd = open(path, O_RDONLY);
 
         // Read and print until end of file
-        str_buff[sizeof(str_buff)-1] = '\0';
-        while (read(fd, str_buff, sizeof(str_buff)-1) != 0) { printf(str_buff); }
+        for (size_t bytes_read; (bytes_read = read(fd, str_buff, sizeof(str_buff)-1)) != 0;) {
+            str_buff[bytes_read] = '\0';
+            printf(str_buff);
+        }
         
         // Close the file
         close(fd);
