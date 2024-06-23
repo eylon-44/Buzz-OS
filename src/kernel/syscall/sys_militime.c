@@ -13,6 +13,5 @@
 */
 void sys_militime(int_frame_t* param)
 {
-    extern size_t ticks;
-    param->eax = (ticks * 1000) / TIMER_TICK_HZ;
+    param->eax = get_militime();
 }

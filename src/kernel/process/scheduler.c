@@ -30,8 +30,23 @@ inline process_t* sched_get_active()
     return queue.active;
 }
 
+// Calculate and set the time slice for the active process
+static void set_active_time_slice()
+{
+    if (sched_get_active()->priority == 0) {
+        sched_get_active()->ticks = 1;
+        return;
+    }
+
+    size_t ticks = SCHED_CYCLE_TICKS * sched_get_active()->priority / queue.psum;
+    // Ensure that the task gets at the minimum amount of execution time
+    if (ticks < SCHED_MIN_TICKS) ticks = SCHED_MIN_TICKS;
+
+    sched_get_active()->ticks = ticks;
+}
+
 // Get a process by its ID
-static process_t* get_process_by_id(int pid)
+process_t* get_process_by_id(int pid)
 {
     process_t* p = queue.proc_list;
     
@@ -47,19 +62,10 @@ static process_t* get_process_by_id(int pid)
     return NULL;
 }
 
-// Calculate and set the time slice for the active process
-static void set_active_time_slice()
+// Get the scheduler's queue
+inline const sched_queue_t* sched_get_queue()
 {
-    if (sched_get_active()->priority == 0) {
-        sched_get_active()->ticks = 1;
-        return;
-    }
-
-    size_t ticks = SCHED_CYCLE_TICKS * sched_get_active()->priority / queue.psum;
-    // Ensure that the task gets at the minimum amount of execution time
-    if (ticks < SCHED_MIN_TICKS) ticks = SCHED_MIN_TICKS;
-
-    sched_get_active()->ticks = ticks;
+    return &queue;
 }
 
 
@@ -245,14 +251,17 @@ void sched_set_status(process_t* proc, pstatus_t status)
 }
 
 // Update the priority of a given thread
-void sched_set_priority(process_t* proc, int priority)
+int sched_set_priority(process_t* proc, int priority)
 {
+    if (priority < PRIORITY_MIN || priority > PRIORITY_MAX) return -1;
+
     // If the thread is ACTIVE or READY, update the queue's priority sum accordingly
     if (proc->status == PSTATUS_ACTIVE || proc->status == PSTATUS_READY) {
         queue.psum += priority - proc->priority;
     }
-    // Set the priority
+    // Set and return the priority
     proc->priority = priority;
+    return priority;
 }
 
 

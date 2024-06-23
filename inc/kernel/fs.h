@@ -66,7 +66,7 @@ typedef uint32_t inode_type_t;
 
 // Inode structure
 typedef struct {
-    char name[FNAME_LEN_MAX];           // file name
+    char name[FNAME_MAX];           // file name
     inode_type_t type;                  // file type
     size_t count;                       // count of <NT_FILE> bytes of data/<NT_DIR> number of files in direcotry
     size_t direct[FS_DIRECT_NUM];       // direct refrence to <NT_FILE> blocks of data/<NT_DIR> inodes

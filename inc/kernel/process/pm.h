@@ -7,6 +7,8 @@
 #include <kernel/ui.h>
 #include <libc/stdint.h>
 #include <libc/stddef.h>
+#include <libc/proc.h>
+#include <libc/limits.h>
 
 #define PM_DEFAULT_PRIORITY 20
 #define PM_DEFUALT_CWD      "/home"
@@ -34,6 +36,7 @@ typedef struct process {
 
     pstatus_t status;       // process status
     int ticks;              // number of ticks to execute process
+    size_t timestamp;       // time created
     int priority;           // process's scheduler priority
 
     fd_t* fds;              // process's file descriptors list
@@ -42,6 +45,8 @@ typedef struct process {
 
     void (*entry)();        // process entry point
     uint8_t exit_status;    // exit status
+
+    char name[FNAME_MAX];   // process name
 
     struct process* next;
     struct process* prev;
@@ -52,6 +57,7 @@ size_t pm_brk(process_t* proc, size_t addr);
 process_t* pm_load(process_t* parent, const char* path,  char* const argv[], int priority);
 void pm_kill(process_t* proc);
 int pm_get_pid();
+int pm_ps(struct ps* psbuff, int count);
 void init_pm();
 
 #endif

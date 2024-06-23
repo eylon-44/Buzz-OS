@@ -4,6 +4,7 @@
 #define TIMER_H
 
 #include <libc/stdint.h>
+#include <libc/stddef.h>
 
 // 8 bit IO ports
 #define PIT_CH0_DATA_PORT 0x40         // channel 0 data port (read/write)
@@ -39,6 +40,7 @@
 // Timer callbacks per second
 #define TIMER_TICK_HZ           400
 
+size_t get_militime();
 void init_timer();
 
 #endif

@@ -28,6 +28,8 @@
 #define SYS_rmdir       0x28
 #define SYS_getcwd      0xb7
 #define SYS_rename      0x26
+#define SYS_ps          0xe5
+#define SYS_pr          0xaf
 
 #define SYS_int 92      // syscall interrupt number (0x5C)
 

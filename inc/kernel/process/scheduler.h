@@ -11,7 +11,7 @@ typedef struct
 {
     process_t* active;      // currently running process
     process_t* proc_list;   // process list
-    size_t count;           // ACTIVE process count in list
+    size_t count;           // process count in queue
     size_t psum;            // priority sum of all READY processes in queue
 } sched_queue_t;
 
@@ -37,10 +37,12 @@ void sched_tick();
 void sched_sleep(int pid, size_t ticks);
 process_t* sched_add_process(process_t t);
 void sched_set_status(process_t* t, pstatus_t status);
-void sched_set_priority(process_t* t, int priority);
+int sched_set_priority(process_t* proc, int priority);
 void sched_switch(process_t* t);
 void sched_switch_next();
 process_t* sched_get_active();
+const sched_queue_t* sched_get_queue();
+process_t* get_process_by_id(int pid);
 void init_scheduler();
 
 #endif

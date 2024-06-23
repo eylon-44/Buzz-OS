@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     
     // Open the file for writing and seek it; if [whence] is set to SEEK_SET truncate the file
     fd = open(path, O_WRONLY);
-    printf("OFFSET: %d\n", lseek(fd, 0, whence));
+    lseek(fd, 0, whence);
     if (whence == SEEK_SET) ftruncate(fd, 0);
     
     // Write to the file

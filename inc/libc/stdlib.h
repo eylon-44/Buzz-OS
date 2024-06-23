@@ -17,6 +17,7 @@ void* realloc(void* ptr, size_t size);
 void exit(int status);
 int atoi(const char *nptr);
 void itoa(int n, char s[16]);
+void itoapad(int n, char s[16], int pad);
 uint32_t rand();
 void srand(unsigned int seed);
 char* realpath(const char* path, char resolved[PATH_MAX]);

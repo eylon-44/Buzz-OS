@@ -4,6 +4,7 @@
 #include <kernel/interrupts/isr.h>
 #include <drivers/ports.h>
 #include <libc/stdint.h>
+#include <libc/stddef.h>
 #include <kernel/process/scheduler.h>
 
 // Tick counter
@@ -33,6 +34,12 @@ static void set_timer_hz(uint32_t hz)
     uint16_t devider = hz_to_devider(hz);           // get the devider
     port_outb(PIT_CH0_DATA_PORT, low16(devider));   // write the low byte of the devider
     port_outb(PIT_CH0_DATA_PORT, high16(devider));  // write the high byte of the devider
+}
+
+// Get time in miliseconds since the start of kernel execution
+inline size_t get_militime()
+{
+    return (ticks * 1000) / TIMER_TICK_HZ;
 }
 
 // Initiate the timer

@@ -4,8 +4,10 @@
 #define __LIBC_LIMITS_H
 
 #define ARGC_MAX        32
-#define FNAME_LEN_MAX   64
+#define FNAME_MAX       64
 #define PATH_MAX        256
+#define PRIORITY_MIN    0
+#define PRIORITY_MAX    100
 
 #define CHAR_BIT        8
 #define SCHAR_MIN       -128

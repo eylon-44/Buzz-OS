@@ -12,7 +12,7 @@
 #include <kernel/fs.h>
 #include <kernel/memory/gdt.h>
 #include <kernel/interrupts/isr.h>
-#include <drivers/pata.h>
+#include <drivers/timer.h>
 #include <libc/stdint.h>
 #include <libc/string.h>
 #include <libc/unistd.h>
@@ -20,6 +20,7 @@
 #include <libc/limits.h>
 #include <libc/unistd.h>
 #include <libc/sys/syscall.h>
+#include <libc/proc.h>
 
 /* Generate a unique process ID.
     The function simply assumes that we will never create more than 4 billion (2^32) processes.
@@ -166,11 +167,13 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
         .status     = PSTATUS_NEW,                  // status of the task; will be set to READY once placed into the scheduler's queue
         .pbrk       = pbrk,                         // program break
         .ticks      = 0,                            // ACTIVE time left; set by the scheduler
+        .timestamp  = get_militime(),               // time of process creation
         .priority   = priority,                     // task's priority
         .fds        = NULL,                         // process's open file descriptors list
         .entry      = (void (*)()) elfhdr.entry,    // process' entry function
         .exit_status= 0,                            // task's exit status
     };
+    strcpy((char*) process.name, basename(path));
 
     // Close the ELF file
     fs_close(fd);
@@ -299,8 +302,7 @@ void pm_kill(process_t* proc)
     sched_set_status(proc, PSTATUS_DONE);
     if (proc->child_count > 0)
     {
-        extern sched_queue_t queue;
-        process_t* child = queue.proc_list;
+        process_t* child = sched_get_queue()->proc_list;
         while (child != NULL) {
             if (child->parent == proc) {
                 pm_kill(child);
@@ -372,16 +374,37 @@ static void init_error()
 static void kill_dummy_proc()
 {
     extern process_t _dummy_proc;   // extern dummy process created by the virtual memory manager
-    extern sched_queue_t queue;     // extern scheduler queue to manipulate it
+    sched_queue_t* queue = (sched_queue_t*) sched_get_queue();
 
     /* Add the dummy process to the queue and set its status to DONE.
         The dummy process represents the process of the current startup context,
         that holds no user process, and therefore should be deleted after initialization. */
     sched_set_status(sched_add_process(_dummy_proc), PSTATUS_DONE);
-    queue.active = queue.proc_list;
+    queue->active = queue->proc_list;
 
     // Load a busy process
     pm_load(NULL, "/sys/_busy.elf", NULL, 0);
+}
+
+/* Retrieve running processes information. Writes [count] struct ps entries
+    into the [psbuff] buffer and returns the number of running processes. */
+int pm_ps(struct ps* psbuff, int count)
+{
+    const sched_queue_t* queue = sched_get_queue();
+    process_t* proc = queue->proc_list;
+
+    // Walk the process list
+    for (int i = 0; i < count && proc != NULL; i++) {
+        // Write the process into the buffer
+        psbuff[i].uptime   = get_militime() - proc->timestamp;
+        psbuff[i].pid      = proc->pid;
+        psbuff[i].priority = proc->priority;
+        strcpy(psbuff[i].name, proc->name);
+
+        proc = proc->next;  // step the list
+    }
+
+    return queue->count;
 }
 
 void init_pm()

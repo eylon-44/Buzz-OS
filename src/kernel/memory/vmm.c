@@ -325,13 +325,13 @@ void init_vmm()
 
     // Setup the dummy process
     {
-        extern sched_queue_t queue;
+        sched_queue_t* queue = (sched_queue_t*) sched_get_queue();
 
         _dummy_proc.pid    = -1;
         _dummy_proc.cr3    = (size_t) pd;
         _dummy_proc.parent = NULL;
         _dummy_proc.ticks  = 0;
 
-        queue.active = &_dummy_proc;
+        queue->active = &_dummy_proc;
     }
 }

@@ -15,7 +15,7 @@
 struct dirent
 {
     unsigned char d_type;
-    char d_name[FNAME_LEN_MAX];
+    char d_name[FNAME_MAX];
 };
 
 #endif

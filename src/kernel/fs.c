@@ -276,7 +276,7 @@ int fs_create(const char* path, inode_type_t type)
     inode_t parent, child;
 
     // If the file's name is too long, return -1
-    if (strlen(basename(path)) >= FNAME_LEN_MAX) {
+    if (strlen(basename(path)) >= FNAME_MAX) {
         return -1;
     }
 
@@ -537,10 +537,8 @@ ssize_t fs_read(int fd, void* buff, size_t count)
 /* Rename and move a file from its old path into its new path. */
 int fs_rename(const char* oldpath, const char* newpath)
 {
-    char dirname_old[PATH_MAX];
-    char* dirname_new;
     int file_indx, dir_indx;
-    inode_t file_inode, tmp_inode;
+    inode_t file_inode, dir_inode;
     
     // Try to get the file's inode; if file does not exist, return -1
     file_indx = fs_seek(oldpath);
@@ -549,34 +547,46 @@ int fs_rename(const char* oldpath, const char* newpath)
     }
     file_inode = inode_read(file_indx);
 
-    // Get the direcotry name of the old and new paths
-    strcpy(dirname_old, dirname(oldpath));
-    dirname_new = dirname(newpath);
+    // If [newpath] already exists, read its inode
+    dir_indx = fs_seek(newpath);
+    if (dir_indx >= 0) {
+        dir_inode = inode_read(dir_indx);
 
-    // Compare the old directory with the new one; if they are not the same, move the inode into the new directory
-    if (strcmp(dirname_old, dirname_new) != 0)
-    {
-        // Link the file to its new parent
-        dir_indx = fs_seek(dirname_new);
+        // If [newpath] is a directory, 
+        if (dir_inode.type == FS_NT_DIR) {
+            dir_indx = dir_indx;
+        }
+        // If [newpath] is a regular file, remove it and replace [oldpath] with it
+        else {
+            fs_remove(newpath);
+            strcpy(file_inode.name, basename(newpath));
+            dir_indx = dir_inode.pindx;
+        }
+    }
+    // If [newpath] does not exist, 
+    else {
+        dir_indx = fs_seek(dirname(newpath));
         if (dir_indx < 0) {
             return -1;
         }
-        tmp_inode = inode_read(dir_indx);
-        inode_link(&tmp_inode, file_indx);
-        inode_write(tmp_inode, dir_indx);
-        file_inode.pindx = dir_indx;
-
-        // Unlink the file from its old parent
-        dir_indx  = fs_seek(dirname_old);
-        tmp_inode = inode_read(dir_indx);
-        inode_unlink(&tmp_inode, file_indx);
-        inode_write(tmp_inode, dir_indx);
+        strcpy(file_inode.name, basename(newpath));
     }
 
-    // Change the inode's name and write the changes into the disk
-    strcpy(file_inode.name, basename(newpath));
+    // Link the file to its new parent
+    dir_inode = inode_read(dir_indx);
+    inode_link(&dir_inode, file_indx);
+    inode_write(dir_inode, dir_indx);
+    file_inode.pindx = dir_indx;
+
+    // Unlink the file from its old parent
+    dir_indx  = fs_seek(dirname(oldpath));
+    dir_inode = inode_read(dir_indx);
+    inode_unlink(&dir_inode, file_indx);
+    inode_write(dir_inode, dir_indx);
+
+    // Update the file inode
     inode_write(file_inode, file_indx);
-    
+
     return 0;
 }
 

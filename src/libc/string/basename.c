@@ -20,7 +20,7 @@
     char* basename(char* path);
 */
 char* basename(const char* path) {
-    static char buff[FNAME_LEN_MAX];
+    static char buff[FNAME_MAX];
     char* last_slash;
 
     // If path is NULL or empty, return "."
