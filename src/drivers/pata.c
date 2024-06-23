@@ -72,7 +72,7 @@ static void write_sector(void* src, sector_t lba)
 void pata_write_disk(void* src, sector_t size, sector_t disk_offset)
 {
     uint8_t* start = (uint8_t*) src; 
-    uint8_t* end   = start + size;
+    uint8_t* end   = start + size * PATA_SECTOR_SIZE;
 
     for (; start < end; start += PATA_SECTOR_SIZE, disk_offset++) {
         write_sector(start, disk_offset);

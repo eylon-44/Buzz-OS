@@ -14,7 +14,7 @@ typedef struct
 } cmd_freestanding_t;
 
 const cmd_freestanding_t* freestanding_get_cmds();
-int freestanding_get_count();
+size_t freestanding_get_count();
 int freestanding_execute(char* argv[]);
 void init_freestanding();
 

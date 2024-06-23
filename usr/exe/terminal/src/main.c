@@ -44,7 +44,7 @@ int main()
         }
 
         // Search for a matching built-in command
-        for (int i = 0; i < cmds_builtin_count; i++) {
+        for (size_t i = 0; i < cmds_builtin_count; i++) {
             if (strcmp(argv[0], cmds_builtin[i].ref) == 0) {
                 cmds_builtin[i].func(argc, argv);
                 goto loop_end;
@@ -52,7 +52,7 @@ int main()
         }
 
         // Search for a matching freestanding command
-        for (int i = 0; i < freestanding_get_count(); i++) {
+        for (size_t i = 0; i < freestanding_get_count(); i++) {
             if (strcmp(argv[0], freestanding_get_cmds()[i].ref) == 0) {
                 freestanding_execute(argv);
                 goto loop_end;

@@ -16,7 +16,7 @@ static size_t cmds_freestanding_count        = 0;
 
 // Freestanding commands list
 inline const cmd_freestanding_t* freestanding_get_cmds() { return cmds_freestanding; }
-inline int freestanding_get_count() { return cmds_freestanding_count; }
+inline size_t freestanding_get_count() { return cmds_freestanding_count; }
 
 /* Execute a freestanding program located at the bin directory. The function executes
     /bin/[argv[0]], passes [argv] to it, and returns the new process's PID. */

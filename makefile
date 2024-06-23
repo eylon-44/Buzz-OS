@@ -84,6 +84,7 @@ $(KRNL_BIN): $(LIBC_BIN) $(KRNL_OBJS)
 
 # Build the file system
 $(FS_IMG): $(KRNL_BIN) $(BOOT_BIN) $(shell find $(USR_FILES_DIR) $(USR_PRGS) ! -name '*.o' ! -name '*.elf')
+	rm -rf ${FS_LAYOUT}
 	cp -r $(USR_FILES_DIR) ${FS_LAYOUT}
 
 	for prog in $(USR_PRGS); do \

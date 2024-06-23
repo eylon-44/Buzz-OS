@@ -11,7 +11,7 @@ extern char wd;
 // Change the current working directory
 int cmd_builtin_cd(int argc, char* argv[])
 {
-    char* path[PATH_MAX];
+    char path[PATH_MAX];
 
     if (argc < 2) {
         printf("Invalid use of command.\n");

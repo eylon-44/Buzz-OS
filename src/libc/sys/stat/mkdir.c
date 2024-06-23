@@ -6,9 +6,15 @@
 
 /* Create a new directory.
     
-    sys_mkdir() attempts to create a directory named [pathname].
+    mkdir() attempts to create a directory named [pathname].
 
-    mkdir() returns 0 on success, and -1 on error.
+    The mkdir() function shall behave as if it is implemented as
+    follows:
+
+    int mkdir(const char *path)
+    {
+        return open(path, O_WRONLY|O_CREAT|O_TRUNC|O_DIRECTORY);
+    }
 
     #include <sys/stat.h>
     int mkdir(const char* pathname);

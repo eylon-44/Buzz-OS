@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 
     // If there are not enough arguments
     if (argc < 2) {
-        printf(" - Usage: counter [seconds]\n.");
+        printf(" - Usage: %s [seconds]\n.", argv[0]);
         return -1;
     }
     // If argument is not a number

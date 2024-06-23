@@ -292,7 +292,8 @@ int fs_create(const char* path, inode_type_t type)
     strcpy(child.name, basename(path));
     child.type  = type;
     child.count = 0;
-    memset(child.direct, 0, sizeof(child.direct) * sizeof(child.direct[0]));
+    memset(child.direct, 0, sizeof(child.direct));
+    child.pindx = indx_p;
     
     // Get a free inode index and load the child's inode into it
     indx_c = inodemap_get();
@@ -368,11 +369,18 @@ int fs_open(const char* path, int flags)
     process_t* p;
     int index;
 
-    // [TODO] create file if not exists and O_CREAT in flags
-    // Seek the file's inode; if the file could not be found, return -1
+    // Seek the file's inode; if the file could not be found, create it or return -1
     index = fs_seek(path);
     if (index < 0) {
-        return -1;
+        if (flags & O_CREAT) {
+            index = fs_create(path, flags & O_DIRECTORY ? FS_NT_DIR : FS_NT_FILE);
+            if (index < 0) {
+                return -1;
+            }
+        }
+        else {
+            return -1;
+        }
     }
 
     // Allocate and set the file descriptor

@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     int fd;
 
     if (argc < 2) {
-        printf("Missing argument. Aborting.\n");
+        printf("Missing arguments. Aborting.\n");
         return -1;
     }
 
