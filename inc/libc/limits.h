@@ -8,6 +8,8 @@
 #define PATH_MAX        256
 #define PRIORITY_MIN    0
 #define PRIORITY_MAX    100
+#define SCREEN_ROWS_MAX 24
+#define SCREEN_COLS_MAX 80
 
 #define CHAR_BIT        8
 #define SCHAR_MIN       -128

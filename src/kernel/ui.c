@@ -275,13 +275,12 @@ ssize_t ui_stdout_write(const char* buff, size_t count)
 
     // If the tab is the active tab, write directly to the screen
     if (tab == tabs.active) {
-        // Scroll the screen as needed
-        ui_cursor_set(tab, handle_screen_scrolling(ui_cursor_get(tab), count));
         // Print the string to the screen
         for (size_t i = 0; i < count; i++) {
             char c = (buff + count - (count%UI_MAX_OUT))[i];
             // If [c] is not an escape sequence character, print it
             if (!handle_escape_sequences(tab, c)) {
+                ui_cursor_set(tab, handle_screen_scrolling(ui_cursor_get(tab), 1));
                 vga_put_char(c, UI_ATR_DEFAULT);
             }
         }
@@ -291,14 +290,12 @@ ssize_t ui_stdout_write(const char* buff, size_t count)
         // Temporarlily attach the buffer of the target tab
         tab_buff_t* tab_buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
 
-        // Scroll the screen as needed
-        tab->out_offset = handle_buffer_scrolling(tab_buff->out, tab->out_offset, count);
-
         // Copy the string to the buffer
         for (size_t i = 0; i < count; i++) {
             char c = (buff + count - (count%UI_MAX_OUT))[i];
             // If [c] is not an escape sequence character, copy it to the buffer
             if (!handle_escape_sequences(tab, c)) {
+                tab->out_offset = handle_buffer_scrolling(tab_buff->out, tab->out_offset, 1);
                 tab_buff->out[tab->out_offset++] = c;
             }
         }

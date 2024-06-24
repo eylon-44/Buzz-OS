@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
         fd = open(path, O_RDONLY);
 
         // Read and print until end of file
-        for (size_t bytes_read; (bytes_read = read(fd, str_buff, sizeof(str_buff)-1)) != 0;) {
+        for (size_t lines = 0, bytes_read; (bytes_read = read(fd, str_buff, sizeof(str_buff)-1)) != 0; lines++) {
             str_buff[bytes_read] = '\0';
             printf(str_buff);
         }
