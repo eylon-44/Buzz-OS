@@ -139,15 +139,33 @@ static void new_line(tab_t* tab)
         vmm_detach_page((vaddr_t) tab_buff);
     }
 }
+// Clear the screen
+static void clear_screen(tab_t* tab)
+{
+    ui_cursor_set(tab, 0);
+    
+    if (tab == tabs.active) {
+        for (int i = VGA_COL_COUNT; i < VGA_SIZE; i++) {
+            vga_put_char_at(' ', UI_ATR_DEFAULT, i);
+        }
+    }
+    else {
+        tab_buff_t* tab_buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
+        memset((void*) tab_buff->out, ' ', UI_MAX_OUT);
+        vmm_detach_page((vaddr_t) tab_buff);
+    }
+}
 // Handle escape sequence characters. If [c] is not an escape sequence, return false, else true.
 static bool handle_escape_sequences(tab_t* tab, char c)
 {
     switch (c)
     {
-    case '\n':
+    case '\n':  // New line
         new_line(tab);
         return true;
-    
+    case '\f':  // Clear the screen
+        clear_screen(tab);
+        return true;
     default:
         return false;
     }
