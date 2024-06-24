@@ -35,7 +35,8 @@ int main(int argc, char* argv[])
 
         // If file is a regular file
         if (statbuf.type == DT_REG) {
-            printf("File: %s | Size: %d\n", basename((const char*) path), statbuf.size);
+            printf("File: %s | Size: %d | Executable: %s\n", basename((const char*) path),
+                statbuf.size, statbuf.exe ? "true" : "false");
         }
         // If file is a directory
         else if (statbuf.type == DT_DIR) {

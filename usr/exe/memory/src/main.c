@@ -4,11 +4,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdio.h>
 #include <time.h>
 #include <unistd.h>
 #include <string.h>
-#include <stddef.h>
 #include <stdbool.h>
 
 // Game structure
@@ -23,7 +21,7 @@ struct
     .points=0, .count=1, .rate=5, .numbers=NULL, .running=true
 };
 
-/* Short term number memory game. */
+/* Short term number memorization game. */
 int main()
 {
     /* Rules. */

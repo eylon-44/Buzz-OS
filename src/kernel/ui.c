@@ -335,7 +335,6 @@ void ui_cursor_set(tab_t* tab, size_t offset)
     else {
         tab->out_offset = offset;
     }
-    
 }
 
 // Set the cursor of the given tab

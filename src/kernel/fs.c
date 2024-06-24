@@ -7,6 +7,7 @@
 #include <kernel/memory/heap.h>
 #include <kernel/panic.h>
 #include <kernel/process/pm.h>
+#include <kernel/process/elf.h>
 #include <libc/stddef.h>
 #include <libc/stdint.h>
 #include <libc/list.h>
@@ -745,13 +746,36 @@ int fs_ftruncate(int fd, size_t length)
     named by [path] or referenced by [fd].
         Inormation is stored in the stat struct buffer [buf].
     On success, zero is returned, on failure, -1 is returned. */
-static int fs_istat(int inode_indx, struct stat* buf)
+static int fs_istat(int inode_indx, struct stat* buff)
 {
     inode_t inode = inode_read(inode_indx);
 
-    buf->size = inode.count;
-    buf->type    = inode.type == FS_NT_FILE ? DT_REG : DT_DIR;
-    buf->indx    = inode_indx;
+    buff->size = inode.count;
+    buff->type = inode.type == FS_NT_FILE ? DT_REG : DT_DIR;
+    buff->indx = inode_indx;
+    buff->exe  = 0;
+
+    // If inode is a regualr file, check if it is executable
+    if (buff->type == DT_REG) {
+        vaddr_t scratch;
+        elfheader_t* elfhdr;
+
+        // Read the first block of the file, where the ELF header should be located
+        scratch = vmm_attach_page(fs_phys_scratch);
+        block_read((void*) scratch, inode.direct[0]);
+
+        // Check ELF validity
+        elfhdr = (elfheader_t*) scratch;
+        if (elfhdr->identify.magic == ELF_MAGIC     // ELF magic
+            || elfhdr->identify.bitness == 1         // 32 bit executable
+            || elfhdr->identify.abi == 0             // System-V
+            || elfhdr->machine == 3)                 // x86
+        {
+            buff->exe = 1;
+        }
+        
+        vmm_detach_page(scratch);
+    }
 
     return 0;
 }
@@ -787,6 +811,18 @@ int fs_fstat(int fd, struct stat* buf)
     the beginning of the file, on failure, -1 is returned. */
 int fs_lseek(int fd, int offset, int whence)
 {
+    /* Handle standard streams */
+    switch (fd)
+    {
+    case 0:     // STDIN
+        return -1;
+    case 1:     // STDOUT
+        ui_cursor_set(pm_get_active()->tab, offset);
+        return offset;
+    case 2:     // STDERR
+        return -1;
+    }
+
     // Get file descriptor and check if it is valid
     fd_t* fd_p = fd_seek(fd);
     if (fd_p == NULL) {
