@@ -217,7 +217,7 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     if (key == KEY_RETURN) {
         if (tabs.active->flags & TABF_TAKING_INPUT) {
             // Resume process execution and insert \n into the buffer
-            sched_set_status(tabs.active->parent, PSTATUS_READY);
+            sched_set_status(tabs.active->active, PSTATUS_READY);
             stdin_buff[tabs.active->in_offset] = '\n';
             tabs.active->in_offset++;
         }
@@ -257,6 +257,7 @@ size_t ui_stdin_read(const char* buff, size_t count)
         
         // Block this context; control will return once stdin flushes
         sched_set_status(pm_get_active(), PSTATUS_BLOCKED);
+        tab->active = pm_get_active();
         syscall(SYS_sched_yield);   // see you later!
     }
     

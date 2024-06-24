@@ -9,6 +9,6 @@ extern char wd;
 // Print the currently working directory
 int cmd_builtin_pwd(UNUSED int argc, UNUSED char* argv[])
 {
-    printf("Working directory: %s\n", &wd);
+    printf(" - Working directory: %s\n", &wd);
     return 0;
 }

@@ -4,5 +4,5 @@
 */
 void __libc_fini()
 {
-    // [TODO]
+    /* Termination code. */
 }

@@ -21,6 +21,8 @@
 #include <libc/unistd.h>
 #include <libc/sys/syscall.h>
 #include <libc/proc.h>
+#include <libc/sys/stat.h>
+#include <libc/dirent.h>
 
 /* Generate a unique process ID.
     The function simply assumes that we will never create more than 4 billion (2^32) processes.
@@ -59,6 +61,16 @@ process_t* pm_load(process_t* parent, const char* path, UNUSED char* const argv[
     fd = fs_open(path, O_RDONLY);
     if (fd < 0) {
         return NULL;
+    }
+
+    // Abort if [path] is not a regular file
+    {
+        struct stat statbuff;
+        fs_fstat(fd, &statbuff);
+
+        if (statbuff.type != DT_REG) {
+            return NULL;
+        }
     }
 
     // Read the ELF header and check its validity

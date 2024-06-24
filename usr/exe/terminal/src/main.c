@@ -38,7 +38,9 @@ int main()
         if (strchr(argv[0], '/') != NULL) {
             char path[PATH_MAX];
             if (realpath(argv[0], path) != NULL) {
-                execve(path, argv);
+                if (execve(path, argv) == -1) {
+                    printf(" - Could not execute \"%s\".\n", argv[0]);
+                }
                 goto loop_end;
             }
         }
@@ -61,7 +63,7 @@ int main()
 
         
         // Command not found
-        printf("Command \"%s\" not found.\n", argv[0]);
+        printf(" - Command \"%s\" not found.\n", argv[0]);
 
         loop_end:
             free_input(argv);

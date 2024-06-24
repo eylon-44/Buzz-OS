@@ -29,7 +29,7 @@ int get_input(char* argv[ARGC_MAX])
         bufflen = strlen(buff);                             // get the length of the read input
 
         input = (char*) realloc(input, inputlen + bufflen); // allocate memory for the new input in the input buffer
-        strcpy(input + inputlen - 1, buff);                   // add the new input into the input buffer; strcpy puts a null terminator at the end
+        strcpy(input + inputlen - 1, buff);                 // add the new input into the input buffer; strcpy puts a null terminator at the end
         inputlen += bufflen;                                // increase the input buffer's size with the new input size
     }
     while (input[inputlen-2] != '\n');
