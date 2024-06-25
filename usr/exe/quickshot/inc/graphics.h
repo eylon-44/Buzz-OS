@@ -3,18 +3,25 @@
 #if !defined(__GRAPHICS_H)
 #define __GRAPHICS_H
 
-const char* shot_str = "\
-                ,\n\
-             \\  :  /\n\
-          `. __/ \\__ .'\n\
-          _ _\\     /_ _\n\
-             /_   _\\\n\
-           .'  \\ /  `.\n\
-             /  :  \\\n\
-                '\n";
+const char* shot_str = "\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v(\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v_\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v,\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v)\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v/=>\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\\  :  /\v\v\v\v\v\v\v\v\v\v\v\v\v(  +____________________/\\/\\___ / /|\n\
+\v\v\v\v\v\v\v\v\v\v`. __/ \\__ .'\v\v\v\v\v\v\v\v\v\v.''._____________'._____      / /|/\\\n\
+\v\v\v\v\v\v\v\v\v\v_ _\\     /_ _\v\v\v\v\v\v\v\v\v: () :              :\\ ----\\|    \\ )\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v/_   _\\\v\v\v\v\v\v\v\v\v\v\v\v\v'..'______________.'0|----|      \\\n\
+\v\v\v\v\v\v\v\v\v\v\v.'  \\ /  `.\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v0_0/____/        \\\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v/  :  \\\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v|----    /----\\\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v'\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v|| -\\\\ --|      \\\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v||   || ||\\      \\\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\\\\____// '|      \\\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v.'/       |\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v.:/        |\n\
+\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v\v:/_________|\n";
+
 
 const char* enemies_str[] = {
-"            _---_\n\
+"\n\n            _---_\n\
            ###  '\\\n\
            ##    )\n\
             -----_________===='\n\
@@ -28,18 +35,18 @@ const char* enemies_str[] = {
      ______/  /        | |__\n\
     \\ _______/          |___)\n",
 
-"                                           \"\"\"\"\"\"\"\n\
-                                           |\"\"\"\"\"\"\n\
-                             _________     O   C\"\"\n\
-                            //-------\\   /_     \\\n\
-    L______________||O-----------------\\   |____/_\\ /\n\
-    -----------------||||| =========== /\\ ____\\    v|\\\n\
-                      OOOO-L______________          /\n\
-                        --____||||___\\<\n\
-                              ||||    (|-- |\n\
-                              ----\n",
+"\n\n\n\n                                         \"\"\"\"\"\"\"\n\
+                                         |\"\"\"\"\"\"\n\
+                           _________     O   C\"\"\n\
+                          //-------\\   /_     \\\n\
+  L______________||O-----------------\\   |____/_\\ /\n\
+  -----------------||||| =========== /\\ ____\\    v|\\\n\
+                    OOOO-L______________          /\n\
+                      --____||||___\\<\n\
+                            ||||    (|-- |\n\
+                            ----\n",
 
-"          ----.\n\
+"\n          ----.\n\
          \"   _}\n\
          \"@   >\n\
          |\\   7\n\
@@ -49,7 +56,7 @@ const char* enemies_str[] = {
      |  |       /         \"\n\
      |  /      |",
 
-"             ,-.\n\
+"\n\n             ,-.\n\
      \"===o\\_(-_-)\n\
           '--.   \\\n\
               )___\\\n\

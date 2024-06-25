@@ -155,6 +155,18 @@ static void clear_screen(tab_t* tab)
         vmm_detach_page((vaddr_t) tab_buff);
     }
 }
+// Invisible character only moves the cursor
+static void no_print(tab_t* tab)
+{
+    if (tab == tabs.active) {
+        ui_cursor_set(tab, handle_screen_scrolling(ui_cursor_get(tab)+1, 0));
+    }
+    else {
+        tab_buff_t* tab_buff = (tab_buff_t*) vmm_attach_page((paddr_t) tab->buff);
+        tab->out_offset = handle_buffer_scrolling((char*) tab_buff->out, ui_cursor_get(tab)+1, 0);
+        vmm_detach_page((vaddr_t) tab_buff);
+    }
+}
 // Handle escape sequence characters. If [c] is not an escape sequence, return false, else true.
 static bool handle_escape_sequences(tab_t* tab, char c)
 {
@@ -165,6 +177,9 @@ static bool handle_escape_sequences(tab_t* tab, char c)
         return true;
     case '\f':  // Clear the screen
         clear_screen(tab);
+        return true;
+    case '\v':  // Invisible character only moves the cursor
+        no_print(tab);
         return true;
     default:
         return false;
@@ -237,6 +252,12 @@ void ui_key_event_handler(char key, uint8_t modifiers)
     // Print the key
     ui_cursor_set(tabs.active, handle_screen_scrolling(ui_cursor_get(tabs.active), 1));
     vga_put_char(key, UI_ATR_DEFAULT);
+}
+
+// Clear the stdin buffer
+void ui_stdin_flush(tab_t* tab)
+{
+    tab->in_offset = 0;
 }
 
 /* Read [count] bytes from the stdin buffer to [buff].

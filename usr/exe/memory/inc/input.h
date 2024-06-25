@@ -4,6 +4,6 @@
 #define __INPUT_H
 
 char* get_input();
-void clear_input_buffer();
+void block_enter();
 
 #endif

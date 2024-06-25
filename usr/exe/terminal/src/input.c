@@ -20,6 +20,9 @@ int get_input(char* argv[ARGC_MAX])
     char* input = NULL;
     size_t inputlen = 1;
     
+    // Clear the input buffer
+    stdin_flush();
+
     // Read user input and add it to the input buffer until encountering a '\n' character
     do
     {

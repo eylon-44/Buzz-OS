@@ -34,7 +34,7 @@ int main()
     printf("  * Your goal is to recall and enter the numbers displayed in order\n");
     printf("  * The game continues until a wrong or \"exit\" input is received\n");
     printf(" - To start, press Enter.\n");
-    clear_input_buffer();   // block until Enter
+    block_enter();   // block until Enter
     printf("\f");           // clear the screen
 
     // Initiate random
@@ -88,7 +88,7 @@ int main()
         free(game.numbers);
 
         printf("Press Enter to continue.");
-        clear_input_buffer();   // block until Enter
+        block_enter();          // block until Enter
         printf("\f");           // clear the screen
     }
 }

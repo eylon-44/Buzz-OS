@@ -13,9 +13,9 @@
 #include <stdbool.h>
 
 #define SHOTS_PER_ROUND     10
-#define REACT_TIME_MIN      20      // minimum react time in miliseconds
+#define REACT_TIME_MIN      100      // minimum react time in miliseconds
 #define WAIT_TIME_MIN       200     // minimum wait time in miliseconds
-#define WAIT_TIME_MAX       8000    // maximum wait time in miliseconds
+#define WAIT_TIME_MAX       6000    // maximum wait time in miliseconds
 #define SHOT_DISPLAY_TIME   150     // time in miliseconds the shot is displayed on the screen
 
 // Game structure
@@ -29,19 +29,31 @@ struct
     .best_time=UINT_MAX, .best_avrg_time=UINT_MAX, .running=true
 };
 
+// Check if user inputed "exit", and if so quit
+static void is_input_exit(char* str) {
+    if (strcmp(str, "exit") == 0) {
+        printf("\f");
+        exit(0);
+    }
+}
+
 /* Fast reflex game. */
 int main()
 {
+    char* input;
+
     /* Rules. */
     printf("\f");           // clear the screen
     printf(" *** Welcome to Quickshot ***\n");
     printf(" - How to play:\n");
     printf("  * In each round, %d enemies will appear one after another at random times\n", SHOTS_PER_ROUND);
     printf("  * Your job is to shoot them as fast as you can by pressing Enter\n");
-    printf("  * The game continues until \"exit\" is inputed at the end of the round\n");
+    printf("  * The game continues until \"exit\" is inputed\n");
     printf(" - To start, press Enter.\n");
-    clear_input_buffer();   // block until Enter
+    input = get_input();    // block until Enter
+    is_input_exit(input);
     printf("\f");           // clear the screen
+
 
     // Initiate random
     srand(militime());
@@ -61,7 +73,7 @@ int main()
             size_t wait_t, enemy_t;
 
             // Calculate a random time to sleep between WAIT_TIME_MIN and WAIT_TIME_MAX miliseconds and sleep it
-            wait_t = rand() % (WAIT_TIME_MAX-WAIT_TIME_MIN) + WAIT_TIME_MIN;
+            wait_t = (rand() % (WAIT_TIME_MAX - WAIT_TIME_MIN + 1)) + WAIT_TIME_MIN;
             milisleep(wait_t);
 
             // Print a random enemy, record the time, and wait for the user to hit Enter
@@ -71,9 +83,11 @@ int main()
             // Block and wait for user reaction, then calculate reaction time
             do
             {
-                clear_input_buffer();
+                input = get_input();
                 game.react_time[i] = militime() - enemy_t;
             } while(game.react_time[i] < REACT_TIME_MIN);
+            
+            is_input_exit(input);
 
             // Update stats
             avrg_t += game.react_time[i];
@@ -112,11 +126,8 @@ int main()
 
         printf("Press Enter to continue.\n");
         input = get_input();    // block
+        is_input_exit(input);
         printf("\f");           // clear the screen
-        // If user asked to exit
-        if (strcmp(input, "exit") == 0) {
-            exit(0);
-        }
         free(input);
     }
 }

@@ -30,6 +30,7 @@
 #define SYS_rename      0x26
 #define SYS_ps          0xe5
 #define SYS_pr          0xaf
+#define SYS_stdin_flush 0xb9
 
 #define SYS_int 92      // syscall interrupt number (0x5C)
 

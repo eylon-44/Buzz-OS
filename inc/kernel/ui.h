@@ -70,6 +70,7 @@ void ui_tab_open();
 void ui_tab_close();
 void ui_tab_close_tab(tab_t* tab);
 void ui_tab_switch(char index);
+void ui_stdin_flush(tab_t* tab);
 void init_ui();
 
 #endif

@@ -14,6 +14,9 @@ char* get_input()
     char* input = NULL;
     size_t inputlen = 1;
     
+    // Clear the input buffer
+    stdin_flush();
+
     // Read user input and add it to the input buffer until encountering a '\n' character
     do
     {
@@ -33,8 +36,9 @@ char* get_input()
     return input;
 }
 
-// Clear the input buffer
-void clear_input_buffer()
+// Block until enter is pressed
+void block_enter()
 {
+    stdin_flush();
     while ((char) fgetc(stdin) != '\n');
 }

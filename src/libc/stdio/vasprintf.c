@@ -14,7 +14,7 @@ static void write_to_buff(char** buff, size_t* buff_size, size_t* buff_len, char
 {
     // Allocate more memory for the buffer if needed
     if (len + *buff_len > *buff_size) {
-        *buff_size = ALIGN_UP(len+*buff_len-*buff_size, BUFF_JUMP);
+        *buff_size = ALIGN_UP(len+*buff_len, BUFF_JUMP);
         *buff = realloc(*buff, *buff_size);
     }
 
