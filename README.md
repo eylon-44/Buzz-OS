@@ -3,7 +3,7 @@
 <img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/22e46b24-26ef-4a0d-930f-22e857af5d55" align="right" width="225" alt="Buzz Logo" title="Buzz Logo">
 Buzz is a hobby operating system built for learning purposes. Buzz is probably the best operating system in the world (as of 1918 A.D.).
 
-<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/35668b79-6264-464a-aae3-08ab0520699b" height="250" alt="Buzz Demo" title="Buzz Demo">
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/92ede007-b87f-4993-b111-982da3ac916e" height="250" alt="Buzz Demo" title="Buzz Demo">
 
 ### Table of Contents 🤸
 
@@ -106,6 +106,7 @@ Buzz allows you to configure the file system already at compile time.
 The `usr/file` directory within the project acts as the file system's root directory. Any file placed in this directory will later appear in the operating system's file system at the same relative location.
 
 <img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/1d4ad551-a39c-43ba-80cc-d84c9df35711" height="250" alt="Creating Files" title="Creating Files">
+
 
 You can also add your own terminal commands.
 

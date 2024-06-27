@@ -13,16 +13,16 @@ typedef struct
 } cmd_metedata_t;
 
 static const cmd_metedata_t cmds[] = {
-    {.ref="cd", .dec="cd [dirname]", .desc="Change working directory."},
-    {.ref="ls", .dec="ls [<no-arg>/pathname]", .desc="List a directory or show file information."},
+    {.ref="cd", .dec="cd [dirname]", .desc="Change the working directory."},
+    {.ref="ls", .dec="ls [<no-arg>/pathname]", .desc="List the names and attributes of files and directories."},
     {.ref="dir", .dec="dir [dirname]", .desc="Create a new directory."},
     {.ref="file", .dec="file [filename]", .desc="Create a new file."},
     {.ref="rm", .dec="rm [pathname]", .desc="Remove a file or directory."},
     {.ref="mv", .dec="mv [oldpath] [newpath]", .desc="Move or rename a file or directory."},
     {.ref="read", .dec="read [filename]", .desc="Read a file."},
     {.ref="write", .dec="write [filename] [-w/-a](write/append) [data...", .desc="Write or append data to a file."},
-    {.ref="ps", .dec="ps", .desc="Display running processes information."},
-    {.ref="kill", .dec="kill [pid]", .desc="Stop the execution of a running process."},
+    {.ref="ps", .dec="ps", .desc="Show running processes."},
+    {.ref="kill", .dec="kill [pid]", .desc="Terminate a process."},
     {.ref="pr", .dec="pr [pid] [priority]", .desc="Change the priority of a process."},
     {.ref="pwd", .dec="pwd", .desc="Print working directory."},
     {.ref="help", .dec="help [<no-arg>/command]", .desc="Get information about commands."},

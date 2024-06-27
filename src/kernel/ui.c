@@ -65,6 +65,20 @@ static tab_t* get_tab_by_index(char index)
     return tab;
 }
 
+// Get a tab index in the list by a pointer to it
+static int get_index_by_tab(tab_t* tab)
+{
+    int index = 0;
+    tab_t* tab_node = tabs.tab_list;
+
+    while (tab_node != NULL && tab_node != tab) {
+        index++;
+        tab_node = tab_node->next;
+    }
+
+    return index;
+}
+
 // Print the screen header
 static void update_header()
 {
@@ -410,6 +424,8 @@ void ui_tab_open()
 // Close a given tab without killing the parent
 void ui_tab_close_tab(tab_t* tab)
 {
+    int index = get_index_by_tab(tab);
+
     // Free tab resources and remove it from the list
     pmm_free_page((paddr_t) tab->buff);
     tab->parent->tab = NULL;
@@ -421,15 +437,27 @@ void ui_tab_close_tab(tab_t* tab)
     tabs.count--;
     if (tab == tabs.active) tabs.active = NULL;
 
-    // If there are open tabs, switch to the tab that is on the left, or to the tab that is on the right if this is the last tab
+    // If there are open tabs, switch to the tab that is on the right, or to the tab that is on the left if this is the last tab
     if (tabs.count > 0) {
-        // If there is a tab to the left of the one we closed, switch to it
-        if (get_index_by_char(tabs.active_index) < tabs.count) {
-            ui_tab_switch(tabs.active_index);
+        if (tab == tabs.active)
+        {
+            // If there is a tab to the right of the one we closed, switch to it
+            if (get_index_by_char(tabs.active_index) < tabs.count) {
+                ui_tab_switch(tabs.active_index);
+            }
+            // If not, switch to the tab on the left.
+            else {
+                ui_tab_switch(tab_indexes[get_index_by_char(tabs.active_index)-1]);
+            }
         }
-        // If not, switch to the tab on the left.
-        else {
-            ui_tab_switch(tab_indexes[get_index_by_char(tabs.active_index)-1]);
+        else
+        {
+            if (get_index_by_char(tabs.active_index) < index) {
+                ui_tab_switch(tabs.active_index);
+            }
+            else {
+                ui_tab_switch(tab_indexes[get_index_by_char(tabs.active_index)-1]);
+            }
         }
     }
     // Else, open a new tab
@@ -455,6 +483,7 @@ void ui_tab_switch(char index)
 
     // If there is no tab at the given index, or switching to the active tab, return
     if (tab == NULL || tab == tabs.active) {
+        tabs.active_index = index;
         update_header();
         return;
     }

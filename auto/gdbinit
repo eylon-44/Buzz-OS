@@ -5,13 +5,8 @@ add-symbol-file bin/symbols/BM.elf 0x1000
 #add-symbol-file bin/kernel/kernel.elf 0x100000
 add-symbol-file bin/kernel/kernel.elf
 # add-symbol-file usr/fs_layout/sys/terminal.elf
-# add-symbol-file usr/fs_layout/home/games/quickshot.elf
-add-symbol-file usr/fs_layout/sys/terminal.elf
 
-#layout prev
 layout src
-# layout asm
-# layout reg
 
 target remote localhost:1234
 
@@ -26,18 +21,6 @@ target remote localhost:1234
 
 # Kernel main start
 # break kernel_main
-# break _entry
-
-# User program start
-# break main
-break pm_kill
-# break itruncate
-# break fs.c:501
-#break freestanding_execute
-# break cmd_builtin_cd
-# break ui.c:276
-# break fs_build_path
-
 
 define plist
   set $node = $arg0
