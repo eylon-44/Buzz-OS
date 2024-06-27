@@ -13,10 +13,10 @@
 #include <stdbool.h>
 
 #define SHOTS_PER_ROUND     10
-#define REACT_TIME_MIN      100      // minimum react time in miliseconds
-#define WAIT_TIME_MIN       200     // minimum wait time in miliseconds
+#define REACT_TIME_MIN      100     // minimum react time in miliseconds
+#define WAIT_TIME_MIN       50      // minimum wait time in miliseconds
 #define WAIT_TIME_MAX       6000    // maximum wait time in miliseconds
-#define SHOT_DISPLAY_TIME   150     // time in miliseconds the shot is displayed on the screen
+#define SHOT_DISPLAY_TIME   200     // time in miliseconds the shot is displayed on the screen
 
 // Game structure
 struct
@@ -30,7 +30,7 @@ struct
 };
 
 // Check if user inputed "exit", and if so quit
-static void is_input_exit(char* str) {
+static void handle_input_exit(char* str) {
     if (strcmp(str, "exit") == 0) {
         printf("\f");
         exit(0);
@@ -40,25 +40,10 @@ static void is_input_exit(char* str) {
 /* Fast reflex game. */
 int main()
 {
-    char* input;
-
-    /* Rules. */
-    printf("\f");           // clear the screen
-    printf(" *** Welcome to Quickshot ***\n");
-    printf(" - How to play:\n");
-    printf("  * In each round, %d enemies will appear one after another at random times\n", SHOTS_PER_ROUND);
-    printf("  * Your job is to shoot them as fast as you can by pressing Enter\n");
-    printf("  * The game continues until \"exit\" is inputed\n");
-    printf(" - To start, press Enter.\n");
-    input = get_input();    // block until Enter
-    is_input_exit(input);
-    printf("\f");           // clear the screen
-
-
     // Initiate random
     srand(militime());
 
-    // Game loop
+    // Main game loop
     while(game.running)
     {
         char* input;                    // user input
@@ -67,6 +52,18 @@ int main()
         // Buffers to hold number strings
         char num1_str[16];
         char num2_str[16];
+        
+        /* Rules. */
+        printf("\f");           // clear the screen
+        printf(" *** Welcome to Quickshot ***\n");
+        printf(" - How to play:\n");
+        printf("  * In each round, %d enemies will appear one after another at random times\n", SHOTS_PER_ROUND);
+        printf("  * Your job is to shoot them as fast as you can by pressing Enter\n");
+        printf("  * The game continues until \"exit\" is inputed\n");
+        printf(" - To start, press Enter.\n");
+        input = get_input();    // block until Enter
+        handle_input_exit(input);
+        printf("\f");           // clear the screen
 
         // Take reaction time of [SHOTS_PER_ROUND] shots 
         for (int i = 0; i < SHOTS_PER_ROUND; i++) {
@@ -87,7 +84,7 @@ int main()
                 game.react_time[i] = militime() - enemy_t;
             } while(game.react_time[i] < REACT_TIME_MIN);
             
-            is_input_exit(input);
+            handle_input_exit(input);
 
             // Update stats
             avrg_t += game.react_time[i];
@@ -126,7 +123,7 @@ int main()
 
         printf("Press Enter to continue.\n");
         input = get_input();    // block
-        is_input_exit(input);
+        handle_input_exit(input);
         printf("\f");           // clear the screen
         free(input);
     }

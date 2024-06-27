@@ -2,10 +2,54 @@
 
 #include <stdio.h>
 #include <stddef.h>
+#include <string.h>
 
-// Supply information about the system
-int cmd_builtin_help(UNUSED int argc, UNUSED char* argv[])
+// Command metadata structure
+typedef struct
 {
-    printf("Help is on the way!\n");
+    char* ref;      // command name
+    char* dec;      // declaration; usage
+    char* desc;     // short description
+} cmd_metedata_t;
+
+static const cmd_metedata_t cmds[] = {
+    {.ref="dir", .dec="dir [dirname]", .desc="Create a new directory."},
+    {.ref="read", .dec="read [filename]", .desc="Read a file."},
+    {.ref="rm", .dec="rm [pathname]", .desc="Remove a file or directory."},
+    {.ref="ps", .dec="ps", .desc="Display running processes information."},
+    {.ref="file", .dec="file [filename]", .desc="Create a new file."},
+    {.ref="write", .dec="write [filename] [-w/-a](write/append) [data...", .desc="Write or append data to a file."},
+    {.ref="pr", .dec="pr [pid] [priority]", .desc="Change the priority of a process."},
+    {.ref="echo", .dec="echo [text...", .desc="Print to the screen."},
+    {.ref="ls", .dec="ls [<no-arg>/pathname]", .desc="List a directory or show file information."},
+    {.ref="mv", .dec="mv [oldpath] [newpath]", .desc="Move or rename a file or directory."},
+    {.ref="pwd", .dec="pwd", .desc="Print working directory."},
+    {.ref="help", .dec="help [<no-arg>/command]", .desc="Get information about commands."},
+    {.ref="cd", .dec="cd [dirname]", .desc="Change working directory."},
+};
+
+// Supply information about terminal commands
+int cmd_builtin_help(int argc, char* argv[])
+{
+    // If no arguments were given
+    if (argc < 2) {
+        printf(" - Usage: help [<no-arg>/command]\n");
+        printf(" Avialable commands:\n");
+        for (size_t i = 0; i < sizeof(cmds)/sizeof(cmds[0]); i++)
+        {
+            printf("  * %s\n", cmds[i].dec);
+        }
+        return 0;
+    }
+    // If an argument was given
+    for (size_t i = 0; i < sizeof(cmds)/sizeof(cmds[0]); i++)
+    {
+        if (strcmp(argv[1], cmds[i].ref) == 0) {
+            printf(" - Usage: %s\n %s\n", cmds[i].dec, cmds[i].desc);
+            return 0;
+        }
+    }
+    printf(" - No such command \"%s\".\n - For a list of avialable commands, use the \"help\" command.\n", argv[1]);
+
     return 0;
 }

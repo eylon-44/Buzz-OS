@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     struct stat statbuff;
 
     if (argc < 2) {
-        printf(" - Usage: %s [filename]\n", argv[0]);
+        printf(" - Usage: %s [pathname]\n", argv[0]);
         return -1;
     }
 
@@ -22,7 +22,7 @@ int main(int argc, char* argv[])
         realpath(argv[i], path);
         
         if (stat(path, &statbuff) != 0) {
-            printf(" - Could not delete file at \"%s\". Aborting.\n", path);
+            printf(" - Could not remove file at \"%s\". Aborting.\n", path);
             return -1;
         }
 

@@ -10,6 +10,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#define INIT_PWD "/home"
+
 // Working directory string
 char wd[PATH_MAX];
 // Argument array to be passed to the handling command
@@ -19,7 +21,9 @@ char* argv[ARGC_MAX];
 int main()
 {
     init_freestanding();
+    chdir(INIT_PWD);
     getcwd(wd, PATH_MAX);
+    printf("\f");
 
     for (;;)
     {

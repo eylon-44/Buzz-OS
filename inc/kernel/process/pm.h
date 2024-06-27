@@ -11,7 +11,7 @@
 #include <libc/limits.h>
 
 #define PM_DEFAULT_PRIORITY 20
-#define PM_DEFUALT_CWD      "/home"
+#define PM_DEFUALT_CWD      "/"
 
 // Process status enum
 typedef enum

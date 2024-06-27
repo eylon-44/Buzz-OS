@@ -35,10 +35,3 @@ char* get_input()
     input[inputlen-2] = '\0';
     return input;
 }
-
-// Block until enter is pressed
-void block_enter()
-{
-    stdin_flush();
-    while ((char) fgetc(stdin) != '\n');
-}

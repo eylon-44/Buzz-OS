@@ -7,7 +7,7 @@
 /* Count seconds up to the given argument. */
 int main(int argc, char* argv[])
 {
-    size_t sec;
+    int sec;
 
     // If there are not enough arguments
     if (argc < 2) {
@@ -15,17 +15,17 @@ int main(int argc, char* argv[])
         return -1;
     }
     // If argument is not a number
-    if ((sec = atoi(argv[1])) == 0) {
-        printf(" - Argument \"%s\" is not a number! Aborting.\n", argv[1]);
+    if ((sec = atoi(argv[1])) <= 0) {
+        printf(" - Argument \"%s\" is invalid. Aborting.\n", argv[1]);
         return -1;
     }
 
     // Count
-    printf("0\n");
     for (size_t i = 0; i < sec; i++) {
+        printf("%d\n", sec-i);
         milisleep(1000);
-        printf("%d\n", i+1);
     }
+    printf("TIME'S UP!\n");
 
     return 0;
 }

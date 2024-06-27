@@ -4,6 +4,5 @@
 #define __INPUT_H
 
 char* get_input();
-void block_enter();
 
 #endif
