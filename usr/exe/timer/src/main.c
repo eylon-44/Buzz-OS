@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
     }
 
     // Count
-    for (size_t i = 0; i < sec; i++) {
+    for (int i = 0; i < sec; i++) {
         printf("%d\n", sec-i);
         milisleep(1000);
     }

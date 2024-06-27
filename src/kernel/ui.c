@@ -455,6 +455,7 @@ void ui_tab_switch(char index)
 
     // If there is no tab at the given index, or switching to the active tab, return
     if (tab == NULL || tab == tabs.active) {
+        update_header();
         return;
     }
 

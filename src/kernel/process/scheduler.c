@@ -45,23 +45,6 @@ static void set_active_time_slice()
     sched_get_active()->ticks = ticks;
 }
 
-// Get a process by its ID
-process_t* get_process_by_id(int pid)
-{
-    process_t* p = queue.proc_list;
-    
-    // Iterate over the list
-    while (p != NULL)
-    {
-        if (p->pid == pid) {
-            return p;
-        }
-        p = p->next;
-    }
-
-    return NULL;
-}
-
 // Get the scheduler's queue
 inline const sched_queue_t* sched_get_queue()
 {
@@ -96,7 +79,7 @@ void sched_sleep(int pid, size_t ticks)
     sleep_node_t* new_node = (sleep_node_t*) kmalloc(sizeof(sleep_node_t)); // allocate a new sleep node
     sleep_node_t* node     = sleep_lst;   // keep a duplicate of the original list so we can iterate over it
 
-    new_node->proc   = get_process_by_id(pid);
+    new_node->proc   = pm_get_process_by_id(pid);
     new_node->dticks = ticks;
 
     // Iterate over the list and insert the new sleep node into it while decrementing its ticks

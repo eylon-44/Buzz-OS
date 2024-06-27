@@ -58,6 +58,7 @@ process_t* pm_load(process_t* parent, const char* path,  char* const argv[], int
 void pm_kill(process_t* proc);
 int pm_get_pid();
 int pm_ps(struct ps* psbuff, int count);
+process_t* pm_get_process_by_id(int pid);
 void init_pm();
 
 #endif

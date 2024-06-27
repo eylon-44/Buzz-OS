@@ -65,4 +65,5 @@ void init_syscall()
     SYSCALL_HANDLER(ps);
     SYSCALL_HANDLER(pr);
     SYSCALL_HANDLER(stdin_flush);
+    SYSCALL_HANDLER(kill);
 }

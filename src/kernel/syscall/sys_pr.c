@@ -17,7 +17,7 @@
 */
 void sys_pr(int_frame_t* param)
 {
-    process_t* proc = get_process_by_id(param->ebx);
+    process_t* proc = pm_get_process_by_id(param->ebx);
     if (proc == NULL) {
         param->eax = -1;
         return;

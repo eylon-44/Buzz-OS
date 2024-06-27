@@ -43,6 +43,22 @@ inline int pm_get_pid() {
 inline process_t* pm_get_active() {
     return sched_get_active();
 }
+// Get a process by its ID
+process_t* pm_get_process_by_id(int pid)
+{
+    process_t* p = sched_get_queue()->proc_list;
+    
+    // Iterate over the list
+    while (p != NULL)
+    {
+        if (p->pid == pid) {
+            return p;
+        }
+        p = p->next;
+    }
+
+    return NULL;
+}
 
 /* Create a new process.
     [path] must be a file path for an ELF file.

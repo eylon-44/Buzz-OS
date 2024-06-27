@@ -42,7 +42,6 @@ void sched_switch(process_t* t);
 void sched_switch_next();
 process_t* sched_get_active();
 const sched_queue_t* sched_get_queue();
-process_t* get_process_by_id(int pid);
 void init_scheduler();
 
 #endif

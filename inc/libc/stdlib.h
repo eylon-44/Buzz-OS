@@ -15,6 +15,7 @@ void free(void* ptr);
 void* calloc(size_t nmemb, size_t size);
 void* realloc(void* ptr, size_t size);
 void exit(int status);
+int kill(int pid);
 int atoi(const char *nptr);
 void itoa(int n, char s[16]);
 void itoapad(int n, char s[16], int pad);

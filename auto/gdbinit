@@ -29,7 +29,8 @@ target remote localhost:1234
 # break _entry
 
 # User program start
-break main
+# break main
+break pm_kill
 # break itruncate
 # break fs.c:501
 #break freestanding_execute

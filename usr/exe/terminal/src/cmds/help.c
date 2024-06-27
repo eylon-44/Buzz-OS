@@ -13,19 +13,20 @@ typedef struct
 } cmd_metedata_t;
 
 static const cmd_metedata_t cmds[] = {
-    {.ref="dir", .dec="dir [dirname]", .desc="Create a new directory."},
-    {.ref="read", .dec="read [filename]", .desc="Read a file."},
-    {.ref="rm", .dec="rm [pathname]", .desc="Remove a file or directory."},
-    {.ref="ps", .dec="ps", .desc="Display running processes information."},
-    {.ref="file", .dec="file [filename]", .desc="Create a new file."},
-    {.ref="write", .dec="write [filename] [-w/-a](write/append) [data...", .desc="Write or append data to a file."},
-    {.ref="pr", .dec="pr [pid] [priority]", .desc="Change the priority of a process."},
-    {.ref="echo", .dec="echo [text...", .desc="Print to the screen."},
+    {.ref="cd", .dec="cd [dirname]", .desc="Change working directory."},
     {.ref="ls", .dec="ls [<no-arg>/pathname]", .desc="List a directory or show file information."},
+    {.ref="dir", .dec="dir [dirname]", .desc="Create a new directory."},
+    {.ref="file", .dec="file [filename]", .desc="Create a new file."},
+    {.ref="rm", .dec="rm [pathname]", .desc="Remove a file or directory."},
     {.ref="mv", .dec="mv [oldpath] [newpath]", .desc="Move or rename a file or directory."},
+    {.ref="read", .dec="read [filename]", .desc="Read a file."},
+    {.ref="write", .dec="write [filename] [-w/-a](write/append) [data...", .desc="Write or append data to a file."},
+    {.ref="ps", .dec="ps", .desc="Display running processes information."},
+    {.ref="kill", .dec="kill [pid]", .desc="Stop the execution of a running process."},
+    {.ref="pr", .dec="pr [pid] [priority]", .desc="Change the priority of a process."},
     {.ref="pwd", .dec="pwd", .desc="Print working directory."},
     {.ref="help", .dec="help [<no-arg>/command]", .desc="Get information about commands."},
-    {.ref="cd", .dec="cd [dirname]", .desc="Change working directory."},
+    {.ref="echo", .dec="echo [text...", .desc="Print to the screen."}
 };
 
 // Supply information about terminal commands
