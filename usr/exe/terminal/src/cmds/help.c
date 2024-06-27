@@ -26,7 +26,8 @@ static const cmd_metedata_t cmds[] = {
     {.ref="pr", .dec="pr [pid] [priority]", .desc="Change the priority of a process."},
     {.ref="pwd", .dec="pwd", .desc="Print working directory."},
     {.ref="help", .dec="help [<no-arg>/command]", .desc="Get information about commands."},
-    {.ref="echo", .dec="echo [text...", .desc="Print to the screen."}
+    {.ref="echo", .dec="echo [text...", .desc="Print to the screen."},
+    {.ref="clear", .dec="clear", .desc="Clear the screen."}
 };
 
 // Supply information about terminal commands

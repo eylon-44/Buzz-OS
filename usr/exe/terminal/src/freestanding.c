@@ -29,7 +29,7 @@ int freestanding_execute(char* argv[])
     pid = execve(path, argv);
 
     if (pid < 0) {
-        printf("Failed to execute %s. Aborting.\n", path);
+        printf(" - Could not execute \"%s\". Aborting.\n", path);
         return -1;
     }
     
@@ -45,7 +45,7 @@ void init_freestanding()
     // Open for reading and get the stat of the bin directory
     int fd = open(BIN_PATH, O_RDONLY | O_DIRECTORY);
     if (fd < 0 || stat(BIN_PATH, &statbuf) != 0) {
-        printf("Failed to find %s. Aborting.\n", BIN_PATH);
+        printf(" - No directory found at \"%s\". Aborting.\n", BIN_PATH);
         return;
     }
 

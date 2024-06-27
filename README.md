@@ -59,6 +59,7 @@ Inside the project's root directory, enter `make run`. The system will boot up a
 
 ### <a name="use">Use 🦧</a>
 
+
 describe a few instruction/command then put a giff of them
 
 <img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/43fd70ab-b8ed-4c92-ab18-1564da29adad" height="250" alt="Buzz Logo" title="Buzz Logo">
@@ -104,12 +105,13 @@ Buzz allows you to configure the file system already at compile time.
 
 The `usr/file` directory within the project acts as the file system's root directory. Any file placed in this directory will later appear in the operating system's file system at the same relative location.
 
-<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/1d4ad551-a39c-43ba-80cc-d84c9df35711
-" height="250" alt="Creating Files" title="Creating Files">
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/1d4ad551-a39c-43ba-80cc-d84c9df35711" height="250" alt="Creating Files" title="Creating Files">
 
 You can also add your own terminal commands.
 
 Any executable placed in the `/bin` directory within the operating system's file system can be used as a terminal command. Note that the terminal must be restarted for the changes to take effect.
+
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/3c6bd2a4-e409-4221-bbc7-d2bde2e887ea" height="250" alt="Creating New Commands" title="Creating New Commands">
 
 
 ## <a name="features">Features 🐦‍🔥</a>
