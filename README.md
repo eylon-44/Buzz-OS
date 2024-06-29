@@ -48,7 +48,7 @@ make
 
 ### <a name="run">Run 🏃</a>
 
-Inside the project's root directory, enter `make run`. The system will boot up and greet you with a terminal program. Happy buzzing 🐝.
+Inside the project's root directory, enter `make run`. The system will boot up and greet you with a terminal program.
 
 > **Quick Tips**<br>
 > • Use the `help` command to get information about available commands
@@ -59,11 +59,17 @@ Inside the project's root directory, enter `make run`. The system will boot up a
 
 ### <a name="use">Use 🦧</a>
 
+In the terminal, use the `help` command to list available commands. For more details on a specific command, use `help` followed by the command's name.
 
-describe a few instruction/command then put a giff of them
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/1fac0d76-ed27-4129-b6c2-99dbdabc00c9" height="250" alt="Help Command" title="Help Command">
 
-<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/43fd70ab-b8ed-4c92-ab18-1564da29adad" height="250" alt="Buzz Logo" title="Buzz Logo">
+<br>Execute a program by inputting its path. Use the `ls` command followed by a file name to check if it's executable.
 
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/48dd48be-56bf-4742-aac2-8c0a13fde116" height="250" alt="Execute Programs" title="Execute Programs">
+
+<br>Open a tab with `Ctrl+Shift+T`, close it with `Ctrl+Shift+W`, and switch to a different one with `Alt+[tab index]`.
+
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/fb7ae4a7-8f5b-42cd-bbee-1eafc33aee8c" height="250" alt="Tab Manipulation" title="Tab Manipulation">
 
 ### <a name="write-your-own-programs">Write Your Own Programs 🧑‍💻</a>
 
@@ -92,7 +98,7 @@ You can now write your code under the `src` directory and your header files unde
 
 When it's time to compile, enter `make`. The build system will compile all `.c` and `.S` files under the `src` directory, include the `inc` directory, and link the program with the Buzz C standard library.
 
-Note that in each user program, a `.path` file can be found. This file holds the path that will lead to your program once in the system. You should set this file before compiling.
+Note that in each user program, a `.path` file can be found. This file defines the path that will lead to your program once in the system. Make sure to set this file with a valid path before compiling.
 ```console
 echo /home/apps/MyCoolProgram.elf > .path
 ```
@@ -107,20 +113,19 @@ The `usr/file` directory within the project acts as the file system's root direc
 
 <img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/1d4ad551-a39c-43ba-80cc-d84c9df35711" height="250" alt="Creating Files" title="Creating Files">
 
+<br>The terminal allows you to add your own custom commands.
 
-You can also add your own terminal commands.
+Any executable placed in the `/bin` directory within the operating system's file system can be used as a terminal command. Please note that the terminal must be restarted for the changes to take effect.
 
-Any executable placed in the `/bin` directory within the operating system's file system can be used as a terminal command. Note that the terminal must be restarted for the changes to take effect.
-
-<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/3c6bd2a4-e409-4221-bbc7-d2bde2e887ea" height="250" alt="Creating New Commands" title="Creating New Commands">
+<img src="https://github.com/eylon-44/Buzz-OS/assets/67273282/bc99ddea-6b90-4f94-bfcf-abf8cca4dbd0" height="250" alt="Creating New Commands" title="Creating New Commands">
 
 
 ## <a name="features">Features 🐦‍🔥</a>
 
 #### <a name="bootloader">Bootloader 🤰</a>
 
-* First-stage bootloader sets up the environment, loads the second stage bootloader and jumps to it
-* Second-stage bootloader loads the kernel from the file system and jumps to it
+* First-stage bootloader that sets up the environment, loads the second stage bootloader and jumps to it
+* Second-stage bootloader that loads the kernel from the file system and jumps to it
 
 #### <a name="kernel">Kernel 🧠</a>
 
